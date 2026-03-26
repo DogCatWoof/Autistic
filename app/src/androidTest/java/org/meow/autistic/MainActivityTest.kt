@@ -2,6 +2,7 @@ package org.meow.autistic
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -18,7 +19,8 @@ class MainActivityTest {
 
     @Test
     fun bottomNav_allFiveTabsDisplayed() {
-        composeTestRule.onNodeWithText("Todo").assertIsDisplayed()
+        // "Todo" appears in both the top bar title and the nav tab label when it's the active tab
+        composeTestRule.onAllNodesWithText("Todo")[0].assertIsDisplayed()
         composeTestRule.onNodeWithText("Daily").assertIsDisplayed()
         composeTestRule.onNodeWithText("Events").assertIsDisplayed()
         composeTestRule.onNodeWithText("Mood").assertIsDisplayed()
