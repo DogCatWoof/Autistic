@@ -1,5 +1,74 @@
 package org.meow.autistic.ui.screens
 
+// TODO PHASE 1 - Dependencies (requires build.gradle.kts approval)
+// TODO [Phase 1] Add play-services-auth for Google OAuth popup
+// TODO [Phase 1] Add google-api-client-android base client
+// TODO [Phase 1] Add google-api-services-tasks REST SDK
+// TODO [Phase 1] Add google-api-services-calendar REST SDK
+// TODO [Phase 1] Add security-crypto for EncryptedSharedPreferences (token storage)
+// TODO [Phase 1] Add okhttp3:logging-interceptor for HTTP boundary logging
+// TODO [Phase 1] Add INTERNET + ACCESS_NETWORK_STATE permissions to AndroidManifest.xml
+// TODO [Phase 1] Add OAuth redirect intent-filter to AndroidManifest.xml
+
+// TODO PHASE 2 - Auth Layer
+// TODO [Phase 2] Create data/auth/TokenStore.kt — read/write/clear access_token, refresh_token, expiry_ms via EncryptedSharedPreferences
+// TODO [Phase 2] Create data/auth/GoogleAuthManager.kt — OAuth popup via ActivityResultLauncher
+// TODO [Phase 2]   Scopes: tasks (read+write) + calendar.readonly
+// TODO [Phase 2]   isAuthenticated(): Boolean
+// TODO [Phase 2]   getValidToken(): String — auto-refresh before expiry
+// TODO [Phase 2]   signOut() — clears TokenStore
+
+// TODO PHASE 3 - Database Migration
+// TODO [Phase 3] Add to TodoEntity: googleTaskId, googleTaskListId, extraPropertiesJson, lastSyncedAt, syncStatus
+// TODO [Phase 3]   syncStatus values: "local" | "synced" | "pending_push" | "pending_delete"
+// TODO [Phase 3]   extraPropertiesJson: open JSON blob written into Google Tasks notes field — never displayed in UI
+// TODO [Phase 3] Bump TodoDatabase to version 2, add Migration(1, 2)
+// TODO [Phase 3] Create CalendarEventEntity (googleEventId, title, startAt, endAt, isAllDay, calendarId, lastSyncedAt)
+// TODO [Phase 3] Create CalendarDao
+// TODO [Phase 3] Add calendar_events table in TodoDatabase version 3, add Migration(2, 3)
+
+// TODO PHASE 4 - Google Tasks Repository (Bidirectional)
+// TODO [Phase 4] Create data/todo/GoogleTasksRemoteSource.kt — raw API calls only
+// TODO [Phase 4]   fetchTasks(token): List<RemoteTask> — GET @default/tasks (showDeleted=true, showHidden=true)
+// TODO [Phase 4]   createTask(token, task): RemoteTask
+// TODO [Phase 4]   updateTask(token, task): RemoteTask
+// TODO [Phase 4]   deleteTask(token, googleTaskId)
+// TODO [Phase 4] Create data/todo/GoogleTasksSyncService.kt — sync orchestration (no HTTP here)
+// TODO [Phase 4]   pushPending() — flush syncStatus=pending_push|pending_delete to remote, then mark synced
+// TODO [Phase 4]   pullAndMerge() — fetch remote, upsert into Room, delete locally anything deleted on remote
+// TODO [Phase 4]   Conflict rule: remote wins on pull; local edits queued as pending_push, flushed before next pull
+// TODO [Phase 4] Update TodoRepository: markPendingPush(id), markPendingDelete(id), upsertFromRemote(tasks), deleteSyncedIds(ids)
+// TODO [Phase 4] Update TodoDao: add queries for pending_push, pending_delete, upsert by googleTaskId
+
+// TODO PHASE 5 - Google Calendar Repository (Read-Only)
+// TODO [Phase 5] Create data/calendar/CalendarRemoteSource.kt — read-only
+// TODO [Phase 5]   fetchEvents(token, timeMin, timeMax): List<RemoteEvent> — rolling 60-day window
+// TODO [Phase 5]   fetchDeletedEvents(token, syncToken): List<RemoteEvent> — incremental sync via Google syncToken
+// TODO [Phase 5] Create data/calendar/CalendarSyncService.kt
+// TODO [Phase 5]   pullAndMerge() — upsert events, delete cancelled events, store syncToken for next incremental pull
+// TODO [Phase 5]   Trigger full re-sync if syncToken expires (Google invalidates after ~7 days of no sync)
+
+// TODO PHASE 6 - Sync Worker & Scheduler
+// TODO [Phase 6] Create data/sync/SyncWorker.kt (CoroutineWorker)
+// TODO [Phase 6]   Step 1: getValidToken() — abort with retry if unavailable
+// TODO [Phase 6]   Step 2: GoogleTasksSyncService.pushPending()
+// TODO [Phase 6]   Step 3: GoogleTasksSyncService.pullAndMerge()
+// TODO [Phase 6]   Step 4: CalendarSyncService.pullAndMerge()
+// TODO [Phase 6] Create data/sync/SyncScheduler.kt
+// TODO [Phase 6]   WiFi worker: Constraints(UNMETERED) + PeriodicWork(15 min)
+// TODO [Phase 6]   Cellular worker: Constraints(CONNECTED) + PeriodicWork(1 hour) — fires as fallback when not on WiFi
+// TODO [Phase 6]   triggerImmediate() — OneTimeWorkRequest for manual sync button
+
+// TODO PHASE 7 - ViewModel & UI
+// TODO [Phase 7] Add to TodoViewModel: syncState: StateFlow<SyncState> (Idle|Syncing|Error|LastSynced)
+// TODO [Phase 7] Add to TodoViewModel: isAuthenticated: StateFlow<Boolean>
+// TODO [Phase 7] Add to TodoViewModel: triggerSync() — checks network type, calls SyncScheduler.triggerImmediate()
+// TODO [Phase 7] Add to TodoViewModel: authenticate(launcher) — delegates to GoogleAuthManager
+// TODO [Phase 7] Add sync icon button to top bar — spins during Syncing, shows last-synced time when Idle
+// TODO [Phase 7] Show "Connect Google Tasks" banner when !isAuthenticated — tapping triggers OAuth popup
+// TODO [Phase 7] Show cellular confirmation dialog before manual sync on metered network
+// TODO [Phase 7] Never render extraPropertiesJson or Google Tasks notes field in any UI element
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
