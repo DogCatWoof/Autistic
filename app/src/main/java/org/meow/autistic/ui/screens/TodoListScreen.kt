@@ -31,13 +31,13 @@ package org.meow.autistic.ui.screens
 // DONE #24 [Phase 1] Add INTERNET + ACCESS_NETWORK_STATE permissions to AndroidManifest.xml
 // DONE #25 [Phase 1] Add OAuth redirect intent-filter to AndroidManifest.xml
 
-// TODO #26 PHASE 2 - Auth Layer
-// TODO #27 [Phase 2] Create data/auth/TokenStore.kt — read/write/clear access_token, refresh_token, expiry_ms via EncryptedSharedPreferences
-// TODO #28 [Phase 2] Create data/auth/GoogleAuthManager.kt — OAuth popup via ActivityResultLauncher
-// TODO #29 [Phase 2]   Scopes: tasks (read+write) + calendar.readonly
-// TODO #30 [Phase 2]   isAuthenticated(): Boolean
-// TODO #31 [Phase 2]   getValidToken(): String — auto-refresh before expiry
-// TODO #32 [Phase 2]   signOut() — clears TokenStore
+// DONE #26 PHASE 2 - Auth Layer
+// DONE #27 [Phase 2] Create data/auth/TokenStore.kt — read/write/clear access_token, refresh_token, expiry_ms via EncryptedSharedPreferences
+// DONE #28 [Phase 2] Create data/auth/GoogleAuthManager.kt — OAuth popup via ActivityResultLauncher
+// DONE #29 [Phase 2]   Scopes: tasks (read+write) + calendar.readonly
+// DONE #30 [Phase 2]   isAuthenticated(): Boolean
+// DONE #31 [Phase 2]   getValidToken(): String — auto-refresh before expiry
+// DONE #32 [Phase 2]   signOut() — clears TokenStore
 
 // TODO #33 PHASE 3 - Database Migration
 // TODO #34 [Phase 3] Add to TodoEntity: googleTaskId, googleTaskListId, extraPropertiesJson, lastSyncedAt, syncStatus
