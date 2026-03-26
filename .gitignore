@@ -1,0 +1,42 @@
+# Built outputs
+/build
+**/build/
+*.iml
+*.ap_
+*.apk
+*.aab
+*.dex
+*.class
+
+# Gradle
+.gradle/
+gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# Local config (machine-specific, may contain secrets)
+local.properties
+*.keystore
+*.jks
+
+# Android Studio / IntelliJ
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+/.idea/deploymentTargetDropDown.xml
+/.idea/migrations.xml
+/.idea/androidTestResultsUserPreferences.xml
+captures/
+
+# NDK / CMake
+.externalNativeBuild/
+.cxx/
+
+# macOS
+.DS_Store
+
+# Backup files
+*.bak
+*.orig

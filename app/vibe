@@ -1,0 +1,24 @@
+Current App Features:
+- Navigation: Bottom tabs (Todo, Daily, Events, Mood, Notes).
+- Top Bar: Settings icon in the upper right.
+- Todo Screen:
+    - Task list with completion checkboxes and strike-through.
+    - Floating Action Button (FAB) to add tasks.
+    - Date/Time pickers for Due Date.
+    - Automatic Creation Date tracking.
+    - Visual indicators for overdue tasks.
+    - Individual task deletion.
+    - Categories for Todos.
+    - List Dividers (Today vs. Future).
+    - Data Persistence: Room Database.
+    - Edit Mode for existing tasks.
+    - Push Notifications for reminders (marked tasks).
+    - Animations (UI transitions and item changes).
+    - put a divider between today and future.
+    - add some animation.
+- Exercise routine guide
+    - Put in the steps I need.  Maybe can add a photo
+    - When run the routine.  Show steps, a go, and cancel button
+    - Start with a list of routines.  Routines can have multiple steps.
+    - Use voice commands where possible
+    - Use voice for counting.

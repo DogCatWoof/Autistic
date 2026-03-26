@@ -1,0 +1,10 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+# Machine-specific
+/caches/
+/deploymentTargetSelector.xml
+/deviceManager.xml
+/appInsightsSettings.xml
+/studiobot.xml
+/migrations.xml
