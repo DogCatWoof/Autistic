@@ -21,7 +21,7 @@ package org.meow.autistic.ui.screens
 // TODO #15: Add an 'Account' or 'Login' button to trigger the OAuth popup if tokens are missing
 // TODO #16: Update TodoItem UI to hide the JSON metadata string from the notes display
 
-// TODO #17 PHASE 1 - Dependencies (requires build.gradle.kts approval)
+// DONE #17 PHASE 1 - Dependencies (requires build.gradle.kts approval)
 // DONE #18 [Phase 1] Add play-services-auth for Google OAuth popup
 // DONE #19 [Phase 1] Add google-api-client-android base client
 // DONE #20 [Phase 1] Add google-api-services-tasks REST SDK
