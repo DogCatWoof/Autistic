@@ -65,44 +65,47 @@ data class NavigationItem(
     val title: String,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
-    val badgeCount: Int? = null
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
+
+    companion object {
+        private val BOTTOM_ITEMS = listOf(
+            NavigationItem(
+                title = "Todo",
+                selectedIcon = Icons.Filled.Done,
+                unselectedIcon = Icons.Outlined.Done,
+            ),
+            NavigationItem(
+                title = "Daily",
+                selectedIcon = Icons.AutoMirrored.Filled.List,
+                unselectedIcon = Icons.AutoMirrored.Outlined.List,
+            ),
+            NavigationItem(
+                title = "Events",
+                selectedIcon = Icons.Filled.DateRange,
+                unselectedIcon = Icons.Outlined.DateRange,
+            ),
+            NavigationItem(
+                title = "Mood",
+                selectedIcon = Icons.Filled.Face,
+                unselectedIcon = Icons.Outlined.Face,
+            ),
+            NavigationItem(
+                title = "Notes",
+                selectedIcon = Icons.Filled.Create,
+                unselectedIcon = Icons.Outlined.Create,
+            ),
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         createNotificationChannel()
         setContent {
             AutisticTheme {
-                val bottomItems = listOf(
-                    NavigationItem(
-                        title = "Todo",
-                        selectedIcon = Icons.Filled.Done,
-                        unselectedIcon = Icons.Outlined.Done,
-                    ),
-                    NavigationItem(
-                        title = "Daily",
-                        selectedIcon = Icons.AutoMirrored.Filled.List,
-                        unselectedIcon = Icons.AutoMirrored.Outlined.List,
-                    ),
-                    NavigationItem(
-                        title = "Events",
-                        selectedIcon = Icons.Filled.DateRange,
-                        unselectedIcon = Icons.Outlined.DateRange,
-                    ),
-                    NavigationItem(
-                        title = "Mood",
-                        selectedIcon = Icons.Filled.Face,
-                        unselectedIcon = Icons.Outlined.Face,
-                    ),
-                    NavigationItem(
-                        title = "Notes",
-                        selectedIcon = Icons.Filled.Create,
-                        unselectedIcon = Icons.Outlined.Create,
-                    ),
-                )
+                val bottomItems = BOTTOM_ITEMS
 
                 var selectedBottomItemIndex by rememberSaveable {
                     mutableIntStateOf(0)
@@ -206,8 +209,6 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     ) { isGranted: Boolean ->
         if (isGranted) {
             showNotification(context)
-        } else {
-            // Permission Denied
         }
     }
 

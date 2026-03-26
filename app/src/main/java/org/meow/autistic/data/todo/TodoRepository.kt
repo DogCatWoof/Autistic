@@ -8,5 +8,4 @@ class TodoRepository(private val todoDao: TodoDao) {
     suspend fun insert(todo: TodoEntity) = todoDao.insertTodo(todo)
     suspend fun update(todo: TodoEntity) = todoDao.updateTodo(todo)
     suspend fun delete(todo: TodoEntity) = todoDao.deleteTodo(todo)
-    suspend fun getTodoById(id: Long) = todoDao.getTodoById(id)
 }

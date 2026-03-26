@@ -9,12 +9,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
 @Composable
-fun DailyScreen(modifier: Modifier = Modifier) {
+fun PlaceholderScreen(label: String, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "Daily Screen")
+        Text(text = label)
     }
+}
+
+@Composable
+fun DailyScreen(modifier: Modifier = Modifier) {
+    PlaceholderScreen("Daily Screen", modifier)
 }
