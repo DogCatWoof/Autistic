@@ -58,6 +58,14 @@ dependencies {
     // Google Sign-In / OAuth
     implementation(libs.google.play.services.auth)
 
+    // Google API Client + Tasks + Calendar
+    implementation(libs.google.api.client.android)
+    implementation(libs.google.api.services.tasks)
+    implementation(libs.google.api.services.calendar)
+
+    // Encrypted token storage
+    implementation(libs.androidx.security.crypto)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

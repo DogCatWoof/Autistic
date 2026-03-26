@@ -23,10 +23,10 @@ package org.meow.autistic.ui.screens
 
 // TODO #17 PHASE 1 - Dependencies (requires build.gradle.kts approval)
 // DONE #18 [Phase 1] Add play-services-auth for Google OAuth popup
-// TODO #19 [Phase 1] Add google-api-client-android base client
-// TODO #20 [Phase 1] Add google-api-services-tasks REST SDK
-// TODO #21 [Phase 1] Add google-api-services-calendar REST SDK
-// TODO #22 [Phase 1] Add security-crypto for EncryptedSharedPreferences (token storage)
+// DONE #19 [Phase 1] Add google-api-client-android base client
+// DONE #20 [Phase 1] Add google-api-services-tasks REST SDK
+// DONE #21 [Phase 1] Add google-api-services-calendar REST SDK
+// DONE #22 [Phase 1] Add security-crypto for EncryptedSharedPreferences (token storage)
 // TODO #23 [Phase 1] Add okhttp3:logging-interceptor for HTTP boundary logging
 // TODO #24 [Phase 1] Add INTERNET + ACCESS_NETWORK_STATE permissions to AndroidManifest.xml
 // TODO #25 [Phase 1] Add OAuth redirect intent-filter to AndroidManifest.xml
