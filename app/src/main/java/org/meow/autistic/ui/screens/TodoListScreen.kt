@@ -1,5 +1,26 @@
 package org.meow.autistic.ui.screens
 
+// TODO: Add Google Play Services Auth and Google API Client dependencies to build.gradle.kts
+// TODO: Configure Google Cloud Console with OAuth 2.0 Client ID for Android
+// TODO: Create a GoogleAuthManager to handle OAuth sign-in, token storage, and refreshing
+
+// TODO: Update TodoEntity to include googleTaskId (String?), etag (String?), and lastSynced (Long)
+// TODO: Add 'notes' field to TodoEntity to store the raw string from Google Tasks
+// TODO: Create a data class (e.g., TodoMetadata) for custom JSON properties not in Google Tasks
+// TODO: Implement a JSON parser/stripper to separate user-visible notes from the metadata blob
+
+// TODO: Implement TodoSyncWorker using WorkManager for background synchronization
+// TODO: Configure SyncWorker constraints: 15m interval on WiFi, 1h on Cellular
+// TODO: Add a manual sync function to TodoRepository that triggers a one-time WorkRequest
+
+// TODO: Create GoogleTasksService to wrap API calls (List, Insert, Patch, Delete)
+// TODO: Create GoogleCalendarService to fetch and sync primary calendar events
+// TODO: Implement conflict resolution logic (Local vs Remote timestamps)
+
+// TODO: Add 'Sync' button to TodoListScreen TopAppBar
+// TODO: Add an 'Account' or 'Login' button to trigger the OAuth popup if tokens are missing
+// TODO: Update TodoItem UI to hide the JSON metadata string from the notes display
+
 // TODO PHASE 1 - Dependencies (requires build.gradle.kts approval)
 // TODO [Phase 1] Add play-services-auth for Google OAuth popup
 // TODO [Phase 1] Add google-api-client-android base client
