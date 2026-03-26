@@ -68,4 +68,10 @@ class MainActivityTest {
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.onNodeWithContentDescription("Add Todo").assertIsDisplayed()
     }
+
+    @Test
+    fun settingsScreen_showsConnectButton_whenNotAuthenticated() {
+        composeTestRule.onNodeWithContentDescription("Settings").performClick()
+        composeTestRule.onNodeWithText("Connect Google Account").assertIsDisplayed()
+    }
 }

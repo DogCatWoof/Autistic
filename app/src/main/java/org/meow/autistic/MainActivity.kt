@@ -45,8 +45,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
+import org.meow.autistic.data.auth.GoogleAuthManager
+import org.meow.autistic.data.auth.TokenStore
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -204,11 +209,25 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val launcher = rememberLauncherForActivityResult(
+    val scope = rememberCoroutineScope()
+
+    val notificationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
             showNotification(context)
+        }
+    }
+
+    val tokenStore = remember { TokenStore.create(context) }
+    val authManager = remember { GoogleAuthManager(context, tokenStore) }
+    var isAuthenticated by remember { mutableStateOf(authManager.isAuthenticated()) }
+
+    val signInLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (authManager.handleSignInResult(result.data)) {
+            isAuthenticated = true
         }
     }
 
@@ -227,13 +246,33 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                 ) {
                     showNotification(context)
                 } else {
-                    launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
             } else {
                 showNotification(context)
             }
         }) {
             Text(text = "Show Notification")
+        }
+
+        // TEMP: auth buttons — will be moved to ViewModel+UI in Phase 7 (TODO #74)
+        if (isAuthenticated) {
+            Text(text = "Connected: ${tokenStore.getAccountEmail() ?: "unknown"}")
+            Button(onClick = {
+                scope.launch {
+                    authManager.signOut()
+                    isAuthenticated = false
+                }
+            }) {
+                Text(text = "Disconnect Google")
+            }
+        } else {
+            Text(text = "Not connected to Google")
+            Button(onClick = {
+                signInLauncher.launch(authManager.getSignInIntent())
+            }) {
+                Text(text = "Connect Google Account")
+            }
         }
     }
 }
