@@ -21,13 +21,15 @@ class TodoRepositoryTest {
     @Before
     fun setUp() {
         dao = mockk()
+        every { dao.getAllTodos() } returns flowOf(emptyList())
         repository = TodoRepository(dao)
     }
 
     @Test
     fun `allTodos exposes flow from dao`() = runTest {
-        every { dao.getAllTodos() } returns flowOf(listOf(todo))
-        val result = repository.allTodos.first()
+        val testDao = mockk<TodoDao>()
+        every { testDao.getAllTodos() } returns flowOf(listOf(todo))
+        val result = TodoRepository(testDao).allTodos.first()
         assertEquals(listOf(todo), result)
     }
 

@@ -23,14 +23,9 @@
             android:theme="@style/Theme.Autistic">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-        <!-- OAuth redirect handler — update scheme to reverse client ID from Google Cloud Console once TODO #2 is done -->
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
+            <!-- OAuth redirect handler — replace scheme with reverse client ID once TODO #2 is done -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
