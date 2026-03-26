@@ -27,9 +27,9 @@ package org.meow.autistic.ui.screens
 // DONE #20 [Phase 1] Add google-api-services-tasks REST SDK
 // DONE #21 [Phase 1] Add google-api-services-calendar REST SDK
 // DONE #22 [Phase 1] Add security-crypto for EncryptedSharedPreferences (token storage)
-// TODO #23 [Phase 1] Add okhttp3:logging-interceptor for HTTP boundary logging
-// TODO #24 [Phase 1] Add INTERNET + ACCESS_NETWORK_STATE permissions to AndroidManifest.xml
-// TODO #25 [Phase 1] Add OAuth redirect intent-filter to AndroidManifest.xml
+// DONE #23 [Phase 1] Add okhttp3:logging-interceptor for HTTP boundary logging
+// DONE #24 [Phase 1] Add INTERNET + ACCESS_NETWORK_STATE permissions to AndroidManifest.xml
+// DONE #25 [Phase 1] Add OAuth redirect intent-filter to AndroidManifest.xml
 
 // TODO #26 PHASE 2 - Auth Layer
 // TODO #27 [Phase 2] Create data/auth/TokenStore.kt — read/write/clear access_token, refresh_token, expiry_ms via EncryptedSharedPreferences

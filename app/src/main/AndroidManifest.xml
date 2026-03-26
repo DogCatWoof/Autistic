@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:allowBackup="true"
@@ -25,6 +27,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- OAuth redirect handler — update scheme to reverse client ID from Google Cloud Console once TODO #2 is done -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Replace with reverse client ID, e.g. com.googleusercontent.apps.YOUR_CLIENT_ID -->
+                <data android:scheme="org.meow.autistic" android:host="oauth2redirect" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name=".NotificationActivity"
             android:exported="false"

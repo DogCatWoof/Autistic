@@ -15,6 +15,7 @@ googleApiClientAndroid = "2.7.1"
 googleApiServicesTasks = "v1-rev20210709-2.0.0"
 googleApiServicesCalendar = "v3-rev20220715-2.0.0"
 securityCrypto = "1.0.0"
+okhttpLogging = "4.12.0"
 ksp = "2.2.10-2.0.2"
 lifecycleViewmodelCompose = "2.8.7"
 
@@ -43,6 +44,7 @@ google-api-client-android = { group = "com.google.api-client", name = "google-ap
 google-api-services-tasks = { group = "com.google.apis", name = "google-api-services-tasks", version.ref = "googleApiServicesTasks" }
 google-api-services-calendar = { group = "com.google.apis", name = "google-api-services-calendar", version.ref = "googleApiServicesCalendar" }
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
+okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttpLogging" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -66,6 +66,9 @@ dependencies {
     // Encrypted token storage
     implementation(libs.androidx.security.crypto)
 
+    // HTTP logging at boundary
+    implementation(libs.okhttp.logging.interceptor)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
