@@ -8,6 +8,7 @@
 - Categories: General, Work, Personal, Health
 - Completing a task marks it done; it remains visible until dismissed or deleted
 - Tasks with reminders trigger a local notification at the due time
+- Only show not completed tasks / todos
 
 ### Google Tasks Sync
 - Users can connect a Google account via OAuth to enable sync
