@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.automirrored.outlined.List
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Done
@@ -40,7 +38,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -71,36 +68,15 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         private val BOTTOM_ITEMS = listOf(
-            NavigationItem(
-                title = "Todo",
-                selectedIcon = Icons.Filled.Done,
-                unselectedIcon = Icons.Outlined.Done,
-                subItems = listOf("All Tasks", "Today", "Upcoming", "Completed"),
-            ),
-            NavigationItem(
-                title = "Daily",
-                selectedIcon = Icons.AutoMirrored.Filled.List,
-                unselectedIcon = Icons.AutoMirrored.Outlined.List,
-                subItems = listOf("Overview", "Morning", "Afternoon", "Evening"),
-            ),
+            NavigationItem("Todo", Icons.Filled.Done, Icons.Outlined.Done),
             NavigationItem(
                 title = "Events",
                 selectedIcon = Icons.Filled.DateRange,
                 unselectedIcon = Icons.Outlined.DateRange,
-                subItems = listOf("Calendar", "Upcoming", "Past"),
+                subItems = listOf("Events", "Daily"),
             ),
-            NavigationItem(
-                title = "Mood",
-                selectedIcon = Icons.Filled.Face,
-                unselectedIcon = Icons.Outlined.Face,
-                subItems = listOf("Log Mood", "History", "Insights"),
-            ),
-            NavigationItem(
-                title = "Notes",
-                selectedIcon = Icons.Filled.Create,
-                unselectedIcon = Icons.Outlined.Create,
-                subItems = listOf("All Notes", "New Note", "Tags"),
-            ),
+            NavigationItem("Mood", Icons.Filled.Face, Icons.Outlined.Face),
+            NavigationItem("Notes", Icons.Filled.Create, Icons.Outlined.Create),
         )
     }
 
@@ -110,21 +86,25 @@ class MainActivity : ComponentActivity() {
         setContent {
             AutisticTheme {
                 val bottomItems = BOTTOM_ITEMS
-                var selectedBottomItemIndex by rememberSaveable { mutableIntStateOf(0) }
+                // currentDestination can be any screen name, including "Daily" which has no tab
+                var currentDestination by rememberSaveable { mutableStateOf("Todo") }
                 var showSettings by rememberSaveable { mutableStateOf(false) }
                 var bottomSheetIndex by rememberSaveable { mutableStateOf<Int?>(null) }
                 val drawerState = rememberDrawerState(DrawerValue.Closed)
                 val scope = rememberCoroutineScope()
+
+                // "Daily" lives under "Events" in the nav bar
+                val activeNavTitle = if (currentDestination == "Daily") "Events" else currentDestination
 
                 ModalNavigationDrawer(
                     drawerState = drawerState,
                     drawerContent = {
                         AppDrawerSheet(
                             items = bottomItems,
-                            selectedIndex = selectedBottomItemIndex,
+                            selectedIndex = bottomItems.indexOfFirst { it.title == activeNavTitle },
                             showSettings = showSettings,
                             onSelect = { index ->
-                                selectedBottomItemIndex = index
+                                currentDestination = bottomItems[index].title
                                 showSettings = false
                                 scope.launch { drawerState.close() }
                             },
@@ -146,8 +126,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 title = {
-                                    val title = if (showSettings) "Settings" else bottomItems[selectedBottomItemIndex].title
-                                    Text(text = title)
+                                    Text(text = if (showSettings) "Settings" else currentDestination)
                                 },
                                 actions = {
                                     IconButton(onClick = { showSettings = !showSettings }) {
@@ -163,12 +142,19 @@ class MainActivity : ComponentActivity() {
                             NavigationBar {
                                 bottomItems.forEachIndexed { index, item ->
                                     NavigationBarItem(
-                                        selected = !showSettings && index == selectedBottomItemIndex,
-                                        onClick = { bottomSheetIndex = index },
+                                        selected = !showSettings && item.title == activeNavTitle,
+                                        onClick = {
+                                            if (item.subItems.isEmpty()) {
+                                                currentDestination = item.title
+                                                showSettings = false
+                                            } else {
+                                                bottomSheetIndex = index
+                                            }
+                                        },
                                         label = { Text(text = item.title) },
                                         icon = {
                                             Icon(
-                                                imageVector = if (!showSettings && index == selectedBottomItemIndex) {
+                                                imageVector = if (!showSettings && item.title == activeNavTitle) {
                                                     item.selectedIcon
                                                 } else {
                                                     item.unselectedIcon
@@ -185,12 +171,12 @@ class MainActivity : ComponentActivity() {
                             if (showSettings) {
                                 SettingsScreen()
                             } else {
-                                when (selectedBottomItemIndex) {
-                                    0 -> TodoListScreen()
-                                    1 -> DailyScreen()
-                                    2 -> EventsScreen()
-                                    3 -> MoodScreen()
-                                    4 -> NotesScreen()
+                                when (currentDestination) {
+                                    "Todo" -> TodoListScreen()
+                                    "Daily" -> DailyScreen()
+                                    "Events" -> EventsScreen()
+                                    "Mood" -> MoodScreen()
+                                    "Notes" -> NotesScreen()
                                 }
                             }
                         }
@@ -200,8 +186,8 @@ class MainActivity : ComponentActivity() {
                 bottomSheetIndex?.let { tabIndex ->
                     NavBottomSheet(
                         item = bottomItems[tabIndex],
-                        onSubItemSelected = {
-                            selectedBottomItemIndex = tabIndex
+                        onSubItemSelected = { subItem ->
+                            currentDestination = subItem
                             showSettings = false
                             bottomSheetIndex = null
                         },

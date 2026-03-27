@@ -18,10 +18,9 @@ class MainActivityTest {
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun bottomNav_allFiveTabsDisplayed() {
+    fun bottomNav_fourTabsDisplayed() {
         // Each label appears in both the bottom nav and the drawer — [0] is the bottom nav item
         composeTestRule.onAllNodesWithText("Todo")[0].assertIsDisplayed()
-        composeTestRule.onAllNodesWithText("Daily")[0].assertIsDisplayed()
         composeTestRule.onAllNodesWithText("Events")[0].assertIsDisplayed()
         composeTestRule.onAllNodesWithText("Mood")[0].assertIsDisplayed()
         composeTestRule.onAllNodesWithText("Notes")[0].assertIsDisplayed()
@@ -33,30 +32,37 @@ class MainActivityTest {
     }
 
     @Test
-    fun clickDailyTab_showsDailyScreen() {
-        composeTestRule.onAllNodesWithText("Daily")[0].performClick()
-        composeTestRule.onNodeWithText("Overview").performClick()
-        composeTestRule.onNodeWithText("Daily Screen").assertIsDisplayed()
+    fun clickTodoTab_showsTodoScreen() {
+        // Todo has no sub-items — navigates directly
+        composeTestRule.onAllNodesWithText("Todo")[0].performClick()
+        composeTestRule.onNodeWithContentDescription("Add Todo").assertIsDisplayed()
     }
 
     @Test
     fun clickEventsTab_showsEventsScreen() {
         composeTestRule.onAllNodesWithText("Events")[0].performClick()
-        composeTestRule.onNodeWithText("Calendar").performClick()
+        composeTestRule.onNodeWithContentDescription("Events option").performClick()
         composeTestRule.onNodeWithText("Events Screen").assertIsDisplayed()
     }
 
     @Test
+    fun dailyAccessibleViaEventsTab() {
+        composeTestRule.onAllNodesWithText("Events")[0].performClick()
+        composeTestRule.onNodeWithContentDescription("Daily option").performClick()
+        composeTestRule.onNodeWithText("Daily Screen").assertIsDisplayed()
+    }
+
+    @Test
     fun clickMoodTab_showsMoodScreen() {
+        // Mood has no sub-items — navigates directly
         composeTestRule.onAllNodesWithText("Mood")[0].performClick()
-        composeTestRule.onNodeWithText("Log Mood").performClick()
         composeTestRule.onNodeWithText("Mood Screen").assertIsDisplayed()
     }
 
     @Test
     fun clickNotesTab_showsNotesScreen() {
+        // Notes has no sub-items — navigates directly
         composeTestRule.onAllNodesWithText("Notes")[0].performClick()
-        composeTestRule.onNodeWithText("All Notes").performClick()
         composeTestRule.onNodeWithText("Notes Screen").assertIsDisplayed()
     }
 
