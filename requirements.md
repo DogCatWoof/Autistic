@@ -30,13 +30,12 @@
 ### Scan
 - Users can scan grocery product barcodes using the device camera (icon: Barcode)
 - A camera preview fills the scan screen; a live barcode detector identifies the first valid barcode
-- On barcode detection, the camera stops and a product lookup is triggered automatically
-- Product data is fetched from `https://world.openfoodfacts.org/api/v0/product/{barcode}.json`
-- The screen displays the returned product information: product name, brand, quantity, ingredients, and nutrition facts (energy, fat, carbohydrates, sugars, protein, salt — per 100 g where available)
-- If the product is not found (404 or empty `product` object) a "Product not found" message is shown
-- If the network call fails, an error message is shown with a retry option
+- On barcode detection, the camera stops and a local product lookup is performed by barcode code
+- The screen displays the matched product's stored JSON: product name, brand, quantity, ingredients, and nutrition facts where present
+- If the barcode is not found in the local database, a "Product not found" message is shown
 - A "Scan again" button resets the camera to scan a new barcode
 - Camera permission is requested at runtime before the camera preview starts; if denied, an explanation and a settings-link are shown
+- Scan is unavailable (with a prompt to sync) until the product database has been populated at least once
 
 ### Notes
 - Users can write and save free-form notes (not yet implemented — placeholder)
@@ -46,6 +45,14 @@
 - Connected account email is displayed
 - Users can grant or revoke notification permission
 - A test notification button is available for verification
+
+#### Sync Section (Settings)
+- A "Sync" section lists data sources that can be downloaded locally
+- **Open Food Facts**: a "Sync Products" button downloads the full product database from `https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz`, decompresses it on-device, parses each CSV row, and upserts a `barcode → JSON` record into the local product table
+- During sync, progress is shown (e.g. "Downloading…", "Importing X of Y rows…"); the button is disabled while a sync is in progress
+- On completion, the last-synced timestamp is displayed beneath the button
+- On failure, an error message is shown with a retry option
+- The sync runs as a background WorkManager task so it survives the app being backgrounded
 
 ---
 
@@ -86,6 +93,22 @@ Sync runs as a 4-step sequence (abort with retry if no valid token):
 ### Sync State (ViewModel)
 - `syncState: StateFlow<SyncState>` with values: `Idle` | `Syncing` | `Error` | `LastSynced`
 - `isAuthenticated: StateFlow<Boolean>` drives UI banner visibility
+
+### Product Database
+- A `ProductEntity` table stores `barcode` (primary key, text) and `productJson` (text — the raw JSON-serialised CSV row as a key/value map)
+- Lookups are by exact barcode string; no full-text or partial search is required
+- The table is populated exclusively by the Open Food Facts sync worker; no manual inserts from the UI
+- Schema version must be bumped and a migration provided when the table is added
+
+### Open Food Facts Sync Worker
+- Implemented as a `CoroutineWorker` managed by WorkManager (one-time, on-demand)
+- Downloads the `.csv.gz` file with an HTTP GET; streams the response body directly through a `GZIPInputStream` to avoid writing the compressed file to disk
+- Parses the CSV line-by-line; the first line is the header row — use it to build a column-name index
+- Each data row is converted to a `Map<String, String>` (column name → value) serialised to JSON, then upserted into `ProductEntity` by barcode (first column, `code`)
+- Rows with an empty or blank `code` field are skipped
+- Upserts are batched (e.g. 500 rows per transaction) to bound memory usage
+- Worker exposes progress via `setProgress` so the UI can display live row counts
+- The worker stores the completion timestamp in `DataStore<Preferences>` on success; this value is displayed in Settings
 
 ### Testing
 - Unit tests must use mocks; no test may require a live network or external service connection
