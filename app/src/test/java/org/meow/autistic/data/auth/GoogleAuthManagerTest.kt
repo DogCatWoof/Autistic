@@ -13,6 +13,7 @@ import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import io.mockk.verify
+import java.io.IOException
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -94,6 +95,59 @@ class GoogleAuthManagerTest {
         every { tokenStore.getAccessToken() } returns "cached_token"
 
         assertEquals("cached_token", manager.getValidToken())
+    }
+
+    @Test
+    fun `handleSignInResult returns false when account email is null`() {
+        val account = mockk<GoogleSignInAccount> { every { email } returns null }
+        val task = mockk<com.google.android.gms.tasks.Task<GoogleSignInAccount>> {
+            every { getResult(ApiException::class.java) } returns account
+        }
+        every { GoogleSignIn.getSignedInAccountFromIntent(any()) } returns task
+        assertFalse(manager.handleSignInResult(mockk<Intent>()))
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun `getValidToken throws when not authenticated`() = runTest {
+        every { tokenStore.isTokenValid() } returns false
+        every { GoogleSignIn.getLastSignedInAccount(context) } returns null
+        manager.getValidToken()
+    }
+
+    @Test
+    fun `getValidToken throws when account has no Android account`() = runTest {
+        mockkStatic(GoogleAuthUtil::class)
+        val signInAccount = mockk<GoogleSignInAccount> { every { account } returns null }
+        every { tokenStore.isTokenValid() } returns false
+        every { GoogleSignIn.getLastSignedInAccount(context) } returns signInAccount
+        var threw = false
+        try {
+            manager.getValidToken()
+        } catch (e: IllegalStateException) {
+            threw = true
+        } finally {
+            unmockkStatic(GoogleAuthUtil::class)
+        }
+        assertTrue(threw)
+    }
+
+    @Test
+    fun `getValidToken propagates IOException from GoogleAuthUtil`() = runTest {
+        mockkStatic(GoogleAuthUtil::class)
+        val androidAccount = mockk<android.accounts.Account>()
+        val signInAccount = mockk<GoogleSignInAccount> { every { account } returns androidAccount }
+        every { tokenStore.isTokenValid() } returns false
+        every { GoogleSignIn.getLastSignedInAccount(context) } returns signInAccount
+        every { GoogleAuthUtil.getToken(context, androidAccount, any<String>()) } throws IOException("Network failure")
+        var threw = false
+        try {
+            manager.getValidToken()
+        } catch (e: IOException) {
+            threw = true
+        } finally {
+            unmockkStatic(GoogleAuthUtil::class)
+        }
+        assertTrue(threw)
     }
 
     @Test

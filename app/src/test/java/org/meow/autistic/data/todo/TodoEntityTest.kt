@@ -76,6 +76,27 @@ class TodoEntityTest {
     }
 
     @Test
+    fun `inequality when isCompleted differs`() {
+        val a = TodoEntity(id = 1L, task = "Task", createdAt = 1000L, isCompleted = false)
+        val b = TodoEntity(id = 1L, task = "Task", createdAt = 1000L, isCompleted = true)
+        assertNotEquals(a, b)
+    }
+
+    @Test
+    fun `inequality when createdAt differs`() {
+        val a = TodoEntity(id = 1L, task = "Task", createdAt = 1000L)
+        val b = TodoEntity(id = 1L, task = "Task", createdAt = 2000L)
+        assertNotEquals(a, b)
+    }
+
+    @Test
+    fun `inequality when syncStatus differs`() {
+        val a = TodoEntity(task = "Task", createdAt = 1000L, syncStatus = "local")
+        val b = TodoEntity(task = "Task", createdAt = 1000L, syncStatus = "synced")
+        assertNotEquals(a, b)
+    }
+
+    @Test
     fun `sync fields can be set`() {
         val entity = TodoEntity(
             task = "Task",

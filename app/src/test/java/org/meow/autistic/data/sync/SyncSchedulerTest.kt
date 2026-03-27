@@ -5,6 +5,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
@@ -82,6 +83,33 @@ class SyncSchedulerTest {
         scheduler.triggerImmediate()
 
         verify(exactly = 0) { workManager.enqueueUniquePeriodicWork(any(), any(), any()) }
+    }
+
+    @Test
+    fun `schedulePeriodicSync does not call enqueueUniqueWork`() {
+        scheduler.schedulePeriodicSync()
+
+        verify(exactly = 0) { workManager.enqueueUniqueWork(any(), any(), any<OneTimeWorkRequest>()) }
+    }
+
+    // endregion
+
+    // region error propagation
+
+    @Test(expected = RuntimeException::class)
+    fun `schedulePeriodicSync propagates WorkManager exception`() {
+        every {
+            workManager.enqueueUniquePeriodicWork(any(), any(), any<PeriodicWorkRequest>())
+        } throws RuntimeException("WorkManager unavailable")
+        scheduler.schedulePeriodicSync()
+    }
+
+    @Test(expected = RuntimeException::class)
+    fun `triggerImmediate propagates WorkManager exception`() {
+        every {
+            workManager.enqueueUniqueWork(any(), any(), any<OneTimeWorkRequest>())
+        } throws RuntimeException("WorkManager unavailable")
+        scheduler.triggerImmediate()
     }
 
     // endregion

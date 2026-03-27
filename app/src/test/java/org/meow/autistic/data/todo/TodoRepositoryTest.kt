@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
@@ -108,5 +109,42 @@ class TodoRepositoryTest {
         coEvery { dao.deleteByGoogleTaskIds(listOf("gid")) } returns 1
         repository.deleteByGoogleTaskIds(listOf("gid"))
         coVerify { dao.deleteByGoogleTaskIds(listOf("gid")) }
+    }
+
+    @Test(expected = RuntimeException::class)
+    fun `insert propagates dao exception`() = runTest {
+        coEvery { dao.insertTodo(todo) } throws RuntimeException("DB error")
+        repository.insert(todo)
+    }
+
+    @Test(expected = RuntimeException::class)
+    fun `update propagates dao exception`() = runTest {
+        coEvery { dao.updateTodo(todo) } throws RuntimeException("DB error")
+        repository.update(todo)
+    }
+
+    @Test(expected = RuntimeException::class)
+    fun `delete propagates dao exception`() = runTest {
+        coEvery { dao.deleteTodo(todo) } throws RuntimeException("DB error")
+        repository.delete(todo)
+    }
+
+    @Test
+    fun `getByGoogleTaskId returns null when not found`() = runTest {
+        coEvery { dao.getByGoogleTaskId("unknown") } returns null
+        assertNull(repository.getByGoogleTaskId("unknown"))
+    }
+
+    @Test
+    fun `getPendingPush returns empty list when none pending`() = runTest {
+        coEvery { dao.getPendingPush() } returns emptyList()
+        assertEquals(emptyList<TodoEntity>(), repository.getPendingPush())
+    }
+
+    @Test
+    fun `deleteByGoogleTaskIds with empty list delegates to dao`() = runTest {
+        coEvery { dao.deleteByGoogleTaskIds(emptyList()) } returns 0
+        repository.deleteByGoogleTaskIds(emptyList())
+        coVerify { dao.deleteByGoogleTaskIds(emptyList()) }
     }
 }

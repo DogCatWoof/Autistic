@@ -5,6 +5,7 @@ import com.google.api.services.tasks.model.Task
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.io.IOException
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -179,6 +180,45 @@ class GoogleTasksRemoteSourceTest {
 
     // endregion
 
+    @Test
+    fun `fetchTasks returns empty list when response items is null`() = runTest {
+        val mockList = mockk<Tasks.TasksOperations.List>()
+        every { mockOps.list("@default") } returns mockList
+        every { mockList.setShowDeleted(true) } returns mockList
+        every { mockList.setShowHidden(true) } returns mockList
+        every { mockList.execute() } returns com.google.api.services.tasks.model.Tasks().apply {
+            items = null
+            nextPageToken = null
+        }
+        assertTrue(source.fetchTasks("token").isEmpty())
+    }
+
+    @Test(expected = IOException::class)
+    fun `fetchTasks propagates IOException from API`() = runTest {
+        val mockList = mockk<Tasks.TasksOperations.List>()
+        every { mockOps.list("@default") } returns mockList
+        every { mockList.setShowDeleted(true) } returns mockList
+        every { mockList.setShowHidden(true) } returns mockList
+        every { mockList.execute() } throws IOException("Network error")
+        source.fetchTasks("token")
+    }
+
+    @Test(expected = IOException::class)
+    fun `createTask propagates IOException from API`() = runTest {
+        val mockInsert = mockk<Tasks.TasksOperations.Insert>()
+        every { mockOps.insert("@default", any()) } returns mockInsert
+        every { mockInsert.execute() } throws IOException("Network error")
+        source.createTask("token", RemoteTask(id = null, title = "Task", notes = null, status = "needsAction", due = null, completed = null, deleted = false))
+    }
+
+    @Test(expected = IOException::class)
+    fun `updateTask propagates IOException from API`() = runTest {
+        val mockUpdate = mockk<Tasks.TasksOperations.Update>()
+        every { mockOps.update("@default", "task1", any()) } returns mockUpdate
+        every { mockUpdate.execute() } throws IOException("Network error")
+        source.updateTask("token", RemoteTask(id = "task1", title = "Task", notes = null, status = "needsAction", due = null, completed = null, deleted = false))
+    }
+
     // region deleteTask
 
     @Test
@@ -190,6 +230,14 @@ class GoogleTasksRemoteSourceTest {
         source.deleteTask("token", "task1")
 
         verify(exactly = 1) { mockOps.delete("@default", "task1") }
+    }
+
+    @Test(expected = IOException::class)
+    fun `deleteTask propagates IOException from API`() = runTest {
+        val mockDelete = mockk<Tasks.TasksOperations.Delete>()
+        every { mockOps.delete("@default", "task1") } returns mockDelete
+        every { mockDelete.execute() } throws IOException("Network error")
+        source.deleteTask("token", "task1")
     }
 
     // endregion

@@ -164,4 +164,43 @@ class GoogleTasksSyncServiceTest {
     }
 
     // endregion
+
+    // region error propagation
+
+    @Test(expected = RuntimeException::class)
+    fun `pushPending propagates exception from createTask`() = runTest {
+        coEvery { repository.getPendingPush() } returns listOf(localNew)
+        coEvery { remoteSource.createTask(token, any()) } throws RuntimeException("API error")
+        service.pushPending()
+    }
+
+    @Test(expected = RuntimeException::class)
+    fun `pushPending propagates exception from updateTask`() = runTest {
+        coEvery { repository.getPendingPush() } returns listOf(localExisting)
+        coEvery { remoteSource.updateTask(token, any()) } throws RuntimeException("API error")
+        service.pushPending()
+    }
+
+    @Test(expected = RuntimeException::class)
+    fun `pushPending propagates exception from deleteTask`() = runTest {
+        coEvery { repository.getPendingDelete() } returns listOf(localPendingDelete)
+        coEvery { remoteSource.deleteTask(token, "remote2") } throws RuntimeException("API error")
+        service.pushPending()
+    }
+
+    @Test(expected = RuntimeException::class)
+    fun `pullAndMerge propagates exception from fetchTasks`() = runTest {
+        coEvery { remoteSource.fetchTasks(token) } throws RuntimeException("API error")
+        service.pullAndMerge()
+    }
+
+    @Test
+    fun `pullAndMerge skips getByGoogleTaskId when remote task id is null`() = runTest {
+        val noIdTask = remoteTask.copy(id = null, deleted = false)
+        coEvery { remoteSource.fetchTasks(token) } returns listOf(noIdTask)
+        service.pullAndMerge()
+        coVerify(exactly = 0) { repository.getByGoogleTaskId(any()) }
+    }
+
+    // endregion
 }
