@@ -1,0 +1,133 @@
+package org.meow.autistic.data.todo
+
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
+
+private const val DEFAULT_TASK_LIST = "@default"
+private const val RFC3339_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+
+/**
+ * Orchestrates bidirectional sync between the local Room database and the Google Tasks API.
+ *
+ * Conflict rule: remote wins on pull. Local edits are queued as "pending_push" and
+ * flushed to the remote before each pull.
+ *
+ * @param remoteSource Raw HTTP calls to the Google Tasks API.
+ * @param repository Local persistence for todo entities.
+ * @param tokenProvider Suspending supplier of a valid OAuth access token.
+ */
+class GoogleTasksSyncService(
+    private val remoteSource: GoogleTasksRemoteSource,
+    private val repository: TodoRepository,
+    private val tokenProvider: suspend () -> String,
+) {
+
+    /**
+     * Pushes all locally queued changes to Google Tasks.
+     * "pending_push" items are created or updated; "pending_delete" items are deleted.
+     */
+    suspend fun pushPending() {
+        val token = tokenProvider()
+        pushCreatesAndUpdates(token)
+        pushDeletes(token)
+    }
+
+    /**
+     * Fetches the full remote task list and merges it into the local database.
+     * Remote-deleted tasks are removed locally; active tasks are upserted with remote data winning.
+     */
+    suspend fun pullAndMerge() {
+        val token = tokenProvider()
+        val remoteTasks = remoteSource.fetchTasks(token)
+        applyRemoteDeletions(remoteTasks.filter { it.deleted })
+        mergeActiveTasks(remoteTasks.filter { !it.deleted })
+    }
+
+    private suspend fun pushCreatesAndUpdates(token: String) {
+        repository.getPendingPush().forEach { local ->
+            val remote = if (local.googleTaskId == null) {
+                remoteSource.createTask(token, local.toRemoteTask())
+            } else {
+                remoteSource.updateTask(token, local.toRemoteTask())
+            }
+            repository.markSynced(local.id, requireNotNull(remote.id), System.currentTimeMillis())
+        }
+    }
+
+    private suspend fun pushDeletes(token: String) {
+        repository.getPendingDelete().forEach { local ->
+            if (local.googleTaskId != null) {
+                remoteSource.deleteTask(token, local.googleTaskId)
+            }
+            repository.delete(local)
+        }
+    }
+
+    private suspend fun applyRemoteDeletions(deleted: List<RemoteTask>) {
+        val ids = deleted.mapNotNull { it.id }
+        if (ids.isNotEmpty()) {
+            repository.deleteByGoogleTaskIds(ids)
+        }
+    }
+
+    private suspend fun mergeActiveTasks(active: List<RemoteTask>) {
+        val now = System.currentTimeMillis()
+        active.forEach { remote ->
+            val existing = remote.id?.let { repository.getByGoogleTaskId(it) }
+            val entity = if (existing != null) {
+                mergeIntoExisting(existing, remote, now)
+            } else {
+                remoteToNewEntity(remote, now)
+            }
+            repository.upsertFromRemote(entity)
+        }
+    }
+
+    private fun mergeIntoExisting(existing: TodoEntity, remote: RemoteTask, now: Long) =
+        existing.copy(
+            task = remote.title,
+            isCompleted = remote.status == "completed",
+            dueAt = remote.due?.fromRfc3339(),
+            extraPropertiesJson = remote.notes,
+            googleTaskId = remote.id,
+            googleTaskListId = DEFAULT_TASK_LIST,
+            lastSyncedAt = now,
+            syncStatus = "synced",
+        )
+
+    private fun remoteToNewEntity(remote: RemoteTask, now: Long) = TodoEntity(
+        task = remote.title,
+        isCompleted = remote.status == "completed",
+        createdAt = now,
+        dueAt = remote.due?.fromRfc3339(),
+        extraPropertiesJson = remote.notes,
+        googleTaskId = remote.id,
+        googleTaskListId = DEFAULT_TASK_LIST,
+        lastSyncedAt = now,
+        syncStatus = "synced",
+    )
+}
+
+private fun TodoEntity.toRemoteTask() = RemoteTask(
+    id = googleTaskId,
+    title = task,
+    notes = extraPropertiesJson,
+    status = if (isCompleted) "completed" else "needsAction",
+    due = dueAt?.toRfc3339(),
+    completed = null,
+    deleted = false,
+)
+
+private fun Long.toRfc3339(): String =
+    SimpleDateFormat(RFC3339_PATTERN, Locale.US)
+        .apply { timeZone = TimeZone.getTimeZone("UTC") }
+        .format(Date(this))
+
+private fun String.fromRfc3339(): Long? =
+    runCatching {
+        SimpleDateFormat(RFC3339_PATTERN, Locale.US)
+            .apply { timeZone = TimeZone.getTimeZone("UTC") }
+            .parse(this)?.time
+    }.getOrNull()

@@ -53,4 +53,60 @@ class TodoRepositoryTest {
         repository.delete(todo)
         coVerify(exactly = 1) { dao.deleteTodo(todo) }
     }
+
+    @Test
+    fun `getPendingPush delegates to dao`() = runTest {
+        coEvery { dao.getPendingPush() } returns listOf(todo)
+        val result = repository.getPendingPush()
+        assertEquals(listOf(todo), result)
+    }
+
+    @Test
+    fun `getPendingDelete delegates to dao`() = runTest {
+        coEvery { dao.getPendingDelete() } returns listOf(todo)
+        val result = repository.getPendingDelete()
+        assertEquals(listOf(todo), result)
+    }
+
+    @Test
+    fun `getByGoogleTaskId delegates to dao`() = runTest {
+        coEvery { dao.getByGoogleTaskId("gid") } returns todo
+        val result = repository.getByGoogleTaskId("gid")
+        assertEquals(todo, result)
+    }
+
+    @Test
+    fun `markPendingPush calls updateSyncStatus with pending_push`() = runTest {
+        coEvery { dao.updateSyncStatus(1L, "pending_push") } returns 1
+        repository.markPendingPush(1L)
+        coVerify { dao.updateSyncStatus(1L, "pending_push") }
+    }
+
+    @Test
+    fun `markPendingDelete calls updateSyncStatus with pending_delete`() = runTest {
+        coEvery { dao.updateSyncStatus(1L, "pending_delete") } returns 1
+        repository.markPendingDelete(1L)
+        coVerify { dao.updateSyncStatus(1L, "pending_delete") }
+    }
+
+    @Test
+    fun `markSynced delegates to dao`() = runTest {
+        coEvery { dao.markSynced(1L, "gid", 9999L) } returns 1
+        repository.markSynced(1L, "gid", 9999L)
+        coVerify { dao.markSynced(1L, "gid", 9999L) }
+    }
+
+    @Test
+    fun `upsertFromRemote calls insertTodo`() = runTest {
+        coEvery { dao.insertTodo(todo) } returns 1L
+        repository.upsertFromRemote(todo)
+        coVerify { dao.insertTodo(todo) }
+    }
+
+    @Test
+    fun `deleteByGoogleTaskIds delegates to dao`() = runTest {
+        coEvery { dao.deleteByGoogleTaskIds(listOf("gid")) } returns 1
+        repository.deleteByGoogleTaskIds(listOf("gid"))
+        coVerify { dao.deleteByGoogleTaskIds(listOf("gid")) }
+    }
 }

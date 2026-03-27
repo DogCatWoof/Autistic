@@ -48,18 +48,18 @@ package org.meow.autistic.ui.screens
 // DONE #39 [Phase 3] Create CalendarDao
 // DONE #40 [Phase 3] Add calendar_events table in TodoDatabase version 3, add Migration(2, 3)
 
-// TODO #41 PHASE 4 - Google Tasks Repository (Bidirectional)
+// DONE #41 PHASE 4 - Google Tasks Repository (Bidirectional)
 // DONE #42 [Phase 4] Create data/todo/GoogleTasksRemoteSource.kt — raw API calls only
 // DONE #43 [Phase 4]   fetchTasks(token): List<RemoteTask> — GET @default/tasks (showDeleted=true, showHidden=true)
 // DONE #44 [Phase 4]   createTask(token, task): RemoteTask
 // DONE #45 [Phase 4]   updateTask(token, task): RemoteTask
 // DONE #46 [Phase 4]   deleteTask(token, googleTaskId)
-// TODO #47 [Phase 4] Create data/todo/GoogleTasksSyncService.kt — sync orchestration (no HTTP here)
-// TODO #48 [Phase 4]   pushPending() — flush syncStatus=pending_push|pending_delete to remote, then mark synced
-// TODO #49 [Phase 4]   pullAndMerge() — fetch remote, upsert into Room, delete locally anything deleted on remote
-// TODO #50 [Phase 4]   Conflict rule: remote wins on pull; local edits queued as pending_push, flushed before next pull
-// TODO #51 [Phase 4] Update TodoRepository: markPendingPush(id), markPendingDelete(id), upsertFromRemote(tasks), deleteSyncedIds(ids)
-// TODO #52 [Phase 4] Update TodoDao: add queries for pending_push, pending_delete, upsert by googleTaskId
+// DONE #47 [Phase 4] Create data/todo/GoogleTasksSyncService.kt — sync orchestration (no HTTP here)
+// DONE #48 [Phase 4]   pushPending() — flush syncStatus=pending_push|pending_delete to remote, then mark synced
+// DONE #49 [Phase 4]   pullAndMerge() — fetch remote, upsert into Room, delete locally anything deleted on remote
+// DONE #50 [Phase 4]   Conflict rule: remote wins on pull; local edits queued as pending_push, flushed before next pull
+// DONE #51 [Phase 4] Update TodoRepository: markPendingPush(id), markPendingDelete(id), upsertFromRemote(tasks), deleteSyncedIds(ids)
+// DONE #52 [Phase 4] Update TodoDao: add queries for pending_push, pending_delete, upsert by googleTaskId
 
 // TODO #53 PHASE 5 - Google Calendar Repository (Read-Only)
 // TODO #54 [Phase 5] Create data/calendar/CalendarRemoteSource.kt — read-only
@@ -89,6 +89,8 @@ package org.meow.autistic.ui.screens
 // TODO #76 [Phase 7] Show "Connect Google Tasks" banner when !isAuthenticated — tapping triggers OAuth popup
 // TODO #77 [Phase 7] Show cellular confirmation dialog before manual sync on metered network
 // TODO #78 [Phase 7] Never render extraPropertiesJson or Google Tasks notes field in any UI element
+
+// TODO #79 All tests should use mocks and not require access to any external service.
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn

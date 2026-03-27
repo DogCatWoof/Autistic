@@ -1,0 +1,167 @@
+package org.meow.autistic.data.todo
+
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
+import kotlinx.coroutines.test.runTest
+import org.junit.Before
+import org.junit.Test
+
+class GoogleTasksSyncServiceTest {
+
+    private val remoteSource = mockk<GoogleTasksRemoteSource>()
+    private val repository = mockk<TodoRepository>(relaxed = true)
+    private val token = "test-token"
+    private val service = GoogleTasksSyncService(remoteSource, repository) { token }
+
+    private val localNew = TodoEntity(
+        id = 1L, task = "New task", createdAt = 1000L, syncStatus = "pending_push",
+    )
+    private val localExisting = TodoEntity(
+        id = 2L, task = "Existing", createdAt = 1000L,
+        googleTaskId = "remote1", syncStatus = "pending_push",
+    )
+    private val localPendingDelete = TodoEntity(
+        id = 3L, task = "Delete me", createdAt = 1000L,
+        googleTaskId = "remote2", syncStatus = "pending_delete",
+    )
+    private val remoteTask = RemoteTask(
+        id = "remote1", title = "Remote title", notes = null,
+        status = "needsAction", due = null, completed = null, deleted = false,
+    )
+
+    @Before
+    fun setUp() {
+        coEvery { repository.getPendingPush() } returns emptyList()
+        coEvery { repository.getPendingDelete() } returns emptyList()
+        coEvery { remoteSource.fetchTasks(token) } returns emptyList()
+    }
+
+    // region pushPending — creates
+
+    @Test
+    fun `pushPending creates task on remote when googleTaskId is null`() = runTest {
+        val created = remoteTask.copy(id = "new-remote-id")
+        coEvery { repository.getPendingPush() } returns listOf(localNew)
+        coEvery { remoteSource.createTask(token, any()) } returns created
+
+        service.pushPending()
+
+        coVerify { remoteSource.createTask(token, any()) }
+        coVerify { repository.markSynced(localNew.id, "new-remote-id", any()) }
+    }
+
+    @Test
+    fun `pushPending updates task on remote when googleTaskId exists`() = runTest {
+        coEvery { repository.getPendingPush() } returns listOf(localExisting)
+        coEvery { remoteSource.updateTask(token, any()) } returns remoteTask
+
+        service.pushPending()
+
+        coVerify { remoteSource.updateTask(token, any()) }
+        coVerify { repository.markSynced(localExisting.id, "remote1", any()) }
+    }
+
+    // endregion
+
+    // region pushPending — deletes
+
+    @Test
+    fun `pushPending deletes remote task and local record`() = runTest {
+        coEvery { repository.getPendingDelete() } returns listOf(localPendingDelete)
+        coEvery { remoteSource.deleteTask(token, "remote2") } returns Unit
+
+        service.pushPending()
+
+        coVerify { remoteSource.deleteTask(token, "remote2") }
+        coVerify { repository.delete(localPendingDelete) }
+    }
+
+    @Test
+    fun `pushPending deletes local record without remote call when googleTaskId is null`() = runTest {
+        val neverSynced = localPendingDelete.copy(googleTaskId = null)
+        coEvery { repository.getPendingDelete() } returns listOf(neverSynced)
+
+        service.pushPending()
+
+        coVerify(exactly = 0) { remoteSource.deleteTask(any(), any()) }
+        coVerify { repository.delete(neverSynced) }
+    }
+
+    // endregion
+
+    // region pullAndMerge — deletions
+
+    @Test
+    fun `pullAndMerge removes locally tasks deleted on remote`() = runTest {
+        val deleted = remoteTask.copy(id = "gone", deleted = true)
+        coEvery { remoteSource.fetchTasks(token) } returns listOf(deleted)
+
+        service.pullAndMerge()
+
+        coVerify { repository.deleteByGoogleTaskIds(listOf("gone")) }
+    }
+
+    @Test
+    fun `pullAndMerge does not call deleteByGoogleTaskIds when no remote deletions`() = runTest {
+        coEvery { remoteSource.fetchTasks(token) } returns listOf(remoteTask)
+        coEvery { repository.getByGoogleTaskId("remote1") } returns null
+
+        service.pullAndMerge()
+
+        coVerify(exactly = 0) { repository.deleteByGoogleTaskIds(any()) }
+    }
+
+    // endregion
+
+    // region pullAndMerge — upserts
+
+    @Test
+    fun `pullAndMerge inserts new entity when no local match`() = runTest {
+        coEvery { remoteSource.fetchTasks(token) } returns listOf(remoteTask)
+        coEvery { repository.getByGoogleTaskId("remote1") } returns null
+
+        service.pullAndMerge()
+
+        coVerify { repository.upsertFromRemote(match { it.googleTaskId == "remote1" && it.syncStatus == "synced" }) }
+    }
+
+    @Test
+    fun `pullAndMerge merges remote title into existing entity`() = runTest {
+        val existing = localExisting.copy(syncStatus = "synced")
+        coEvery { remoteSource.fetchTasks(token) } returns listOf(remoteTask.copy(title = "Updated title"))
+        coEvery { repository.getByGoogleTaskId("remote1") } returns existing
+
+        service.pullAndMerge()
+
+        coVerify { repository.upsertFromRemote(match { it.task == "Updated title" && it.id == existing.id }) }
+    }
+
+    @Test
+    fun `pullAndMerge preserves local-only fields on merge`() = runTest {
+        val existing = localExisting.copy(category = "Work", reminderSet = true, syncStatus = "synced")
+        coEvery { remoteSource.fetchTasks(token) } returns listOf(remoteTask)
+        coEvery { repository.getByGoogleTaskId("remote1") } returns existing
+
+        service.pullAndMerge()
+
+        coVerify {
+            repository.upsertFromRemote(match {
+                it.category == "Work" && it.reminderSet && it.syncStatus == "synced"
+            })
+        }
+    }
+
+    @Test
+    fun `pullAndMerge maps completed status correctly`() = runTest {
+        val completed = remoteTask.copy(status = "completed")
+        coEvery { remoteSource.fetchTasks(token) } returns listOf(completed)
+        coEvery { repository.getByGoogleTaskId("remote1") } returns null
+
+        service.pullAndMerge()
+
+        coVerify { repository.upsertFromRemote(match { it.isCompleted }) }
+    }
+
+    // endregion
+}
