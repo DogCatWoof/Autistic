@@ -104,9 +104,15 @@ class MainActivity : ComponentActivity() {
                             selectedIndex = bottomItems.indexOfFirst { it.title == activeNavTitle },
                             showSettings = showSettings,
                             onSelect = { index ->
-                                currentDestination = bottomItems[index].title
-                                showSettings = false
-                                scope.launch { drawerState.close() }
+                                val item = bottomItems[index]
+                                if (item.subItems.isEmpty()) {
+                                    currentDestination = item.title
+                                    showSettings = false
+                                    scope.launch { drawerState.close() }
+                                } else {
+                                    scope.launch { drawerState.close() }
+                                    bottomSheetIndex = index
+                                }
                             },
                             onClose = { scope.launch { drawerState.close() } },
                         )
