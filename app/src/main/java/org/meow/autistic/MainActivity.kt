@@ -108,6 +108,7 @@ class MainActivity : ComponentActivity() {
                                 showSettings = false
                                 scope.launch { drawerState.close() }
                             },
+                            onClose = { scope.launch { drawerState.close() } },
                         )
                     },
                 ) {

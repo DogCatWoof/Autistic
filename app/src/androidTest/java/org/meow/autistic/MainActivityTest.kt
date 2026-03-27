@@ -67,6 +67,13 @@ class MainActivityTest {
     }
 
     @Test
+    fun drawerCloseButton_closesDrawer() {
+        composeTestRule.onNodeWithContentDescription("Menu").performClick()
+        composeTestRule.onNodeWithContentDescription("Close menu").performClick()
+        composeTestRule.onNodeWithContentDescription("Add Todo").assertIsDisplayed()
+    }
+
+    @Test
     fun settingsButton_showsSettingsTitle() {
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.onNodeWithText("Settings").assertIsDisplayed()
