@@ -44,7 +44,7 @@ class TodoViewModel(application: Application) : AndroidViewModel(application) {
     init {
         val db = TodoDatabase.getDatabase(application)
         repository = TodoRepository(db.todoDao())
-        allTodos = repository.allTodos
+        allTodos = repository.allTodos.map { todos -> todos.filter { !it.isCompleted } }
 
         val tokenStore = TokenStore.create(application)
         authManager = GoogleAuthManager(application, tokenStore)

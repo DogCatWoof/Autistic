@@ -27,7 +27,7 @@
 ### Daily View
 - A daily view combines tasks and calendar events for the current day
 
-### Scan
+### Scan and Lookup Groceries
 - Users can scan grocery product barcodes using the device camera (icon: Barcode)
 - A camera preview fills the scan screen; a live barcode detector identifies the first valid barcode
 - On barcode detection, the camera stops and a local product lookup is performed by barcode code

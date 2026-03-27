@@ -3,7 +3,9 @@ package org.meow.autistic.ui.screens
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -55,6 +57,19 @@ class TodoListScreenTest {
         composeTestRule.onNodeWithContentDescription("Add Todo").performClick()
         composeTestRule.onNodeWithText("Task description").performTextInput("Buy milk")
         composeTestRule.onNodeWithText("Save").assertIsEnabled()
+    }
+
+    @Test
+    fun completedTodo_isHiddenFromList() {
+        composeTestRule.onNodeWithContentDescription("Add Todo").performClick()
+        composeTestRule.onNodeWithText("Task description").performTextInput("Finish report")
+        composeTestRule.onNodeWithText("Save").performClick()
+
+        composeTestRule.onNodeWithText("Finish report").assertIsDisplayed()
+
+        composeTestRule.onAllNodes(isToggleable()).onFirst().performClick()
+
+        composeTestRule.onNodeWithText("Finish report").assertDoesNotExist()
     }
 
     @Test
