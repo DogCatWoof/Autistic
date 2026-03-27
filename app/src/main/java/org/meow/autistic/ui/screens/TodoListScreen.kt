@@ -49,11 +49,11 @@ package org.meow.autistic.ui.screens
 // DONE #40 [Phase 3] Add calendar_events table in TodoDatabase version 3, add Migration(2, 3)
 
 // TODO #41 PHASE 4 - Google Tasks Repository (Bidirectional)
-// TODO #42 [Phase 4] Create data/todo/GoogleTasksRemoteSource.kt — raw API calls only
-// TODO #43 [Phase 4]   fetchTasks(token): List<RemoteTask> — GET @default/tasks (showDeleted=true, showHidden=true)
-// TODO #44 [Phase 4]   createTask(token, task): RemoteTask
-// TODO #45 [Phase 4]   updateTask(token, task): RemoteTask
-// TODO #46 [Phase 4]   deleteTask(token, googleTaskId)
+// DONE #42 [Phase 4] Create data/todo/GoogleTasksRemoteSource.kt — raw API calls only
+// DONE #43 [Phase 4]   fetchTasks(token): List<RemoteTask> — GET @default/tasks (showDeleted=true, showHidden=true)
+// DONE #44 [Phase 4]   createTask(token, task): RemoteTask
+// DONE #45 [Phase 4]   updateTask(token, task): RemoteTask
+// DONE #46 [Phase 4]   deleteTask(token, googleTaskId)
 // TODO #47 [Phase 4] Create data/todo/GoogleTasksSyncService.kt — sync orchestration (no HTTP here)
 // TODO #48 [Phase 4]   pushPending() — flush syncStatus=pending_push|pending_delete to remote, then mark synced
 // TODO #49 [Phase 4]   pullAndMerge() — fetch remote, upsert into Room, delete locally anything deleted on remote
