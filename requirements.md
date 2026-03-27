@@ -81,16 +81,16 @@
 
 ## Phase 6 — Sync Worker & Scheduler
 
-- [ ] #60 Phase 6 — Sync Worker & Scheduler
-- [ ] #61 Create data/sync/SyncWorker.kt (CoroutineWorker)
-- [ ] #62   Step 1: getValidToken() — abort with retry if unavailable
-- [ ] #63   Step 2: GoogleTasksSyncService.pushPending()
-- [ ] #64   Step 3: GoogleTasksSyncService.pullAndMerge()
-- [ ] #65   Step 4: CalendarSyncService.pullAndMerge()
-- [ ] #66 Create data/sync/SyncScheduler.kt
-- [ ] #67   WiFi worker: Constraints(UNMETERED) + PeriodicWork(15 min)
-- [ ] #68   Cellular worker: Constraints(CONNECTED) + PeriodicWork(1 hour) — fires as fallback when not on WiFi
-- [ ] #69   triggerImmediate() — OneTimeWorkRequest for manual sync button
+- [x] #60 Phase 6 — Sync Worker & Scheduler
+- [x] #61 Create data/sync/SyncWorker.kt (CoroutineWorker)
+- [x] #62   Step 1: getValidToken() — abort with retry if unavailable
+- [x] #63   Step 2: GoogleTasksSyncService.pushPending()
+- [x] #64   Step 3: GoogleTasksSyncService.pullAndMerge()
+- [x] #65   Step 4: CalendarSyncService.pullAndMerge()
+- [x] #66 Create data/sync/SyncScheduler.kt
+- [x] #67   WiFi worker: Constraints(UNMETERED) + PeriodicWork(15 min)
+- [x] #68   Cellular worker: Constraints(CONNECTED) + PeriodicWork(1 hour) — fires as fallback when not on WiFi
+- [x] #69   triggerImmediate() — OneTimeWorkRequest for manual sync button
 
 ## Phase 7 — ViewModel & UI
 
