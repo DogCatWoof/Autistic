@@ -1,7 +1,7 @@
 package org.meow.autistic.ui.screens
 
 // TODO #1: Add Google Play Services Auth and Google API Client dependencies to build.gradle.kts
-// TODO #2: Configure Google Cloud Console with OAuth 2.0 Client ID for Android
+// DONE #2: Configure Google Cloud Console with OAuth 2.0 Client ID for Android
 // TODO #3: Create a GoogleAuthManager to handle OAuth sign-in, token storage, and refreshing
 
 // TODO #4: Update TodoEntity to include googleTaskId (String?), etag (String?), and lastSynced (Long)

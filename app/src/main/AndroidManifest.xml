@@ -25,13 +25,12 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- OAuth redirect handler — replace scheme with reverse client ID once TODO #2 is done -->
+            <!-- OAuth redirect handler -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <!-- Replace with reverse client ID, e.g. com.googleusercontent.apps.YOUR_CLIENT_ID -->
-                <data android:scheme="org.meow.autistic" android:host="oauth2redirect" />
+                <data android:scheme="com.googleusercontent.apps.382787349432-vt7ossefomaap80k2ip4tjit1gcaeaqg" android:host="oauth2redirect" />
             </intent-filter>
         </activity>
 
