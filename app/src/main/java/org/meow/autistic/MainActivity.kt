@@ -14,15 +14,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Create
-import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Done
-import androidx.compose.material.icons.outlined.Face
+import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,9 +47,9 @@ import kotlinx.coroutines.launch
 import org.meow.autistic.ui.screens.AppDrawerSheet
 import org.meow.autistic.ui.screens.DailyScreen
 import org.meow.autistic.ui.screens.EventsScreen
-import org.meow.autistic.ui.screens.MoodScreen
 import org.meow.autistic.ui.screens.NavBottomSheet
 import org.meow.autistic.ui.screens.NotesScreen
+import org.meow.autistic.ui.screens.ScanScreen
 import org.meow.autistic.ui.screens.SettingsScreen
 import org.meow.autistic.ui.screens.TodoListScreen
 import org.meow.autistic.ui.theme.AutisticTheme
@@ -68,14 +66,13 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         private val BOTTOM_ITEMS = listOf(
-            NavigationItem("Todo", Icons.Filled.Done, Icons.Outlined.Done),
             NavigationItem(
-                title = "Events",
-                selectedIcon = Icons.Filled.DateRange,
-                unselectedIcon = Icons.Outlined.DateRange,
-                subItems = listOf("Events", "Daily"),
+                title = "Todo",
+                selectedIcon = Icons.Filled.Done,
+                unselectedIcon = Icons.Outlined.Done,
+                subItems = listOf("Todo", "Today", "Events"),
             ),
-            NavigationItem("Mood", Icons.Filled.Face, Icons.Outlined.Face),
+            NavigationItem("Scan", Icons.Filled.QrCodeScanner, Icons.Outlined.QrCodeScanner),
             NavigationItem("Notes", Icons.Filled.Create, Icons.Outlined.Create),
         )
     }
@@ -86,15 +83,17 @@ class MainActivity : ComponentActivity() {
         setContent {
             AutisticTheme {
                 val bottomItems = BOTTOM_ITEMS
-                // currentDestination can be any screen name, including "Daily" which has no tab
                 var currentDestination by rememberSaveable { mutableStateOf("Todo") }
                 var showSettings by rememberSaveable { mutableStateOf(false) }
                 var bottomSheetIndex by rememberSaveable { mutableStateOf<Int?>(null) }
                 val drawerState = rememberDrawerState(DrawerValue.Closed)
                 val scope = rememberCoroutineScope()
 
-                // "Daily" lives under "Events" in the nav bar
-                val activeNavTitle = if (currentDestination == "Daily") "Events" else currentDestination
+                // Logic to determine which main tab is "active"
+                val activeNavTitle = when (currentDestination) {
+                    "Todo", "Today", "Events" -> "Todo"
+                    else -> currentDestination
+                }
 
                 ModalNavigationDrawer(
                     drawerState = drawerState,
@@ -180,9 +179,9 @@ class MainActivity : ComponentActivity() {
                             } else {
                                 when (currentDestination) {
                                     "Todo" -> TodoListScreen()
-                                    "Daily" -> DailyScreen()
+                                    "Today" -> DailyScreen()
                                     "Events" -> EventsScreen()
-                                    "Mood" -> MoodScreen()
+                                    "Scan" -> ScanScreen()
                                     "Notes" -> NotesScreen()
                                 }
                             }

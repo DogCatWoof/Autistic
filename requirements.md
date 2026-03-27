@@ -9,6 +9,11 @@
 - Completing a task marks it done; it remains visible until dismissed or deleted
 - Tasks with reminders trigger a local notification at the due time
 - Only show not completed tasks / todos
+- **Today View**: A dedicated view showing tasks and events for the current day
+- **Calendar Events (Read-Only)**: 
+    - Calendar events from the user's primary Google Calendar are fetched and stored locally
+    - Events are fetched over a rolling 60-day window
+    - Events are displayed alongside tasks in the daily and task views
 
 ### Google Tasks Sync
 - Users can connect a Google account via OAuth to enable sync
@@ -19,22 +24,25 @@
 - A "Connect Google Tasks" banner is shown when the user is not authenticated
 - On a metered (cellular) network, a confirmation dialog is shown before a manual sync
 
-### Google Calendar (Read-Only)
-- Calendar events from the user's primary Google Calendar are fetched and stored locally
-- Events are fetched over a rolling 60-day window
-- Events screen displays upcoming calendar events (not yet implemented — placeholder)
-
 ### Daily View
-- A daily view combines tasks and calendar events for the current day (not yet implemented — placeholder)
+- A daily view combines tasks and calendar events for the current day
 
-### Mood Tracking
-- Users can log their mood (not yet implemented — placeholder)
+### Scan
+- Users can scan grocery product barcodes using the device camera (icon: Barcode)
+- A camera preview fills the scan screen; a live barcode detector identifies the first valid barcode
+- On barcode detection, the camera stops and a product lookup is triggered automatically
+- Product data is fetched from `https://world.openfoodfacts.org/api/v0/product/{barcode}.json`
+- The screen displays the returned product information: product name, brand, quantity, ingredients, and nutrition facts (energy, fat, carbohydrates, sugars, protein, salt — per 100 g where available)
+- If the product is not found (404 or empty `product` object) a "Product not found" message is shown
+- If the network call fails, an error message is shown with a retry option
+- A "Scan again" button resets the camera to scan a new barcode
+- Camera permission is requested at runtime before the camera preview starts; if denied, an explanation and a settings-link are shown
 
 ### Notes
 - Users can write and save free-form notes (not yet implemented — placeholder)
 
 ### Settings
-- Users can connect or disconnect their Google account
+- Users can connect their Google account
 - Connected account email is displayed
 - Users can grant or revoke notification permission
 - A test notification button is available for verification
