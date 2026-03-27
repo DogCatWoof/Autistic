@@ -72,6 +72,15 @@ class MainActivityTest {
     @Test
     fun settingsScreen_showsConnectButton_whenNotAuthenticated() {
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
+        // Sign out first if the device is already authenticated from a prior session
+        val alreadyConnected = composeTestRule
+            .onAllNodesWithText("Disconnect Google")
+            .fetchSemanticsNodes()
+            .isNotEmpty()
+        if (alreadyConnected) {
+            composeTestRule.onNodeWithText("Disconnect Google").performClick()
+            composeTestRule.waitForIdle()
+        }
         composeTestRule.onNodeWithText("Connect Google Account").assertIsDisplayed()
     }
 }

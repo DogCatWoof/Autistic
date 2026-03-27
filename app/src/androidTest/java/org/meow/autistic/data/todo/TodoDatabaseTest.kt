@@ -40,6 +40,11 @@ class TodoDatabaseTest {
     }
 
     @Test
+    fun calendarDao_isNotNull() {
+        assertNotNull(db.calendarDao())
+    }
+
+    @Test
     fun getDatabase_returnsSameInstance() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val first = TodoDatabase.getDatabase(context)

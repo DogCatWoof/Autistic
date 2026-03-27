@@ -39,14 +39,14 @@ package org.meow.autistic.ui.screens
 // DONE #31 [Phase 2]   getValidToken(): String — auto-refresh before expiry
 // DONE #32 [Phase 2]   signOut() — clears TokenStore
 
-// TODO #33 PHASE 3 - Database Migration
-// TODO #34 [Phase 3] Add to TodoEntity: googleTaskId, googleTaskListId, extraPropertiesJson, lastSyncedAt, syncStatus
-// TODO #35 [Phase 3]   syncStatus values: "local" | "synced" | "pending_push" | "pending_delete"
-// TODO #36 [Phase 3]   extraPropertiesJson: open JSON blob written into Google Tasks notes field — never displayed in UI
-// TODO #37 [Phase 3] Bump TodoDatabase to version 2, add Migration(1, 2)
-// TODO #38 [Phase 3] Create CalendarEventEntity (googleEventId, title, startAt, endAt, isAllDay, calendarId, lastSyncedAt)
-// TODO #39 [Phase 3] Create CalendarDao
-// TODO #40 [Phase 3] Add calendar_events table in TodoDatabase version 3, add Migration(2, 3)
+// DONE #33 PHASE 3 - Database Migration
+// DONE #34 [Phase 3] Add to TodoEntity: googleTaskId, googleTaskListId, extraPropertiesJson, lastSyncedAt, syncStatus
+// DONE #35 [Phase 3]   syncStatus values: "local" | "synced" | "pending_push" | "pending_delete"
+// DONE #36 [Phase 3]   extraPropertiesJson: open JSON blob written into Google Tasks notes field — never displayed in UI
+// DONE #37 [Phase 3] Bump TodoDatabase to version 2, add Migration(1, 2)
+// DONE #38 [Phase 3] Create CalendarEventEntity (googleEventId, title, startAt, endAt, isAllDay, calendarId, lastSyncedAt)
+// DONE #39 [Phase 3] Create CalendarDao
+// DONE #40 [Phase 3] Add calendar_events table in TodoDatabase version 3, add Migration(2, 3)
 
 // TODO #41 PHASE 4 - Google Tasks Repository (Bidirectional)
 // TODO #42 [Phase 4] Create data/todo/GoogleTasksRemoteSource.kt — raw API calls only

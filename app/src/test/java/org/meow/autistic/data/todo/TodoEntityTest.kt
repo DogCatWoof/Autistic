@@ -64,4 +64,32 @@ class TodoEntityTest {
         val entity = TodoEntity(task = "Task", createdAt = 1000L, dueAt = 9999L)
         assertEquals(9999L, entity.dueAt)
     }
+
+    @Test
+    fun `sync fields default to null and local`() {
+        val entity = TodoEntity(task = "Task", createdAt = 1000L)
+        assertNull(entity.googleTaskId)
+        assertNull(entity.googleTaskListId)
+        assertNull(entity.extraPropertiesJson)
+        assertNull(entity.lastSyncedAt)
+        assertEquals("local", entity.syncStatus)
+    }
+
+    @Test
+    fun `sync fields can be set`() {
+        val entity = TodoEntity(
+            task = "Task",
+            createdAt = 1000L,
+            googleTaskId = "gtask-1",
+            googleTaskListId = "list-1",
+            extraPropertiesJson = """{"key":"val"}""",
+            lastSyncedAt = 5000L,
+            syncStatus = "synced",
+        )
+        assertEquals("gtask-1", entity.googleTaskId)
+        assertEquals("list-1", entity.googleTaskListId)
+        assertEquals("""{"key":"val"}""", entity.extraPropertiesJson)
+        assertEquals(5000L, entity.lastSyncedAt)
+        assertEquals("synced", entity.syncStatus)
+    }
 }
