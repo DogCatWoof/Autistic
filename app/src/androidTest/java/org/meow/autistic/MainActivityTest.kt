@@ -18,11 +18,10 @@ class MainActivityTest {
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun bottomNav_fourTabsDisplayed() {
+    fun bottomNav_threeTabsDisplayed() {
         // Each label appears in both the bottom nav and the drawer — [0] is the bottom nav item
         composeTestRule.onAllNodesWithText("Todo")[0].assertIsDisplayed()
-        composeTestRule.onAllNodesWithText("Events")[0].assertIsDisplayed()
-        composeTestRule.onAllNodesWithText("Mood")[0].assertIsDisplayed()
+        composeTestRule.onAllNodesWithText("Scan")[0].assertIsDisplayed()
         composeTestRule.onAllNodesWithText("Notes")[0].assertIsDisplayed()
     }
 
@@ -33,30 +32,16 @@ class MainActivityTest {
 
     @Test
     fun clickTodoTab_showsTodoScreen() {
-        // Todo has no sub-items — navigates directly
+        // Clicking Todo opens the sub-nav sheet; FAB remains accessible behind the sheet
         composeTestRule.onAllNodesWithText("Todo")[0].performClick()
         composeTestRule.onNodeWithContentDescription("Add Todo").assertIsDisplayed()
     }
 
     @Test
-    fun clickEventsTab_showsEventsScreen() {
-        composeTestRule.onAllNodesWithText("Events")[0].performClick()
-        composeTestRule.onNodeWithContentDescription("Events option").performClick()
-        composeTestRule.onNodeWithText("Events Screen").assertIsDisplayed()
-    }
-
-    @Test
-    fun dailyAccessibleViaEventsTab() {
-        composeTestRule.onAllNodesWithText("Events")[0].performClick()
-        composeTestRule.onNodeWithContentDescription("Daily option").performClick()
-        composeTestRule.onNodeWithText("Daily Screen").assertIsDisplayed()
-    }
-
-    @Test
-    fun clickMoodTab_showsMoodScreen() {
-        // Mood has no sub-items — navigates directly
-        composeTestRule.onAllNodesWithText("Mood")[0].performClick()
-        composeTestRule.onNodeWithText("Mood Screen").assertIsDisplayed()
+    fun clickScanTab_showsScanScreen() {
+        // Scan has no sub-items — navigates directly to ScanScreen
+        composeTestRule.onAllNodesWithText("Scan")[0].performClick()
+        composeTestRule.onNodeWithText("Product database not available").assertIsDisplayed()
     }
 
     @Test

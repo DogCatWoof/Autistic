@@ -80,6 +80,21 @@ dependencies {
     // HTTP logging at boundary
     implementation(libs.okhttp.logging.interceptor)
 
+    // CameraX
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+
+    // ML Kit barcode scanning
+    implementation(libs.mlkit.barcode.scanning)
+
+    // JSON serialisation for product data
+    implementation(libs.gson)
+
+    // DataStore for sync timestamps
+    implementation(libs.androidx.datastore.preferences)
+
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)

@@ -8,15 +8,18 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import org.meow.autistic.data.calendar.CalendarDao
 import org.meow.autistic.data.calendar.CalendarEventEntity
+import org.meow.autistic.data.product.ProductDao
+import org.meow.autistic.data.product.ProductEntity
 
 @Database(
-    entities = [TodoEntity::class, CalendarEventEntity::class],
-    version = 3,
+    entities = [TodoEntity::class, CalendarEventEntity::class, ProductEntity::class],
+    version = 4,
     exportSchema = false,
 )
 abstract class TodoDatabase : RoomDatabase() {
     abstract fun todoDao(): TodoDao
     abstract fun calendarDao(): CalendarDao
+    abstract fun productDao(): ProductDao
 
     companion object {
         @Volatile
@@ -50,10 +53,19 @@ abstract class TodoDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS products " +
+                        "(barcode TEXT NOT NULL PRIMARY KEY, productJson TEXT NOT NULL)"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): TodoDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, TodoDatabase::class.java, "todo_database")
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .build()
                     .also { Instance = it }
             }

@@ -49,6 +49,7 @@
 #### Sync Section (Settings)
 - A "Sync" section lists data sources that can be downloaded locally
 - **Open Food Facts**: a "Sync Products" button downloads the full product database from `https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz`, decompresses it on-device, parses each CSV row, and upserts a `barcode → JSON` record into the local product table
+- Sync products only daily, when on wifi
 - During sync, progress is shown (e.g. "Downloading…", "Importing X of Y rows…"); the button is disabled while a sync is in progress
 - On completion, the last-synced timestamp is displayed beneath the button
 - On failure, an error message is shown with a retry option
