@@ -19,12 +19,12 @@ class MainActivityTest {
 
     @Test
     fun bottomNav_allFiveTabsDisplayed() {
-        // "Todo" appears in both the top bar title and the nav tab label when it's the active tab
+        // Each label appears in both the bottom nav and the drawer — [0] is the bottom nav item
         composeTestRule.onAllNodesWithText("Todo")[0].assertIsDisplayed()
-        composeTestRule.onNodeWithText("Daily").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Events").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Mood").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Notes").assertIsDisplayed()
+        composeTestRule.onAllNodesWithText("Daily")[0].assertIsDisplayed()
+        composeTestRule.onAllNodesWithText("Events")[0].assertIsDisplayed()
+        composeTestRule.onAllNodesWithText("Mood")[0].assertIsDisplayed()
+        composeTestRule.onAllNodesWithText("Notes")[0].assertIsDisplayed()
     }
 
     @Test
@@ -34,25 +34,25 @@ class MainActivityTest {
 
     @Test
     fun clickDailyTab_showsDailyScreen() {
-        composeTestRule.onNodeWithText("Daily").performClick()
+        composeTestRule.onAllNodesWithText("Daily")[0].performClick()
         composeTestRule.onNodeWithText("Daily Screen").assertIsDisplayed()
     }
 
     @Test
     fun clickEventsTab_showsEventsScreen() {
-        composeTestRule.onNodeWithText("Events").performClick()
+        composeTestRule.onAllNodesWithText("Events")[0].performClick()
         composeTestRule.onNodeWithText("Events Screen").assertIsDisplayed()
     }
 
     @Test
     fun clickMoodTab_showsMoodScreen() {
-        composeTestRule.onNodeWithText("Mood").performClick()
+        composeTestRule.onAllNodesWithText("Mood")[0].performClick()
         composeTestRule.onNodeWithText("Mood Screen").assertIsDisplayed()
     }
 
     @Test
     fun clickNotesTab_showsNotesScreen() {
-        composeTestRule.onNodeWithText("Notes").performClick()
+        composeTestRule.onAllNodesWithText("Notes")[0].performClick()
         composeTestRule.onNodeWithText("Notes Screen").assertIsDisplayed()
     }
 
