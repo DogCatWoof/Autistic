@@ -35,24 +35,28 @@ class MainActivityTest {
     @Test
     fun clickDailyTab_showsDailyScreen() {
         composeTestRule.onAllNodesWithText("Daily")[0].performClick()
+        composeTestRule.onNodeWithText("Overview").performClick()
         composeTestRule.onNodeWithText("Daily Screen").assertIsDisplayed()
     }
 
     @Test
     fun clickEventsTab_showsEventsScreen() {
         composeTestRule.onAllNodesWithText("Events")[0].performClick()
+        composeTestRule.onNodeWithText("Calendar").performClick()
         composeTestRule.onNodeWithText("Events Screen").assertIsDisplayed()
     }
 
     @Test
     fun clickMoodTab_showsMoodScreen() {
         composeTestRule.onAllNodesWithText("Mood")[0].performClick()
+        composeTestRule.onNodeWithText("Log Mood").performClick()
         composeTestRule.onNodeWithText("Mood Screen").assertIsDisplayed()
     }
 
     @Test
     fun clickNotesTab_showsNotesScreen() {
         composeTestRule.onAllNodesWithText("Notes")[0].performClick()
+        composeTestRule.onNodeWithText("All Notes").performClick()
         composeTestRule.onNodeWithText("Notes Screen").assertIsDisplayed()
     }
 

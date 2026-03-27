@@ -53,6 +53,7 @@ import org.meow.autistic.ui.screens.AppDrawerSheet
 import org.meow.autistic.ui.screens.DailyScreen
 import org.meow.autistic.ui.screens.EventsScreen
 import org.meow.autistic.ui.screens.MoodScreen
+import org.meow.autistic.ui.screens.NavBottomSheet
 import org.meow.autistic.ui.screens.NotesScreen
 import org.meow.autistic.ui.screens.SettingsScreen
 import org.meow.autistic.ui.screens.TodoListScreen
@@ -62,6 +63,7 @@ data class NavigationItem(
     val title: String,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
+    val subItems: List<String> = emptyList(),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,11 +71,36 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         private val BOTTOM_ITEMS = listOf(
-            NavigationItem("Todo", Icons.Filled.Done, Icons.Outlined.Done),
-            NavigationItem("Daily", Icons.AutoMirrored.Filled.List, Icons.AutoMirrored.Outlined.List),
-            NavigationItem("Events", Icons.Filled.DateRange, Icons.Outlined.DateRange),
-            NavigationItem("Mood", Icons.Filled.Face, Icons.Outlined.Face),
-            NavigationItem("Notes", Icons.Filled.Create, Icons.Outlined.Create),
+            NavigationItem(
+                title = "Todo",
+                selectedIcon = Icons.Filled.Done,
+                unselectedIcon = Icons.Outlined.Done,
+                subItems = listOf("All Tasks", "Today", "Upcoming", "Completed"),
+            ),
+            NavigationItem(
+                title = "Daily",
+                selectedIcon = Icons.AutoMirrored.Filled.List,
+                unselectedIcon = Icons.AutoMirrored.Outlined.List,
+                subItems = listOf("Overview", "Morning", "Afternoon", "Evening"),
+            ),
+            NavigationItem(
+                title = "Events",
+                selectedIcon = Icons.Filled.DateRange,
+                unselectedIcon = Icons.Outlined.DateRange,
+                subItems = listOf("Calendar", "Upcoming", "Past"),
+            ),
+            NavigationItem(
+                title = "Mood",
+                selectedIcon = Icons.Filled.Face,
+                unselectedIcon = Icons.Outlined.Face,
+                subItems = listOf("Log Mood", "History", "Insights"),
+            ),
+            NavigationItem(
+                title = "Notes",
+                selectedIcon = Icons.Filled.Create,
+                unselectedIcon = Icons.Outlined.Create,
+                subItems = listOf("All Notes", "New Note", "Tags"),
+            ),
         )
     }
 
@@ -85,6 +112,7 @@ class MainActivity : ComponentActivity() {
                 val bottomItems = BOTTOM_ITEMS
                 var selectedBottomItemIndex by rememberSaveable { mutableIntStateOf(0) }
                 var showSettings by rememberSaveable { mutableStateOf(false) }
+                var bottomSheetIndex by rememberSaveable { mutableStateOf<Int?>(null) }
                 val drawerState = rememberDrawerState(DrawerValue.Closed)
                 val scope = rememberCoroutineScope()
 
@@ -136,10 +164,7 @@ class MainActivity : ComponentActivity() {
                                 bottomItems.forEachIndexed { index, item ->
                                     NavigationBarItem(
                                         selected = !showSettings && index == selectedBottomItemIndex,
-                                        onClick = {
-                                            selectedBottomItemIndex = index
-                                            showSettings = false
-                                        },
+                                        onClick = { bottomSheetIndex = index },
                                         label = { Text(text = item.title) },
                                         icon = {
                                             Icon(
@@ -170,6 +195,18 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
+                }
+
+                bottomSheetIndex?.let { tabIndex ->
+                    NavBottomSheet(
+                        item = bottomItems[tabIndex],
+                        onSubItemSelected = {
+                            selectedBottomItemIndex = tabIndex
+                            showSettings = false
+                            bottomSheetIndex = null
+                        },
+                        onDismiss = { bottomSheetIndex = null },
+                    )
                 }
             }
         }
