@@ -1,5 +1,14 @@
 package org.meow.autistic.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -7,11 +16,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.meow.autistic.data.todo.TodoEntity
@@ -20,31 +34,59 @@ import java.util.*
 
 private val TODO_CATEGORIES = listOf("General", "Work", "Personal", "Health")
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodoListScreen(viewModel: TodoViewModel = viewModel()) {
     val todos by viewModel.allTodos.collectAsState(initial = emptyList())
+    val isAuthenticated by viewModel.isAuthenticated.collectAsState()
+    val syncState by viewModel.syncState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 
+    val signInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        viewModel.handleSignInResult(result.data)
+    }
+
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("My Tasks") },
+                actions = {
+                    SyncStatusIcon(
+                        syncState = syncState,
+                        isAuthenticated = isAuthenticated,
+                        onSyncClick = { viewModel.triggerSync() }
+                    )
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = "Add Todo")
             }
         }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(todos) { todo ->
-                TodoItem(
-                    todo = todo,
-                    onToggle = { viewModel.update(todo.copy(isCompleted = it)) },
-                    onDelete = { viewModel.delete(todo) }
-                )
+        Column(modifier = Modifier.padding(padding)) {
+            if (!isAuthenticated) {
+                GoogleAuthBanner(onConnectClick = {
+                    signInLauncher.launch(viewModel.getSignInIntent())
+                })
+            }
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(todos) { todo ->
+                    TodoItem(
+                        todo = todo,
+                        onToggle = { viewModel.update(todo.copy(isCompleted = it)) },
+                        onDelete = { viewModel.delete(todo) }
+                    )
+                }
             }
         }
 
@@ -59,12 +101,76 @@ fun TodoListScreen(viewModel: TodoViewModel = viewModel()) {
                             category = category,
                             isCompleted = false,
                             reminderSet = reminder,
-                            createdAt = System.currentTimeMillis()
+                            createdAt = System.currentTimeMillis(),
+                            syncStatus = "local"
                         )
                     )
                     showAddDialog = false
                 }
             )
+        }
+    }
+}
+
+@Composable
+fun SyncStatusIcon(
+    syncState: SyncState,
+    isAuthenticated: Boolean,
+    onSyncClick: () -> Unit
+) {
+    if (!isAuthenticated) return
+
+    val rotation = remember { Animatable(0f) }
+    
+    LaunchedEffect(syncState) {
+        if (syncState is SyncState.Syncing) {
+            rotation.animateTo(
+                targetValue = 360f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(1000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart
+                )
+            )
+        } else {
+            rotation.stop()
+            rotation.snapTo(0f)
+        }
+    }
+
+    IconButton(onClick = onSyncClick, enabled = syncState !is SyncState.Syncing) {
+        Icon(
+            imageVector = Icons.Default.Sync,
+            contentDescription = "Sync",
+            modifier = Modifier.rotate(rotation.value)
+        )
+    }
+}
+
+@Composable
+fun GoogleAuthBanner(onConnectClick: () -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.primaryContainer,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onConnectClick() }
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.Refresh, contentDescription = null)
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(
+                    "Connect Google Tasks",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "Sync your tasks across devices",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
     }
 }
