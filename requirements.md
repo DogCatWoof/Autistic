@@ -71,13 +71,13 @@
 
 ## Phase 5 — Google Calendar Repository (Read-Only)
 
-- [ ] #53 Phase 5 — Google Calendar Repository (Read-Only)
-- [ ] #54 Create data/calendar/CalendarRemoteSource.kt — read-only
-- [ ] #55   fetchEvents(token, timeMin, timeMax): List<RemoteEvent> — rolling 60-day window
-- [ ] #56   fetchDeletedEvents(token, syncToken): List<RemoteEvent> — incremental sync via Google syncToken
-- [ ] #57 Create data/calendar/CalendarSyncService.kt
-- [ ] #58   pullAndMerge() — upsert events, delete cancelled events, store syncToken for next incremental pull
-- [ ] #59   Trigger full re-sync if syncToken expires (Google invalidates after ~7 days of no sync)
+- [x] #53 Phase 5 — Google Calendar Repository (Read-Only)
+- [x] #54 Create data/calendar/CalendarRemoteSource.kt — read-only
+- [x] #55   fetchEvents(token, timeMin, timeMax): List<RemoteEvent> — rolling 60-day window
+- [x] #56   fetchDeletedEvents(token, syncToken): List<RemoteEvent> — incremental sync via Google syncToken
+- [x] #57 Create data/calendar/CalendarSyncService.kt
+- [x] #58   pullAndMerge() — upsert events, delete cancelled events, store syncToken for next incremental pull
+- [x] #59   Trigger full re-sync if syncToken expires (Google invalidates after ~7 days of no sync)
 
 ## Phase 6 — Sync Worker & Scheduler
 
