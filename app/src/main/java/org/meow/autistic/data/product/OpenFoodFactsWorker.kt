@@ -10,6 +10,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.WorkerParameters
 import com.google.gson.Gson
+import com.google.gson.JsonObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -25,8 +26,8 @@ import java.util.zip.GZIPInputStream
 
 const val OFF_SYNC_WORK_NAME = "off_product_sync"
 
-private const val OFF_CSV_URL =
-    "https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz"
+private const val OFF_JSONL_URL =
+    "https://static.openfoodfacts.org/data/openfoodfacts-products.jsonl.gz"
 private const val BATCH_SIZE = 500
 private val LAST_SYNC_KEY = longPreferencesKey("off_last_sync")
 private val Context.productDataStore: DataStore<Preferences> by preferencesDataStore("product_prefs")
@@ -52,7 +53,7 @@ class OpenFoodFactsWorker(
             setProgress(Data.Builder().putString("status", "Downloading…").build())
 
             val client = OkHttpClient()
-            val request = Request.Builder().url(OFF_CSV_URL).build()
+            val request = Request.Builder().url(OFF_JSONL_URL).build()
             val response = client.newCall(request).execute()
 
             if (!response.isSuccessful) {
@@ -65,20 +66,20 @@ class OpenFoodFactsWorker(
             )
 
             val reader = BufferedReader(InputStreamReader(GZIPInputStream(body.byteStream())))
-            val headerLine = reader.readLine() ?: return@withContext Result.failure(
-                Data.Builder().putString("error", "Empty CSV file").build()
-            )
-            val headers = headerLine.split("\t")
             val batch = mutableListOf<ProductEntity>()
             var totalImported = 0L
 
             var line = reader.readLine()
             while (line != null) {
-                val values = line.split("\t")
-                val barcode = values.getOrElse(0) { "" }.trim()
+                val obj = runCatching { gson.fromJson(line, JsonObject::class.java) }.getOrNull()
+                val barcode = obj?.get("code")?.asString?.trim() ?: ""
                 if (barcode.isNotBlank()) {
-                    val map = HashMap<String, String>(headers.size)
-                    headers.forEachIndexed { i, header -> map[header] = values.getOrElse(i) { "" } }
+                    val map = HashMap<String, String>(obj!!.size())
+                    for ((key, value) in obj.entrySet()) {
+                        if (!value.isJsonNull) {
+                            map[key] = if (value.isJsonPrimitive) value.asString else value.toString()
+                        }
+                    }
                     batch.add(ProductEntity(barcode = barcode, productJson = gson.toJson(map)))
                     if (batch.size >= BATCH_SIZE) {
                         repository.upsertAll(batch.toList())
