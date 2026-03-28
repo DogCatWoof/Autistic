@@ -2,10 +2,12 @@ package org.meow.autistic.ui.screens
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowRight
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Text
@@ -56,10 +58,23 @@ fun AppDrawerSheet(
             )
             item.subItems.forEach { subItem ->
                 NavigationDrawerItem(
-                    label = { Text(subItem) },
+                    label = {
+                        Text(
+                            text = subItem,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
                     selected = !showSettings && subItem == currentDestination,
                     onClick = { onSubItemSelect(subItem) },
-                    modifier = Modifier.padding(start = 16.dp),
+                    modifier = Modifier.padding(start = 28.dp),
                 )
             }
         }
