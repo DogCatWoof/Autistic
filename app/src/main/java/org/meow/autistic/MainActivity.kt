@@ -42,6 +42,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.launch
 import org.meow.autistic.ui.screens.AppDrawerSheet
@@ -147,6 +149,9 @@ class MainActivity : ComponentActivity() {
                             NavigationBar {
                                 bottomItems.forEachIndexed { index, item ->
                                     NavigationBarItem(
+                                        modifier = Modifier.semantics {
+                                            testTag = "nav_tab_${item.title.lowercase()}"
+                                        },
                                         selected = !showSettings && item.title == activeNavTitle,
                                         onClick = {
                                             if (item.subItems.isEmpty()) {
