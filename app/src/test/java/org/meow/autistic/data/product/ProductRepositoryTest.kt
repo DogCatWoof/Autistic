@@ -14,7 +14,8 @@ import org.meow.autistic.data.diagnostics.QueryLogger
 class ProductRepositoryTest {
 
     private val dao = mockk<ProductDao>(relaxed = true)
-    private val repository = ProductRepository(dao, QueryLogger())
+    private val apiClient = mockk<OpenFoodFactsApiClient>(relaxed = true)
+    private val repository = ProductRepository(dao, QueryLogger(), apiClient)
 
     private val sampleEntity = ProductEntity(barcode = "0123456789", productJson = """{"code":"0123456789","product_name":"Test"}""")
 
@@ -27,11 +28,33 @@ class ProductRepositoryTest {
         val result = repository.getByBarcode("0123456789")
 
         assertEquals(sampleEntity, result)
+        coVerify(exactly = 0) { apiClient.fetchByBarcode(any()) }
     }
 
     @Test
-    fun `getByBarcode returns null when dao finds no match`() = runTest {
+    fun `getByBarcode falls back to api when dao finds no match`() = runTest {
         coEvery { dao.getByBarcode("unknown") } returns null
+        coEvery { apiClient.fetchByBarcode("unknown") } returns sampleEntity
+
+        val result = repository.getByBarcode("unknown")
+
+        assertEquals(sampleEntity, result)
+    }
+
+    @Test
+    fun `getByBarcode saves api result to dao on fallback hit`() = runTest {
+        coEvery { dao.getByBarcode("unknown") } returns null
+        coEvery { apiClient.fetchByBarcode("unknown") } returns sampleEntity
+
+        repository.getByBarcode("unknown")
+
+        coVerify { dao.upsertAll(listOf(sampleEntity)) }
+    }
+
+    @Test
+    fun `getByBarcode returns null when both dao and api find nothing`() = runTest {
+        coEvery { dao.getByBarcode("unknown") } returns null
+        coEvery { apiClient.fetchByBarcode("unknown") } returns null
 
         assertNull(repository.getByBarcode("unknown"))
     }

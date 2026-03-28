@@ -5,14 +5,22 @@ import org.meow.autistic.data.diagnostics.QueryLogger
 
 /**
  * Repository for local product lookups against the Open Food Facts database.
+ * Falls back to the OFF REST API when a barcode is absent from the local DB,
+ * then persists the result for future lookups.
  * Suspend calls are timed via [QueryLogger].
  */
 class ProductRepository(
     private val dao: ProductDao,
     private val queryLogger: QueryLogger,
+    private val apiClient: OpenFoodFactsApiClient,
 ) {
-    suspend fun getByBarcode(barcode: String): ProductEntity? =
+    suspend fun getByBarcode(barcode: String): ProductEntity? {
         timed("ProductRepository.getByBarcode") { dao.getByBarcode(barcode) }
+            ?.let { return it }
+        val remote = apiClient.fetchByBarcode(barcode) ?: return null
+        timed("ProductRepository.upsertFromApi") { dao.upsertAll(listOf(remote)) }
+        return remote
+    }
 
     suspend fun hasProducts(): Boolean =
         timed("ProductRepository.hasProducts") { dao.count() > 0 }
