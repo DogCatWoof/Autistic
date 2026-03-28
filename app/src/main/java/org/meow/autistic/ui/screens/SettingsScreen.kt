@@ -29,6 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.launch
+import org.meow.autistic.NavigationItem
 import org.meow.autistic.data.auth.GoogleAuthManager
 import org.meow.autistic.data.auth.TokenStore
 import org.meow.autistic.showNotification
@@ -38,22 +39,30 @@ import org.meow.autistic.showNotification
  * Manages sub-screen navigation internally.
  */
 @Composable
-fun SettingsScreen(modifier: Modifier = Modifier) {
+fun SettingsScreen(
+    allNavItems: List<NavigationItem>,
+    modifier: Modifier = Modifier,
+) {
     var showSync by remember { mutableStateOf(false) }
     var showQueryLog by remember { mutableStateOf(false) }
+    var showNavPrefs by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = showSync || showQueryLog) {
-        if (showSync) { showSync = false } else { showQueryLog = false }
+    BackHandler(enabled = showSync || showQueryLog || showNavPrefs) {
+        when {
+            showSync -> showSync = false
+            showQueryLog -> showQueryLog = false
+            showNavPrefs -> showNavPrefs = false
+        }
     }
 
-    if (showSync) {
-        SyncSettingsScreen(modifier = modifier)
-    } else if (showQueryLog) {
-        QueryLogScreen(modifier = modifier)
-    } else {
-        SettingsMainList(
+    when {
+        showSync -> SyncSettingsScreen(modifier = modifier)
+        showQueryLog -> QueryLogScreen(modifier = modifier)
+        showNavPrefs -> NavPreferencesScreen(allItems = allNavItems, modifier = modifier)
+        else -> SettingsMainList(
             onSyncClick = { showSync = true },
             onQueryLogClick = { showQueryLog = true },
+            onNavPrefsClick = { showNavPrefs = true },
             modifier = modifier,
         )
     }
@@ -63,6 +72,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
 private fun SettingsMainList(
     onSyncClick: () -> Unit,
     onQueryLogClick: () -> Unit,
+    onNavPrefsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -129,6 +139,19 @@ private fun SettingsMainList(
                     showNotification(context)
                 }
             },
+        )
+        HorizontalDivider()
+        SettingsSectionLabel("Navigation")
+        ListItem(
+            headlineContent = { Text("Bottom Navigation") },
+            supportingContent = { Text("Choose which items appear in the navigation bar") },
+            trailingContent = {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowForwardIos,
+                    contentDescription = "Open navigation preferences",
+                )
+            },
+            modifier = Modifier.clickable { onNavPrefsClick() },
         )
         HorizontalDivider()
         SettingsSectionLabel("Data")

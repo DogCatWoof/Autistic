@@ -35,17 +35,23 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.launch
+import org.meow.autistic.data.navigation.NavPreferencesStore
+import org.meow.autistic.ui.screens.filterNavItems
+import org.meow.autistic.ui.screens.navTitlesFrom
 import org.meow.autistic.ui.screens.AppDrawerSheet
 import org.meow.autistic.ui.screens.DailyScreen
 import org.meow.autistic.ui.screens.EventsScreen
@@ -84,7 +90,11 @@ class MainActivity : ComponentActivity() {
         createNotificationChannel()
         setContent {
             AutisticTheme {
-                val bottomItems = BOTTOM_ITEMS
+                val context = LocalContext.current
+                val allNavTitles = remember { navTitlesFrom(BOTTOM_ITEMS) }
+                val savedEnabled by NavPreferencesStore.getEnabledFlow(context)
+                    .collectAsState(initial = null)
+                val bottomItems = filterNavItems(BOTTOM_ITEMS, savedEnabled ?: allNavTitles)
                 var currentDestination by rememberSaveable { mutableStateOf("Todo") }
                 var showSettings by rememberSaveable { mutableStateOf(false) }
                 var bottomSheetIndex by rememberSaveable { mutableStateOf<Int?>(null) }
@@ -179,7 +189,7 @@ class MainActivity : ComponentActivity() {
                     ) { innerPadding ->
                         Column(modifier = Modifier.padding(innerPadding)) {
                             if (showSettings) {
-                                SettingsScreen()
+                                SettingsScreen(allNavItems = BOTTOM_ITEMS)
                             } else {
                                 when (currentDestination) {
                                     "Todo" -> TodoListScreen()
