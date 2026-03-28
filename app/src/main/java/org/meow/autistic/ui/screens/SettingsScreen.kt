@@ -40,19 +40,29 @@ import org.meow.autistic.showNotification
 @Composable
 fun SettingsScreen(modifier: Modifier = Modifier) {
     var showSync by remember { mutableStateOf(false) }
+    var showQueryLog by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = showSync) { showSync = false }
+    BackHandler(enabled = showSync || showQueryLog) {
+        if (showSync) { showSync = false } else { showQueryLog = false }
+    }
 
     if (showSync) {
         SyncSettingsScreen(modifier = modifier)
+    } else if (showQueryLog) {
+        QueryLogScreen(modifier = modifier)
     } else {
-        SettingsMainList(onSyncClick = { showSync = true }, modifier = modifier)
+        SettingsMainList(
+            onSyncClick = { showSync = true },
+            onQueryLogClick = { showQueryLog = true },
+            modifier = modifier,
+        )
     }
 }
 
 @Composable
 private fun SettingsMainList(
     onSyncClick: () -> Unit,
+    onQueryLogClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -132,6 +142,19 @@ private fun SettingsMainList(
                 )
             },
             modifier = Modifier.clickable { onSyncClick() },
+        )
+        HorizontalDivider()
+        SettingsSectionLabel("Diagnostics")
+        ListItem(
+            headlineContent = { Text("Query Log") },
+            supportingContent = { Text("Recent database query timings") },
+            trailingContent = {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowForwardIos,
+                    contentDescription = "Open query log",
+                )
+            },
+            modifier = Modifier.clickable { onQueryLogClick() },
         )
     }
 }

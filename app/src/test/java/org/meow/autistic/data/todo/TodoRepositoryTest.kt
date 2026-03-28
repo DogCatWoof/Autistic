@@ -11,6 +11,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
+import org.meow.autistic.data.diagnostics.QueryLogger
 
 class TodoRepositoryTest {
 
@@ -23,14 +24,14 @@ class TodoRepositoryTest {
     fun setUp() {
         dao = mockk()
         every { dao.getAllTodos() } returns flowOf(emptyList())
-        repository = TodoRepository(dao)
+        repository = TodoRepository(dao, QueryLogger())
     }
 
     @Test
     fun `allTodos exposes flow from dao`() = runTest {
         val testDao = mockk<TodoDao>()
         every { testDao.getAllTodos() } returns flowOf(listOf(todo))
-        val result = TodoRepository(testDao).allTodos.first()
+        val result = TodoRepository(testDao, QueryLogger()).allTodos.first()
         assertEquals(listOf(todo), result)
     }
 

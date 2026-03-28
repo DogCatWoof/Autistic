@@ -6,7 +6,7 @@ import org.meow.autistic.data.product.ProductRepository
 import org.meow.autistic.data.todo.TodoRepository
 
 val repositoryModule = module {
-    single { TodoRepository(get()) }
-    single { CalendarRepository(get()) }
-    single { ProductRepository(get()) }
+    single { TodoRepository(get(), get()) }
+    single { CalendarRepository(get(), get()) }
+    single { ProductRepository(get(), get()) }
 }

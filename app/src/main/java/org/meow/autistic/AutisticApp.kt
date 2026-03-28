@@ -5,6 +5,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import org.meow.autistic.di.authModule
 import org.meow.autistic.di.databaseModule
+import org.meow.autistic.di.diagnosticsModule
 import org.meow.autistic.di.repositoryModule
 import org.meow.autistic.di.syncModule
 import org.meow.autistic.di.viewModelModule
@@ -20,6 +21,7 @@ class AutisticApp : Application() {
             androidContext(this@AutisticApp)
             modules(
                 databaseModule,
+                diagnosticsModule,
                 authModule,
                 repositoryModule,
                 syncModule,

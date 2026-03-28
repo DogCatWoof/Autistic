@@ -9,11 +9,12 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.meow.autistic.data.diagnostics.QueryLogger
 
 class ProductRepositoryTest {
 
     private val dao = mockk<ProductDao>(relaxed = true)
-    private val repository = ProductRepository(dao)
+    private val repository = ProductRepository(dao, QueryLogger())
 
     private val sampleEntity = ProductEntity(barcode = "0123456789", productJson = """{"code":"0123456789","product_name":"Test"}""")
 
