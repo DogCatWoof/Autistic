@@ -26,7 +26,6 @@ import java.util.zip.GZIPInputStream
 
 const val OFF_SYNC_WORK_NAME = "off_product_sync"
 
-
 private const val OFF_JSONL_URL =
     "https://static.openfoodfacts.org/data/openfoodfacts-products.jsonl.gz"
 private const val BATCH_SIZE = 500
