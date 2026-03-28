@@ -4,6 +4,13 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+configurations.all {
+    resolutionStrategy {
+        force("androidx.concurrent:concurrent-futures:1.2.0")
+        force("androidx.concurrent:concurrent-futures-ktx:1.2.0")
+    }
+}
+
 android {
     namespace = "org.meow.autistic"
     compileSdk = 35
@@ -94,6 +101,10 @@ dependencies {
 
     // DataStore for sync timestamps
     implementation(libs.androidx.datastore.preferences)
+
+    // Koin DI
+    implementation(libs.koin.android)
+    implementation(libs.koin.compose)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

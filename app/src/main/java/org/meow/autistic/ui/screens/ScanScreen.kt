@@ -41,7 +41,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.androidx.compose.koinViewModel
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.google.mlkit.vision.barcode.BarcodeScanning
@@ -54,7 +54,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * detects barcodes using ML Kit, and looks up the product in the local database.
  */
 @Composable
-fun ScanScreen(modifier: Modifier = Modifier, viewModel: ScanViewModel = viewModel()) {
+fun ScanScreen(modifier: Modifier = Modifier, viewModel: ScanViewModel = koinViewModel()) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
 

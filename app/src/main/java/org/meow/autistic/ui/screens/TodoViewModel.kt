@@ -1,7 +1,7 @@
 package org.meow.autistic.ui.screens
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import android.content.Intent
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
@@ -14,10 +14,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.meow.autistic.data.auth.GoogleAuthManager
-import org.meow.autistic.data.auth.TokenStore
 import org.meow.autistic.data.sync.IMMEDIATE_WORK_NAME
 import org.meow.autistic.data.sync.SyncScheduler
-import org.meow.autistic.data.todo.TodoDatabase
 import org.meow.autistic.data.todo.TodoEntity
 import org.meow.autistic.data.todo.TodoRepository
 
@@ -28,13 +26,20 @@ sealed class SyncState {
     data class LastSynced(val timestamp: Long) : SyncState()
 }
 
-class TodoViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository: TodoRepository
-    val allTodos: Flow<List<TodoEntity>>
+/**
+ * ViewModel for the todo list screen.
+ *
+ * Manages [TodoRepository] operations, Google authentication state, and sync scheduling.
+ */
+class TodoViewModel(
+    private val repository: TodoRepository,
+    private val authManager: GoogleAuthManager,
+    private val syncScheduler: SyncScheduler,
+    private val workManager: WorkManager,
+) : ViewModel() {
 
-    private val authManager: GoogleAuthManager
-    private val syncScheduler: SyncScheduler
-    private val workManager: WorkManager
+    val allTodos: Flow<List<TodoEntity>> =
+        repository.allTodos.map { todos -> todos.filter { !it.isCompleted } }
 
     private val _isAuthenticated = MutableStateFlow(false)
     val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
@@ -42,15 +47,6 @@ class TodoViewModel(application: Application) : AndroidViewModel(application) {
     val syncState: StateFlow<SyncState>
 
     init {
-        val db = TodoDatabase.getDatabase(application)
-        repository = TodoRepository(db.todoDao())
-        allTodos = repository.allTodos.map { todos -> todos.filter { !it.isCompleted } }
-
-        val tokenStore = TokenStore.create(application)
-        authManager = GoogleAuthManager(application, tokenStore)
-        workManager = WorkManager.getInstance(application)
-        syncScheduler = SyncScheduler(workManager)
-
         _isAuthenticated.value = authManager.isAuthenticated()
 
         syncState = workManager.getWorkInfosForUniqueWorkFlow(IMMEDIATE_WORK_NAME)
@@ -82,7 +78,7 @@ class TodoViewModel(application: Application) : AndroidViewModel(application) {
 
     fun getSignInIntent() = authManager.getSignInIntent()
 
-    fun handleSignInResult(data: android.content.Intent?) {
+    fun handleSignInResult(data: Intent?) {
         if (authManager.handleSignInResult(data)) {
             updateAuthStatus()
             triggerSync()

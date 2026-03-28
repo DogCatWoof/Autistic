@@ -17,7 +17,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.meow.autistic.data.todo.TodoDatabase
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.util.zip.GZIPInputStream
@@ -41,10 +42,10 @@ private val Context.productDataStore: DataStore<Preferences> by preferencesDataS
 class OpenFoodFactsWorker(
     private val context: Context,
     params: WorkerParameters,
-) : CoroutineWorker(context, params) {
+) : CoroutineWorker(context, params), KoinComponent {
 
+    private val repository: ProductRepository by inject()
     private val gson = Gson()
-    private val repository = ProductRepository(TodoDatabase.getDatabase(context).productDao())
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {

@@ -12,16 +12,8 @@ import androidx.work.WorkerParameters
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import org.meow.autistic.data.auth.GoogleAuthManager
-import org.meow.autistic.data.auth.TokenStore
-import org.meow.autistic.data.calendar.CalendarRemoteSource
-import org.meow.autistic.data.calendar.CalendarRepository
-import org.meow.autistic.data.calendar.CalendarSyncService
-import org.meow.autistic.data.calendar.CalendarSyncTokenStore
-import org.meow.autistic.data.todo.GoogleTasksRemoteSource
-import org.meow.autistic.data.todo.GoogleTasksSyncService
-import org.meow.autistic.data.todo.TodoDatabase
-import org.meow.autistic.data.todo.TodoRepository
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 private const val TAG = "SyncWorker"
 private val Context.syncDataStore: DataStore<Preferences> by preferencesDataStore("sync_prefs")
@@ -32,34 +24,13 @@ private val LAST_SYNC_KEY = longPreferencesKey("google_last_sync")
  *
  * Returns [Result.retry] on any failure (no auth, network error, etc.) and
  * [Result.success] when all four steps complete without error.
- *
- * Dependencies are constructed from [applicationContext] on first run, matching the
- * pattern used elsewhere in the app (no DI framework required).
  */
 class SyncWorker(
     appContext: Context,
     workerParams: WorkerParameters,
-) : CoroutineWorker(appContext, workerParams) {
+) : CoroutineWorker(appContext, workerParams), KoinComponent {
 
-    private val orchestrator: SyncOrchestrator
-
-    init {
-        val tokenStore = TokenStore.create(appContext)
-        val authManager = GoogleAuthManager(appContext, tokenStore)
-        val db = TodoDatabase.getDatabase(appContext)
-        val tasksSyncService = GoogleTasksSyncService(
-            remoteSource = GoogleTasksRemoteSource(),
-            repository = TodoRepository(db.todoDao()),
-            tokenProvider = { authManager.getValidToken() },
-        )
-        val calendarSyncService = CalendarSyncService(
-            remoteSource = CalendarRemoteSource(),
-            repository = CalendarRepository(db.calendarDao()),
-            syncTokenStore = CalendarSyncTokenStore(appContext),
-            tokenProvider = { authManager.getValidToken() },
-        )
-        orchestrator = SyncOrchestrator(authManager, tasksSyncService, calendarSyncService)
-    }
+    private val orchestrator: SyncOrchestrator by inject()
 
     companion object {
         /** Emits the timestamp of the last successful Google sync, or null if never synced. */

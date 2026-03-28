@@ -27,7 +27,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.androidx.compose.koinViewModel
 import org.meow.autistic.data.todo.TodoEntity
 import java.text.SimpleDateFormat
 import java.util.*
@@ -36,7 +36,7 @@ private val TODO_CATEGORIES = listOf("General", "Work", "Personal", "Health")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TodoListScreen(viewModel: TodoViewModel = viewModel()) {
+fun TodoListScreen(viewModel: TodoViewModel = koinViewModel()) {
     val todos by viewModel.allTodos.collectAsState(initial = emptyList())
     val isAuthenticated by viewModel.isAuthenticated.collectAsState()
     val syncState by viewModel.syncState.collectAsState()

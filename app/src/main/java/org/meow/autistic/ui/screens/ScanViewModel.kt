@@ -1,15 +1,12 @@
 package org.meow.autistic.ui.screens
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.meow.autistic.data.product.ProductRepository
-import org.meow.autistic.data.todo.TodoDatabase
-
 sealed class ScanUiState {
     object Loading : ScanUiState()
     object NeedsSync : ScanUiState()
@@ -23,15 +20,14 @@ sealed class ScanUiState {
  * Checks whether the product database has been populated, performs barcode lookups,
  * and exposes the current [ScanUiState].
  */
-class ScanViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository: ProductRepository
+class ScanViewModel(
+    private val repository: ProductRepository,
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ScanUiState>(ScanUiState.Loading)
     val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
 
     init {
-        repository = ProductRepository(TodoDatabase.getDatabase(application).productDao())
         checkDatabasePopulated()
     }
 
