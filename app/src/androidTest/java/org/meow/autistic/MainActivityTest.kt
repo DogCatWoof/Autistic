@@ -107,4 +107,22 @@ class MainActivityTest {
         }
         composeTestRule.onNodeWithText("Connect Google Account").assertIsDisplayed()
     }
+
+    @Test
+    fun settingsScreen_syncItem_opensProductsSyncList() {
+        composeTestRule.onNodeWithContentDescription("Settings").performClick()
+        composeTestRule.onNodeWithText("Sync").performClick()
+        composeTestRule.onNodeWithText("Open Food Facts").assertIsDisplayed()
+    }
+
+    @Test
+    fun settingsScreen_syncSubScreen_backReturnsToSettings() {
+        composeTestRule.onNodeWithContentDescription("Settings").performClick()
+        composeTestRule.onNodeWithText("Sync").performClick()
+        composeTestRule.onNodeWithText("Open Food Facts").assertIsDisplayed()
+        composeTestRule.activityRule.scenario.onActivity { activity ->
+            activity.onBackPressedDispatcher.onBackPressed()
+        }
+        composeTestRule.onNodeWithText("Sync").assertIsDisplayed()
+    }
 }
