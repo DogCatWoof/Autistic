@@ -46,12 +46,14 @@ fun SettingsScreen(
     var showSync by remember { mutableStateOf(false) }
     var showQueryLog by remember { mutableStateOf(false) }
     var showNavPrefs by remember { mutableStateOf(false) }
+    var showDailyTasks by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = showSync || showQueryLog || showNavPrefs) {
+    BackHandler(enabled = showSync || showQueryLog || showNavPrefs || showDailyTasks) {
         when {
             showSync -> showSync = false
             showQueryLog -> showQueryLog = false
             showNavPrefs -> showNavPrefs = false
+            showDailyTasks -> showDailyTasks = false
         }
     }
 
@@ -59,10 +61,12 @@ fun SettingsScreen(
         showSync -> SyncSettingsScreen(modifier = modifier)
         showQueryLog -> QueryLogScreen(modifier = modifier)
         showNavPrefs -> NavPreferencesScreen(allItems = allNavItems, modifier = modifier)
+        showDailyTasks -> DailyTasksSettingsScreen(modifier = modifier)
         else -> SettingsMainList(
             onSyncClick = { showSync = true },
             onQueryLogClick = { showQueryLog = true },
             onNavPrefsClick = { showNavPrefs = true },
+            onDailyTasksClick = { showDailyTasks = true },
             modifier = modifier,
         )
     }
@@ -73,6 +77,7 @@ private fun SettingsMainList(
     onSyncClick: () -> Unit,
     onQueryLogClick: () -> Unit,
     onNavPrefsClick: () -> Unit,
+    onDailyTasksClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -139,6 +144,19 @@ private fun SettingsMainList(
                     showNotification(context)
                 }
             },
+        )
+        HorizontalDivider()
+        SettingsSectionLabel("Tasks")
+        ListItem(
+            headlineContent = { Text("Daily Tasks") },
+            supportingContent = { Text("Recurring tasks added to your list every day") },
+            trailingContent = {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowForwardIos,
+                    contentDescription = "Open daily tasks",
+                )
+            },
+            modifier = Modifier.clickable { onDailyTasksClick() },
         )
         HorizontalDivider()
         SettingsSectionLabel("Navigation")

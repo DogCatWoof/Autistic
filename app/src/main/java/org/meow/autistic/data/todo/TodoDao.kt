@@ -34,4 +34,8 @@ interface TodoDao {
 
     @Query("DELETE FROM todos WHERE googleTaskId IN (:googleTaskIds)")
     suspend fun deleteByGoogleTaskIds(googleTaskIds: List<String>): Int
+
+    /** Removes all incomplete todos that were generated from daily task templates. */
+    @Query("DELETE FROM todos WHERE dailyTaskId IS NOT NULL AND isCompleted = 0")
+    suspend fun deleteUnfinishedDailyTodos(): Int
 }

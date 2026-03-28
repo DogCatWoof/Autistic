@@ -50,6 +50,7 @@ import androidx.compose.ui.semantics.testTag
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.launch
 import org.meow.autistic.data.navigation.NavPreferencesStore
+import org.meow.autistic.data.todo.DailyResetWorker
 import org.meow.autistic.ui.screens.filterNavItems
 import org.meow.autistic.ui.screens.navTitlesFrom
 import org.meow.autistic.ui.screens.AppDrawerSheet
@@ -88,6 +89,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         createNotificationChannel()
+        DailyResetWorker.enqueue(this)
         setContent {
             AutisticTheme {
                 val context = LocalContext.current

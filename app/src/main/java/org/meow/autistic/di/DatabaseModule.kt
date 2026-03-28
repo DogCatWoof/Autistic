@@ -9,4 +9,5 @@ val databaseModule = module {
     single { get<TodoDatabase>().todoDao() }
     single { get<TodoDatabase>().calendarDao() }
     single { get<TodoDatabase>().productDao() }
+    single { get<TodoDatabase>().dailyTaskDao() }
 }

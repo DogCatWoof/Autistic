@@ -12,14 +12,15 @@ import org.meow.autistic.data.product.ProductDao
 import org.meow.autistic.data.product.ProductEntity
 
 @Database(
-    entities = [TodoEntity::class, CalendarEventEntity::class, ProductEntity::class],
-    version = 4,
+    entities = [TodoEntity::class, CalendarEventEntity::class, ProductEntity::class, DailyTaskEntity::class],
+    version = 5,
     exportSchema = false,
 )
 abstract class TodoDatabase : RoomDatabase() {
     abstract fun todoDao(): TodoDao
     abstract fun calendarDao(): CalendarDao
     abstract fun productDao(): ProductDao
+    abstract fun dailyTaskDao(): DailyTaskDao
 
     companion object {
         @Volatile
@@ -62,10 +63,26 @@ abstract class TodoDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE todos ADD COLUMN dailyTaskId INTEGER")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS daily_tasks (
+                        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        title TEXT NOT NULL,
+                        category TEXT NOT NULL DEFAULT 'General',
+                        timeMinutes INTEGER
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
         fun getDatabase(context: Context): TodoDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, TodoDatabase::class.java, "autistic_database")
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .build()
                     .also { Instance = it }
             }

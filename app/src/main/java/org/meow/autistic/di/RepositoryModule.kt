@@ -4,6 +4,7 @@ import org.koin.dsl.module
 import org.meow.autistic.data.calendar.CalendarRepository
 import org.meow.autistic.data.product.OpenFoodFactsApiClient
 import org.meow.autistic.data.product.ProductRepository
+import org.meow.autistic.data.todo.DailyTaskRepository
 import org.meow.autistic.data.todo.TodoRepository
 
 val repositoryModule = module {
@@ -11,4 +12,5 @@ val repositoryModule = module {
     single { CalendarRepository(get(), get()) }
     single { OpenFoodFactsApiClient() }
     single { ProductRepository(get(), get(), get()) }
+    single { DailyTaskRepository(get(), get()) }
 }
