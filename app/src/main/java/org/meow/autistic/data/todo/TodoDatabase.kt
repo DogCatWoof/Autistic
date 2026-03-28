@@ -64,7 +64,7 @@ abstract class TodoDatabase : RoomDatabase() {
 
         fun getDatabase(context: Context): TodoDatabase {
             return Instance ?: synchronized(this) {
-                Room.databaseBuilder(context, TodoDatabase::class.java, "todo_database")
+                Room.databaseBuilder(context, TodoDatabase::class.java, "autistic_database")
                     .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .build()
                     .also { Instance = it }
