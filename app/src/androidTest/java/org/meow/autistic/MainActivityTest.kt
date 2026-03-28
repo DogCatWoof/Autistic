@@ -7,11 +7,14 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.meow.autistic.data.auth.TokenStore
+import org.meow.autistic.data.navigation.NavPreferencesStore
+import org.meow.autistic.data.todo.TodoDatabase
 
 @RunWith(AndroidJUnit4::class)
 class MainActivityTest {
@@ -21,7 +24,12 @@ class MainActivityTest {
 
     @Before
     fun clearState() {
-        TokenStore.create(composeTestRule.activity).clear()
+        val activity = composeTestRule.activity
+        TokenStore.create(activity).clear()
+        runBlocking {
+            TodoDatabase.getDatabase(activity).clearAllTables()
+            NavPreferencesStore.clear(activity)
+        }
     }
 
     @Test

@@ -16,7 +16,10 @@
     - Events are fetched over a rolling 60-day window
     - Events are displayed alongside tasks in the daily and task views
 - Under settings add a "Daily Tasks".  This will hold a list of tasks that should be repeated everyday.  They should match todos, but not be in todo list
-    - Every day
+    - They should have an optional Time, no date
+    - Every day 
+      - remove any unfinished daily tasks from todo list.
+      - add the todos from this into Daily Tasks.  All due today (but keep the time)
 
 ### Google Tasks Sync
 - Users can connect a Google account via OAuth to enable sync

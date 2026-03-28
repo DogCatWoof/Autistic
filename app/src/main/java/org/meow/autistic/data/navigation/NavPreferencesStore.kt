@@ -35,4 +35,8 @@ object NavPreferencesStore {
             prefs[ENABLED_ITEMS_KEY] = if (enabled) current + title else current - title
         }
     }
+
+    suspend fun clear(context: Context) {
+        context.navPrefsDataStore.edit { it.clear() }
+    }
 }
