@@ -52,6 +52,28 @@ class MainActivityTest {
     }
 
     @Test
+    fun drawer_showsSubItemsInline() {
+        composeTestRule.onNodeWithContentDescription("Menu").performClick()
+        // Sub-items are rendered inline below their parent in the drawer
+        composeTestRule.onAllNodesWithText("Today")[0].assertIsDisplayed()
+        composeTestRule.onAllNodesWithText("Events")[0].assertIsDisplayed()
+    }
+
+    @Test
+    fun drawer_subItemClick_navigatesToTodayScreen() {
+        composeTestRule.onNodeWithContentDescription("Menu").performClick()
+        composeTestRule.onAllNodesWithText("Today")[0].performClick()
+        composeTestRule.onNodeWithText("Daily Screen").assertIsDisplayed()
+    }
+
+    @Test
+    fun drawer_subItemClick_navigatesToEventsScreen() {
+        composeTestRule.onNodeWithContentDescription("Menu").performClick()
+        composeTestRule.onAllNodesWithText("Events")[0].performClick()
+        composeTestRule.onNodeWithText("Events Screen").assertIsDisplayed()
+    }
+
+    @Test
     fun drawerCloseButton_closesDrawer() {
         composeTestRule.onNodeWithContentDescription("Menu").performClick()
         composeTestRule.onNodeWithContentDescription("Close menu").performClick()

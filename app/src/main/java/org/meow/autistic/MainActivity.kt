@@ -100,18 +100,17 @@ class MainActivity : ComponentActivity() {
                     drawerContent = {
                         AppDrawerSheet(
                             items = bottomItems,
-                            selectedIndex = bottomItems.indexOfFirst { it.title == activeNavTitle },
+                            currentDestination = currentDestination,
                             showSettings = showSettings,
-                            onSelect = { index ->
-                                val item = bottomItems[index]
-                                if (item.subItems.isEmpty()) {
-                                    currentDestination = item.title
-                                    showSettings = false
-                                    scope.launch { drawerState.close() }
-                                } else {
-                                    scope.launch { drawerState.close() }
-                                    bottomSheetIndex = index
-                                }
+                            onItemSelect = { item ->
+                                currentDestination = item.subItems.firstOrNull() ?: item.title
+                                showSettings = false
+                                scope.launch { drawerState.close() }
+                            },
+                            onSubItemSelect = { subItem ->
+                                currentDestination = subItem
+                                showSettings = false
+                                scope.launch { drawerState.close() }
                             },
                             onClose = { scope.launch { drawerState.close() } },
                         )
