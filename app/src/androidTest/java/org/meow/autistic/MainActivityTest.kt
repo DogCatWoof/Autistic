@@ -116,6 +116,14 @@ class MainActivityTest {
     }
 
     @Test
+    fun syncScreen_showsTasksAndCalendarItems() {
+        composeTestRule.onNodeWithContentDescription("Settings").performClick()
+        composeTestRule.onNodeWithText("Sync").performClick()
+        composeTestRule.onNodeWithText("Tasks").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Calendar").assertIsDisplayed()
+    }
+
+    @Test
     fun settingsScreen_syncSubScreen_backReturnsToSettings() {
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.onNodeWithText("Sync").performClick()

@@ -17,6 +17,9 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import org.meow.autistic.data.product.OFF_SYNC_WORK_NAME
 import org.meow.autistic.data.product.OpenFoodFactsWorker
+import org.meow.autistic.data.sync.IMMEDIATE_WORK_NAME
+import org.meow.autistic.data.sync.SyncScheduler
+import org.meow.autistic.data.sync.SyncWorker
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -26,16 +29,61 @@ import java.util.Locale
  */
 @Composable
 fun SyncSettingsScreen(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val workManager = remember { WorkManager.getInstance(context) }
+    val scheduler = remember { SyncScheduler(workManager) }
+
+    val googleWorkInfos by workManager
+        .getWorkInfosForUniqueWorkFlow(IMMEDIATE_WORK_NAME)
+        .collectAsState(initial = emptyList())
+    val googleLastSync by SyncWorker.getLastSyncFlow(context)
+        .collectAsState(initial = null)
+
+    val isGoogleSyncing = googleWorkInfos.firstOrNull()?.state == WorkInfo.State.RUNNING
+
     Column(modifier = modifier.fillMaxSize()) {
+        SettingsSectionLabel("Google")
+        GoogleSyncItem(
+            label = "Tasks",
+            isSyncing = isGoogleSyncing,
+            lastSync = googleLastSync,
+            onSync = { scheduler.triggerImmediate() },
+        )
+        GoogleSyncItem(
+            label = "Calendar",
+            isSyncing = isGoogleSyncing,
+            lastSync = googleLastSync,
+            onSync = { scheduler.triggerImmediate() },
+        )
         SettingsSectionLabel("Products")
-        OpenFoodFactsItem()
+        OpenFoodFactsItem(workManager)
     }
 }
 
 @Composable
-private fun OpenFoodFactsItem() {
+private fun GoogleSyncItem(
+    label: String,
+    isSyncing: Boolean,
+    lastSync: Long?,
+    onSync: () -> Unit,
+) {
+    val status = when {
+        isSyncing -> "Syncing…"
+        lastSync != null -> "Last synced: ${formatTimestamp(lastSync)}"
+        else -> "Never synced"
+    }
+    ListItem(
+        headlineContent = { Text(label) },
+        supportingContent = { Text(status) },
+        trailingContent = {
+            Button(enabled = !isSyncing, onClick = onSync) { Text("Sync") }
+        },
+    )
+}
+
+@Composable
+private fun OpenFoodFactsItem(workManager: WorkManager) {
     val context = LocalContext.current
-    val workManager = remember { WorkManager.getInstance(context) }
 
     val workInfos by workManager
         .getWorkInfosForUniqueWorkFlow(OFF_SYNC_WORK_NAME)
@@ -53,11 +101,7 @@ private fun OpenFoodFactsItem() {
     val status = when {
         isSyncing -> info?.progress?.getString("status") ?: "Syncing…"
         syncError != null -> "Error: $syncError"
-        lastSync != null -> {
-            val formatted = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-                .format(Date(lastSync!!))
-            "Last synced: $formatted"
-        }
+        lastSync != null -> "Last synced: ${formatTimestamp(lastSync!!)}"
         else -> "Never synced"
     }
 
@@ -80,3 +124,6 @@ private fun OpenFoodFactsItem() {
         },
     )
 }
+
+private fun formatTimestamp(ms: Long): String =
+    SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(ms))
