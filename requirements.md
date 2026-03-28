@@ -10,10 +10,13 @@
 - Tasks with reminders trigger a local notification at the due time
 - Only show not completed tasks / todos
 - **Today View**: A dedicated view showing tasks and events for the current day
+- **Full View**: A dedicated view showing all tasks and events
 - **Calendar Events (Read-Only)**: 
     - Calendar events from the user's primary Google Calendar are fetched and stored locally
     - Events are fetched over a rolling 60-day window
     - Events are displayed alongside tasks in the daily and task views
+- Under settings add a "Daily Tasks".  This will hold a list of tasks that should be repeated everyday.  They should match todos, but not be in todo list
+    - Every day
 
 ### Google Tasks Sync
 - Users can connect a Google account via OAuth to enable sync
