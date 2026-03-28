@@ -28,6 +28,12 @@ const val OFF_SYNC_WORK_NAME = "off_product_sync"
 
 private const val OFF_JSONL_URL =
     "https://static.openfoodfacts.org/data/openfoodfacts-products.jsonl.gz"
+
+/** Fetch a single product by barcode: replace {barcode} with the scanned value. */
+internal const val OFF_PRODUCT_URL = "https://world.openfoodfacts.net/api/v2/product/{barcode}"
+
+/** Add or update a product (POST). Requires `code`, `user_id`, and `password` in the body. */
+internal const val OFF_ADD_PRODUCT_URL = "https://world.openfoodfacts.net/cgi/product_jqm2.pl"
 private const val BATCH_SIZE = 500
 private val LAST_SYNC_KEY = longPreferencesKey("off_last_sync")
 private val Context.productDataStore: DataStore<Preferences> by preferencesDataStore("product_prefs")
