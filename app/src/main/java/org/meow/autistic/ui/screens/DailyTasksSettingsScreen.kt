@@ -52,7 +52,7 @@ fun DailyTasksSettingsScreen(modifier: Modifier = Modifier) {
                     headlineContent = { Text(task.title) },
                     supportingContent = {
                         val time = task.timeMinutes?.let { formatTime(it) } ?: "No time"
-                        Text("${task.category} · $time")
+                        Text(time)
                     },
                     trailingContent = {
                         IconButton(onClick = { scope.launch { viewModel.delete(task) } }) {

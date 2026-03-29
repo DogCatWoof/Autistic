@@ -2,15 +2,11 @@ package org.meow.autistic.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -27,13 +23,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import org.meow.autistic.data.todo.DailyTaskEntity
 
-private val CATEGORIES = listOf("General", "Work", "Personal", "Health")
-
 /**
  * Add / edit dialog for a [DailyTaskEntity].
  * Pass [initial] = null to create a new task, or an existing entity to edit it.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DailyTaskDialog(
     initial: DailyTaskEntity?,
@@ -41,7 +34,6 @@ fun DailyTaskDialog(
     onDismiss: () -> Unit,
 ) {
     var title by remember { mutableStateOf(initial?.title ?: "") }
-    var category by remember { mutableStateOf(initial?.category ?: "General") }
     var hasTime by remember { mutableStateOf(initial?.timeMinutes != null) }
     var hour by remember { mutableIntStateOf(initial?.timeMinutes?.div(60) ?: 8) }
     var minute by remember { mutableIntStateOf(initial?.timeMinutes?.rem(60) ?: 0) }
@@ -63,15 +55,6 @@ fun DailyTaskDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    CATEGORIES.forEach { cat ->
-                        FilterChip(
-                            selected = category == cat,
-                            onClick = { category = cat },
-                            label = { Text(cat) },
-                        )
-                    }
-                }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -112,7 +95,6 @@ fun DailyTaskDialog(
                     onSave(
                         (initial ?: DailyTaskEntity(title = title)).copy(
                             title = title,
-                            category = category,
                             timeMinutes = timeMinutes,
                         )
                     )
