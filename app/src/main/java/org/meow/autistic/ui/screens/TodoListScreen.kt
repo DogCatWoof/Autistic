@@ -32,7 +32,6 @@ import org.meow.autistic.data.todo.TodoEntity
 import java.text.SimpleDateFormat
 import java.util.*
 
-private val TODO_CATEGORIES = listOf("General", "Work", "Personal", "Health")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,12 +92,12 @@ fun TodoListScreen(viewModel: TodoViewModel = koinViewModel()) {
         if (showAddDialog) {
             AddTodoDialog(
                 onDismiss = { showAddDialog = false },
-                onConfirm = { task, dueAt, category, reminder ->
+                onConfirm = { task, dueAt, reminder, notes ->
                     viewModel.insert(
                         TodoEntity(
                             task = task,
                             dueAt = dueAt,
-                            category = category,
+                            notes = notes,
                             isCompleted = false,
                             reminderSet = reminder,
                             createdAt = System.currentTimeMillis(),
@@ -206,10 +205,11 @@ fun TodoItem(todo: TodoEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
                             color = dimColor
                         )
                     }
-                    if (todo.category.isNotEmpty()) {
-                        AssistChip(
-                            onClick = { },
-                            label = { Text(todo.category) }
+                    if (!todo.notes.isNullOrEmpty()) {
+                        Text(
+                            text = todo.notes,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = dimColor
                         )
                     }
                 }
@@ -229,10 +229,10 @@ fun TodoItem(todo: TodoEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
 @Composable
 fun AddTodoDialog(
     onDismiss: () -> Unit,
-    onConfirm: (String, Long?, String, Boolean) -> Unit
+    onConfirm: (String, Long?, Boolean, String?) -> Unit
 ) {
     var taskText by remember { mutableStateOf("") }
-    var category by remember { mutableStateOf("General") }
+    var notesText by remember { mutableStateOf("") }
     var reminderSet by remember { mutableStateOf(false) }
 
     AlertDialog(
@@ -247,6 +247,14 @@ fun AddTodoDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                OutlinedTextField(
+                    value = notesText,
+                    onValueChange = { notesText = it },
+                    label = { Text("Notes") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2
+                )
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = reminderSet, onCheckedChange = { reminderSet = it })
                     Text("Remind me")
@@ -257,21 +265,11 @@ fun AddTodoDialog(
                         tint = if (reminderSet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    TODO_CATEGORIES.forEach { cat ->
-                        FilterChip(
-                            selected = category == cat,
-                            onClick = { category = cat },
-                            label = { Text(cat) }
-                        )
-                    }
-                }
             }
         },
         confirmButton = {
             TextButton(
-                onClick = { onConfirm(taskText, null, category, reminderSet) },
+                onClick = { onConfirm(taskText, null, reminderSet, notesText.takeIf { it.isNotBlank() }) },
                 enabled = taskText.isNotBlank()
             ) {
                 Text("Save")

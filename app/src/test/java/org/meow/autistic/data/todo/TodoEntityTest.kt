@@ -15,6 +15,7 @@ class TodoEntityTest {
         assertEquals(0L, entity.id)
         assertFalse(entity.isCompleted)
         assertNull(entity.dueAt)
+        assertNull(entity.notes)
         assertEquals("General", entity.category)
         assertFalse(entity.reminderSet)
     }
@@ -68,6 +69,7 @@ class TodoEntityTest {
     @Test
     fun `sync fields default to null and local`() {
         val entity = TodoEntity(task = "Task", createdAt = 1000L)
+        assertNull(entity.notes)
         assertNull(entity.googleTaskId)
         assertNull(entity.googleTaskListId)
         assertNull(entity.extraPropertiesJson)

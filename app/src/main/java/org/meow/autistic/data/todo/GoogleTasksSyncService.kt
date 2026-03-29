@@ -7,6 +7,7 @@ import java.util.TimeZone
 
 private const val DEFAULT_TASK_LIST = "@default"
 private const val RFC3339_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+private const val PROPS_SEPARATOR = "---autistic-props---"
 
 /**
  * Orchestrates bidirectional sync between the local Room database and the Google Tasks API.
@@ -85,40 +86,67 @@ class GoogleTasksSyncService(
         }
     }
 
-    private fun mergeIntoExisting(existing: TodoEntity, remote: RemoteTask, now: Long) =
-        existing.copy(
+    private fun mergeIntoExisting(existing: TodoEntity, remote: RemoteTask, now: Long): TodoEntity {
+        val (parsedNotes, parsedProps) = parseNotesField(remote.notes)
+        return existing.copy(
             task = remote.title,
             isCompleted = remote.status == "completed",
             dueAt = remote.due?.fromRfc3339(),
-            extraPropertiesJson = remote.notes,
+            notes = parsedNotes,
+            extraPropertiesJson = parsedProps,
             googleTaskId = remote.id,
             googleTaskListId = DEFAULT_TASK_LIST,
             lastSyncedAt = now,
             syncStatus = "synced",
         )
+    }
 
-    private fun remoteToNewEntity(remote: RemoteTask, now: Long) = TodoEntity(
-        task = remote.title,
-        isCompleted = remote.status == "completed",
-        createdAt = now,
-        dueAt = remote.due?.fromRfc3339(),
-        extraPropertiesJson = remote.notes,
-        googleTaskId = remote.id,
-        googleTaskListId = DEFAULT_TASK_LIST,
-        lastSyncedAt = now,
-        syncStatus = "synced",
-    )
+    private fun remoteToNewEntity(remote: RemoteTask, now: Long): TodoEntity {
+        val (parsedNotes, parsedProps) = parseNotesField(remote.notes)
+        return TodoEntity(
+            task = remote.title,
+            isCompleted = remote.status == "completed",
+            createdAt = now,
+            dueAt = remote.due?.fromRfc3339(),
+            notes = parsedNotes,
+            extraPropertiesJson = parsedProps,
+            googleTaskId = remote.id,
+            googleTaskListId = DEFAULT_TASK_LIST,
+            lastSyncedAt = now,
+            syncStatus = "synced",
+        )
+    }
 }
 
 private fun TodoEntity.toRemoteTask() = RemoteTask(
     id = googleTaskId,
     title = task,
-    notes = extraPropertiesJson,
+    notes = encodeNotesField(notes, extraPropertiesJson),
     status = if (isCompleted) "completed" else "needsAction",
     due = dueAt?.toRfc3339(),
     completed = null,
     deleted = false,
 )
+
+private fun encodeNotesField(notes: String?, extraPropertiesJson: String?): String? = when {
+    notes != null && extraPropertiesJson != null -> "$notes\n$PROPS_SEPARATOR\n$extraPropertiesJson"
+    notes != null -> notes
+    extraPropertiesJson != null -> "$PROPS_SEPARATOR\n$extraPropertiesJson"
+    else -> null
+}
+
+private fun parseNotesField(raw: String?): Pair<String?, String?> {
+    if (raw == null) return null to null
+    val separatorPattern = "\n$PROPS_SEPARATOR\n"
+    val idx = raw.indexOf(separatorPattern)
+    return when {
+        idx >= 0 -> raw.substring(0, idx).takeIf { it.isNotEmpty() } to
+            raw.substring(idx + separatorPattern.length).takeIf { it.isNotEmpty() }
+        raw.startsWith("$PROPS_SEPARATOR\n") ->
+            null to raw.removePrefix("$PROPS_SEPARATOR\n").takeIf { it.isNotEmpty() }
+        else -> raw.takeIf { it.isNotEmpty() } to null
+    }
+}
 
 private fun Long.toRfc3339(): String =
     SimpleDateFormat(RFC3339_PATTERN, Locale.US)

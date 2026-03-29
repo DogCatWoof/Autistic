@@ -13,7 +13,7 @@ import org.meow.autistic.data.product.ProductEntity
 
 @Database(
     entities = [TodoEntity::class, CalendarEventEntity::class, ProductEntity::class, DailyTaskEntity::class],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 abstract class TodoDatabase : RoomDatabase() {
@@ -79,10 +79,16 @@ abstract class TodoDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE todos ADD COLUMN notes TEXT")
+            }
+        }
+
         fun getDatabase(context: Context): TodoDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, TodoDatabase::class.java, "autistic_database")
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                     .build()
                     .also { Instance = it }
             }

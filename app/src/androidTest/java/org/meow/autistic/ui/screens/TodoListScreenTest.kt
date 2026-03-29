@@ -80,11 +80,18 @@ class TodoListScreenTest {
     }
 
     @Test
-    fun addDialog_categoryChipsDisplayed() {
+    fun addDialog_notesFieldDisplayed() {
         composeTestRule.onNodeWithContentDescription("Add Todo").performClick()
-        composeTestRule.onNodeWithText("General").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Work").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Personal").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Health").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Notes").assertIsDisplayed()
+    }
+
+    @Test
+    fun addDialog_notesAreShownOnTodoItem() {
+        composeTestRule.onNodeWithContentDescription("Add Todo").performClick()
+        composeTestRule.onNodeWithText("Task description").performTextInput("My task")
+        composeTestRule.onNodeWithText("Notes").performTextInput("Some note here")
+        composeTestRule.onNodeWithText("Save").performClick()
+
+        composeTestRule.onNodeWithText("Some note here").assertIsDisplayed()
     }
 }

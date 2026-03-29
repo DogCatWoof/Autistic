@@ -5,7 +5,7 @@ import androidx.room.PrimaryKey
 
 /**
  * syncStatus values: "local" | "synced" | "pending_push" | "pending_delete"
- * extraPropertiesJson is a JSON blob embedded in the Google Tasks notes field — never shown in UI.
+ * extraPropertiesJson is a JSON blob embedded in the Google Tasks notes field alongside [notes].
  */
 @Entity(tableName = "todos")
 data class TodoEntity(
@@ -15,6 +15,7 @@ data class TodoEntity(
     val isCompleted: Boolean = false,
     val createdAt: Long,
     val dueAt: Long? = null,
+    val notes: String? = null,
     val category: String = "General",
     val reminderSet: Boolean = false,
     val googleTaskId: String? = null,

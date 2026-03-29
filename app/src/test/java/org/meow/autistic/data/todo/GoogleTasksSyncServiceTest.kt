@@ -165,6 +165,67 @@ class GoogleTasksSyncServiceTest {
 
     // endregion
 
+    // region notes encoding/decoding
+
+    @Test
+    fun `pullAndMerge maps plain remote notes to entity notes`() = runTest {
+        val withNotes = remoteTask.copy(notes = "Buy milk")
+        coEvery { remoteSource.fetchTasks(token) } returns listOf(withNotes)
+        coEvery { repository.getByGoogleTaskId("remote1") } returns null
+
+        service.pullAndMerge()
+
+        coVerify { repository.upsertFromRemote(match { it.notes == "Buy milk" && it.extraPropertiesJson == null }) }
+    }
+
+    @Test
+    fun `pullAndMerge splits encoded notes and props`() = runTest {
+        val encoded = remoteTask.copy(notes = "My note\n---autistic-props---\n{\"key\":\"val\"}")
+        coEvery { remoteSource.fetchTasks(token) } returns listOf(encoded)
+        coEvery { repository.getByGoogleTaskId("remote1") } returns null
+
+        service.pullAndMerge()
+
+        coVerify {
+            repository.upsertFromRemote(match {
+                it.notes == "My note" && it.extraPropertiesJson == "{\"key\":\"val\"}"
+            })
+        }
+    }
+
+    @Test
+    fun `pullAndMerge handles props-only encoded notes`() = runTest {
+        val encoded = remoteTask.copy(notes = "---autistic-props---\n{\"key\":\"val\"}")
+        coEvery { remoteSource.fetchTasks(token) } returns listOf(encoded)
+        coEvery { repository.getByGoogleTaskId("remote1") } returns null
+
+        service.pullAndMerge()
+
+        coVerify {
+            repository.upsertFromRemote(match {
+                it.notes == null && it.extraPropertiesJson == "{\"key\":\"val\"}"
+            })
+        }
+    }
+
+    @Test
+    fun `pushPending encodes notes and props into remote notes field`() = runTest {
+        val withNotes = localNew.copy(notes = "My note", extraPropertiesJson = "{\"k\":\"v\"}")
+        val created = remoteTask.copy(id = "new-id")
+        coEvery { repository.getPendingPush() } returns listOf(withNotes)
+        coEvery { remoteSource.createTask(token, any()) } returns created
+
+        service.pushPending()
+
+        coVerify {
+            remoteSource.createTask(token, match {
+                it.notes == "My note\n---autistic-props---\n{\"k\":\"v\"}"
+            })
+        }
+    }
+
+    // endregion
+
     // region error propagation
 
     @Test(expected = RuntimeException::class)
