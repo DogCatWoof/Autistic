@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
@@ -180,24 +181,31 @@ fun TodoItem(todo: TodoEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
 
     val dismissState = rememberSwipeToDismissBoxState()
     LaunchedEffect(dismissState.currentValue) {
-        if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart) { onDelete() }
+        when (dismissState.currentValue) {
+            SwipeToDismissBoxValue.StartToEnd -> onToggle(!todo.isCompleted)
+            SwipeToDismissBoxValue.EndToStart -> onDelete()
+            else -> {}
+        }
     }
 
     SwipeToDismissBox(
         state = dismissState,
-        enableDismissFromStartToEnd = false,
         backgroundContent = {
+            val isComplete = dismissState.dismissDirection == SwipeToDismissBoxValue.StartToEnd
+            val bgColor = if (isComplete) MaterialTheme.colorScheme.primaryContainer
+                          else MaterialTheme.colorScheme.errorContainer
+            val alignment = if (isComplete) Alignment.CenterStart else Alignment.CenterEnd
+            val padding = if (isComplete) Modifier.padding(start = 24.dp) else Modifier.padding(end = 24.dp)
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.errorContainer)
-                    .padding(end = 24.dp),
-                contentAlignment = Alignment.CenterEnd
+                modifier = Modifier.fillMaxSize().background(bgColor),
+                contentAlignment = alignment
             ) {
                 Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = MaterialTheme.colorScheme.onErrorContainer
+                    imageVector = if (isComplete) Icons.Default.CheckCircle else Icons.Default.Delete,
+                    contentDescription = if (isComplete) "Complete" else "Delete",
+                    tint = if (isComplete) MaterialTheme.colorScheme.onPrimaryContainer
+                           else MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = padding
                 )
             }
         }
@@ -213,8 +221,7 @@ fun TodoItem(todo: TodoEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Checkbox(checked = todo.isCompleted, onCheckedChange = onToggle)
-                Column(modifier = Modifier.padding(start = 8.dp)) {
+                Column {
                     Text(
                         text = todo.task,
                         style = MaterialTheme.typography.bodyLarge,
@@ -237,7 +244,7 @@ fun TodoItem(todo: TodoEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
                 }
             }
             HorizontalDivider(
-                modifier = Modifier.padding(start = 72.dp),
+                modifier = Modifier.padding(start = 16.dp),
                 color = MaterialTheme.colorScheme.outlineVariant
             )
         }
