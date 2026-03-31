@@ -3,13 +3,13 @@ package org.meow.autistic.ui.screens
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -74,7 +74,7 @@ class TodoListScreenTest {
 
         composeTestRule.onNodeWithText("Finish report").assertIsDisplayed()
 
-        composeTestRule.onAllNodes(isToggleable()).onFirst().performClick()
+        composeTestRule.onNodeWithText("Finish report").performTouchInput { swipeRight() }
 
         composeTestRule.onNodeWithText("Finish report").assertDoesNotExist()
     }
