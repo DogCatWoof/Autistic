@@ -78,7 +78,7 @@ fun TodoListScreen(viewModel: TodoViewModel = koinViewModel()) {
             }
 
             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(todos) { todo ->
+                items(todos, key = { it.id }) { todo ->
                     TodoItem(
                         todo = todo,
                         onToggle = { viewModel.update(todo.copy(isCompleted = it)) },
@@ -191,7 +191,7 @@ fun TodoItem(todo: TodoEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
     SwipeToDismissBox(
         state = dismissState,
         backgroundContent = {
-            val isComplete = dismissState.dismissDirection == SwipeToDismissBoxValue.StartToEnd
+            val isComplete = dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd
             val bgColor = if (isComplete) MaterialTheme.colorScheme.primaryContainer
                           else MaterialTheme.colorScheme.errorContainer
             val alignment = if (isComplete) Alignment.CenterStart else Alignment.CenterEnd
