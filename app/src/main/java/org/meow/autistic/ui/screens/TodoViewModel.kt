@@ -39,7 +39,9 @@ class TodoViewModel(
 ) : ViewModel() {
 
     val allTodos: Flow<List<TodoEntity>> =
-        repository.allTodos.map { todos -> todos.filter { !it.isCompleted } }
+        repository.allTodos.map { todos ->
+            todos.filter { !it.isCompleted && it.syncStatus != "pending_delete" }
+        }
 
     private val _isAuthenticated = MutableStateFlow(false)
     val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
@@ -94,6 +96,10 @@ class TodoViewModel(
     }
 
     fun delete(todo: TodoEntity) = viewModelScope.launch {
-        repository.delete(todo)
+        if (todo.googleTaskId != null) {
+            repository.markPendingDelete(todo.id)
+        } else {
+            repository.delete(todo)
+        }
     }
 }

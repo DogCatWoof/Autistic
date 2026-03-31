@@ -190,7 +190,11 @@ fun TodoItem(todo: TodoEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
     SwipeToDismissBox(
         state = dismissState,
         backgroundContent = {
-            val isComplete = dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd
+            val isComplete by remember {
+                derivedStateOf {
+                    try { dismissState.requireOffset() > 0f } catch (_: IllegalStateException) { false }
+                }
+            }
             val bgColor = if (isComplete) MaterialTheme.colorScheme.primaryContainer
                           else MaterialTheme.colorScheme.errorContainer
             val alignment = if (isComplete) Alignment.CenterStart else Alignment.CenterEnd
