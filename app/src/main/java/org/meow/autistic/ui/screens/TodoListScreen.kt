@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Sync
@@ -201,7 +200,7 @@ fun TodoItem(todo: TodoEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
                 contentAlignment = alignment
             ) {
                 Icon(
-                    imageVector = if (isComplete) Icons.Default.CheckCircle else Icons.Default.Delete,
+                    imageVector = Icons.Default.CheckCircle,
                     contentDescription = if (isComplete) "Complete" else "Delete",
                     tint = if (isComplete) MaterialTheme.colorScheme.onPrimaryContainer
                            else MaterialTheme.colorScheme.onErrorContainer,
