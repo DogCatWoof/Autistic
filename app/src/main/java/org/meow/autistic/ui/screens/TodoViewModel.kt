@@ -90,7 +90,7 @@ class TodoViewModel(
     }
 
     fun update(todo: TodoEntity) = viewModelScope.launch {
-        repository.update(todo)
+        repository.update(todo.copy(syncStatus = "pending_push"))
     }
 
     fun delete(todo: TodoEntity) = viewModelScope.launch {
