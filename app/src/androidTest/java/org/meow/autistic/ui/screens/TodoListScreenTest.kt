@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.test.core.app.ApplicationProvider
@@ -77,6 +78,19 @@ class TodoListScreenTest {
         composeTestRule.onNodeWithText("Finish report").performTouchInput { swipeRight() }
 
         composeTestRule.onNodeWithText("Finish report").assertDoesNotExist()
+    }
+
+    @Test
+    fun swipeLeft_removesTodo() {
+        composeTestRule.onNodeWithContentDescription("Add Todo").performClick()
+        composeTestRule.onNodeWithText("Task description").performTextInput("Buy milk")
+        composeTestRule.onNodeWithText("Save").performClick()
+
+        composeTestRule.onNodeWithText("Buy milk").assertIsDisplayed()
+
+        composeTestRule.onNodeWithText("Buy milk").performTouchInput { swipeLeft() }
+
+        composeTestRule.onNodeWithText("Buy milk").assertDoesNotExist()
     }
 
     @Test
