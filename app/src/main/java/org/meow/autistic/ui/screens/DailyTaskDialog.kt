@@ -37,6 +37,7 @@ fun DailyTaskDialog(
     var hasTime by remember { mutableStateOf(initial?.timeMinutes != null) }
     var hour by remember { mutableIntStateOf(initial?.timeMinutes?.div(60) ?: 8) }
     var minute by remember { mutableIntStateOf(initial?.timeMinutes?.rem(60) ?: 0) }
+    var expectedTimeText by remember { mutableStateOf(initial?.expectedTimeMinutes?.toString() ?: "") }
 
     val timeMinutes = if (hasTime) hour * 60 + minute else null
     val canSave = title.isNotBlank()
@@ -86,6 +87,14 @@ fun DailyTaskDialog(
                         )
                     }
                 }
+                OutlinedTextField(
+                    value = expectedTimeText,
+                    onValueChange = { expectedTimeText = it.filter { c -> c.isDigit() } },
+                    label = { Text("Expected time (minutes)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         },
         confirmButton = {
@@ -96,6 +105,7 @@ fun DailyTaskDialog(
                         (initial ?: DailyTaskEntity(title = title)).copy(
                             title = title,
                             timeMinutes = timeMinutes,
+                            expectedTimeMinutes = expectedTimeText.toIntOrNull(),
                         )
                     )
                 },

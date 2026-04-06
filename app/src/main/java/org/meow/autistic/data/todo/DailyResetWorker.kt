@@ -68,6 +68,7 @@ class DailyResetWorker(
                     createdAt = now,
                     dailyTaskId = dailyTask.id,
                     syncStatus = "local",
+                    expectedTimeMinutes = dailyTask.expectedTimeMinutes,
                 )
             )
         }

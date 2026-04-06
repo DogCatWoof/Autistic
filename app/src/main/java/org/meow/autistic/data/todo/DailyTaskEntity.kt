@@ -18,4 +18,6 @@ data class DailyTaskEntity(
     val title: String,
     val category: String = "General",
     val timeMinutes: Int? = null,
+    /** Expected duration in minutes. Null means no estimate. */
+    val expectedTimeMinutes: Int? = null,
 )

@@ -51,8 +51,12 @@ fun DailyTasksSettingsScreen(modifier: Modifier = Modifier) {
                 ListItem(
                     headlineContent = { Text(task.title) },
                     supportingContent = {
-                        val time = task.timeMinutes?.let { formatTime(it) } ?: "No time"
-                        Text(time)
+                        val time = task.timeMinutes?.let { formatTime(it) }
+                        val duration = task.expectedTimeMinutes?.let {
+                            if (it < 60) "~$it min"
+                            else { val h = it / 60; val m = it % 60; if (m == 0) "~${h}h" else "~${h}h ${m}m" }
+                        }
+                        Text(listOfNotNull(time, duration).ifEmpty { listOf("No time") }.joinToString(" · "))
                     },
                     trailingContent = {
                         IconButton(onClick = { scope.launch { viewModel.delete(task) } }) {
