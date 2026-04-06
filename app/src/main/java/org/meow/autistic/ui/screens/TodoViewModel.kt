@@ -5,19 +5,22 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.meow.autistic.data.auth.GoogleAuthManager
+import org.meow.autistic.data.calendar.CalendarRepository
 import org.meow.autistic.data.sync.IMMEDIATE_WORK_NAME
 import org.meow.autistic.data.sync.SyncScheduler
 import org.meow.autistic.data.todo.TodoEntity
 import org.meow.autistic.data.todo.TodoRepository
+import java.time.LocalDate
+import java.time.ZoneId
 
 sealed class SyncState {
     object Idle : SyncState()
@@ -29,19 +32,36 @@ sealed class SyncState {
 /**
  * ViewModel for the todo list screen.
  *
- * Manages [TodoRepository] operations, Google authentication state, and sync scheduling.
+ * Combines [TodoRepository] and [CalendarRepository] into a single sorted, sectioned list.
+ * Manages Google authentication state and sync scheduling.
  */
 class TodoViewModel(
     private val repository: TodoRepository,
+    private val calendarRepository: CalendarRepository,
     private val authManager: GoogleAuthManager,
     private val syncScheduler: SyncScheduler,
     private val workManager: WorkManager,
 ) : ViewModel() {
 
-    val allTodos: Flow<List<TodoEntity>> =
-        repository.allTodos.map { todos ->
-            todos.filter { !it.isCompleted && it.syncStatus != "pending_delete" }
-        }
+    val groupedItems: StateFlow<GroupedTodoItems> = combine(
+        repository.allTodos,
+        calendarRepository.getAllEvents(),
+    ) { todos, events ->
+        val todayStart = todayStartMs()
+        val todayEnd = todayEndMs()
+
+        val taskItems = todos
+            .filter { !it.isCompleted && it.syncStatus != "pending_delete" }
+            .map { todo -> TodoListItem.Task(todo, todoSortKey(todo, todayEnd)) }
+
+        val eventItems = events.map { event -> TodoListItem.Event(event, event.endAt) }
+
+        val sorted = (taskItems + eventItems).sortedBy { it.sortKey }
+        GroupedTodoItems(
+            today = sorted.filter { isToday(it, todayStart, todayEnd) },
+            later = sorted.filter { !isToday(it, todayStart, todayEnd) },
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GroupedTodoItems.EMPTY)
 
     private val _isAuthenticated = MutableStateFlow(false)
     val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
@@ -64,9 +84,7 @@ class TodoViewModel(
     }
 
     fun triggerSync() {
-        if (isAuthenticated.value) {
-            syncScheduler.triggerImmediate()
-        }
+        if (isAuthenticated.value) syncScheduler.triggerImmediate()
     }
 
     fun updateAuthStatus() {
@@ -87,19 +105,33 @@ class TodoViewModel(
         }
     }
 
-    fun insert(todo: TodoEntity) = viewModelScope.launch {
-        repository.insert(todo)
-    }
+    fun insert(todo: TodoEntity) = viewModelScope.launch { repository.insert(todo) }
 
     fun update(todo: TodoEntity) = viewModelScope.launch {
         repository.update(todo.copy(syncStatus = "pending_push"))
     }
 
     fun delete(todo: TodoEntity) = viewModelScope.launch {
-        if (todo.googleTaskId != null) {
-            repository.markPendingDelete(todo.id)
-        } else {
-            repository.delete(todo)
-        }
+        if (todo.googleTaskId != null) repository.markPendingDelete(todo.id)
+        else repository.delete(todo)
     }
+
+    private fun todoSortKey(entity: TodoEntity, todayEndMs: Long): Long = when {
+        entity.expectedTimeMinutes != null && entity.dueAt != null ->
+            entity.dueAt + entity.expectedTimeMinutes * 60_000L
+        entity.dailyTaskId != null -> todayEndMs
+        entity.dueAt != null -> entity.dueAt
+        else -> Long.MAX_VALUE
+    }
+
+    private fun isToday(item: TodoListItem, todayStart: Long, todayEnd: Long): Boolean = when (item) {
+        is TodoListItem.Task -> item.entity.dueAt?.let { it in todayStart until todayEnd } ?: false
+        is TodoListItem.Event -> item.entity.startAt < todayEnd && item.entity.endAt > todayStart
+    }
+
+    private fun todayStartMs(): Long =
+        LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+    private fun todayEndMs(): Long =
+        LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 }

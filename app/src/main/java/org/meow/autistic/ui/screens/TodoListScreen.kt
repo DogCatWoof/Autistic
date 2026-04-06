@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
+import org.meow.autistic.data.calendar.CalendarEventEntity
 import org.meow.autistic.data.todo.TodoEntity
 import java.text.SimpleDateFormat
 import java.util.*
@@ -41,7 +42,7 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodoListScreen(viewModel: TodoViewModel = koinViewModel()) {
-    val todos by viewModel.allTodos.collectAsState(initial = emptyList())
+    val grouped by viewModel.groupedItems.collectAsState()
     val isAuthenticated by viewModel.isAuthenticated.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
@@ -79,12 +80,17 @@ fun TodoListScreen(viewModel: TodoViewModel = koinViewModel()) {
             }
 
             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(todos, key = { it.id }) { todo ->
-                    TodoItem(
-                        todo = todo,
-                        onToggle = { viewModel.update(todo.copy(isCompleted = it)) },
-                        onDelete = { viewModel.delete(todo) }
-                    )
+                if (grouped.today.isNotEmpty()) {
+                    item(key = "header_today") { SectionHeader("Today") }
+                    items(grouped.today, key = { it.itemKey }) { item ->
+                        TodoListItemRow(item, viewModel)
+                    }
+                }
+                if (grouped.later.isNotEmpty()) {
+                    item(key = "header_later") { SectionHeader("Later") }
+                    items(grouped.later, key = { it.itemKey }) { item ->
+                        TodoListItemRow(item, viewModel)
+                    }
                 }
             }
         }
@@ -172,6 +178,59 @@ fun GoogleAuthBanner(onConnectClick: () -> Unit) {
                 )
             }
         }
+    }
+}
+
+@Composable
+fun SectionHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+    )
+}
+
+@Composable
+fun TodoListItemRow(item: TodoListItem, viewModel: TodoViewModel) {
+    when (item) {
+        is TodoListItem.Task -> TodoItem(
+            todo = item.entity,
+            onToggle = { viewModel.update(item.entity.copy(isCompleted = it)) },
+            onDelete = { viewModel.delete(item.entity) },
+        )
+        is TodoListItem.Event -> CalendarEventItem(item.entity)
+    }
+}
+
+@Composable
+fun CalendarEventItem(event: CalendarEventEntity) {
+    val dateFormatter = remember { SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()) }
+    val dimColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+    Column(
+        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column {
+                Text(event.title, style = MaterialTheme.typography.bodyLarge)
+                if (event.isAllDay) {
+                    Text("All day", style = MaterialTheme.typography.bodySmall, color = dimColor)
+                } else {
+                    Text(
+                        "${dateFormatter.format(Date(event.startAt))} – ${dateFormatter.format(Date(event.endAt))}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = dimColor,
+                    )
+                }
+            }
+        }
+        HorizontalDivider(
+            modifier = Modifier.padding(start = 16.dp),
+            color = MaterialTheme.colorScheme.outlineVariant,
+        )
     }
 }
 

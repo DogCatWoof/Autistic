@@ -13,9 +13,11 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.meow.autistic.data.auth.GoogleAuthManager
+import org.meow.autistic.data.calendar.CalendarRepository
 import org.meow.autistic.data.sync.SyncScheduler
 import org.meow.autistic.data.todo.TodoEntity
 import org.meow.autistic.data.todo.TodoRepository
@@ -24,6 +26,7 @@ import org.meow.autistic.data.todo.TodoRepository
 class TodoViewModelTest {
 
     private val repository = mockk<TodoRepository>(relaxed = true)
+    private val calendarRepository = mockk<CalendarRepository>(relaxed = true)
     private val authManager = mockk<GoogleAuthManager>()
     private val syncScheduler = mockk<SyncScheduler>(relaxed = true)
     private val workManager = mockk<androidx.work.WorkManager>()
@@ -37,7 +40,8 @@ class TodoViewModelTest {
         every { authManager.isAuthenticated() } returns false
         every { workManager.getWorkInfosForUniqueWorkFlow(any()) } returns flowOf(emptyList())
         every { repository.allTodos } returns flowOf(emptyList())
-        viewModel = TodoViewModel(repository, authManager, syncScheduler, workManager)
+        every { calendarRepository.getAllEvents() } returns flowOf(emptyList())
+        viewModel = TodoViewModel(repository, calendarRepository, authManager, syncScheduler, workManager)
     }
 
     @After
@@ -90,33 +94,40 @@ class TodoViewModelTest {
 
     // endregion
 
-    // region allTodos filtering
+    // region groupedItems filtering
+
+    private fun makeViewModel(todos: List<TodoEntity>): TodoViewModel {
+        every { repository.allTodos } returns flowOf(todos)
+        return TodoViewModel(repository, calendarRepository, authManager, syncScheduler, workManager)
+    }
 
     @Test
-    fun `allTodos filters out completed todos`() = runTest {
+    fun `groupedItems filters out completed todos`() = runTest {
         val active = TodoEntity(id = 1L, task = "Active", createdAt = 0L, isCompleted = false)
         val completed = TodoEntity(id = 2L, task = "Done", createdAt = 0L, isCompleted = true)
-        every { repository.allTodos } returns flowOf(listOf(active, completed))
-        val vm = TodoViewModel(repository, authManager, syncScheduler, workManager)
-        assertEquals(listOf(active), vm.allTodos.first())
+        val vm = makeViewModel(listOf(active, completed))
+        val grouped = vm.groupedItems.first()
+        val allItems = grouped.today + grouped.later
+        assertTrue(allItems.all { it is TodoListItem.Task && !it.entity.isCompleted })
     }
 
     @Test
-    fun `allTodos filters out pending_delete todos`() = runTest {
+    fun `groupedItems filters out pending_delete todos`() = runTest {
         val active = TodoEntity(id = 1L, task = "Active", createdAt = 0L)
         val pendingDelete = TodoEntity(id = 2L, task = "Deleted", createdAt = 0L, syncStatus = "pending_delete")
-        every { repository.allTodos } returns flowOf(listOf(active, pendingDelete))
-        val vm = TodoViewModel(repository, authManager, syncScheduler, workManager)
-        assertEquals(listOf(active), vm.allTodos.first())
+        val vm = makeViewModel(listOf(active, pendingDelete))
+        val grouped = vm.groupedItems.first()
+        val allItems = grouped.today + grouped.later
+        assertTrue(allItems.none { it is TodoListItem.Task && it.entity.syncStatus == "pending_delete" })
     }
 
     @Test
-    fun `allTodos returns empty list when all todos are completed or pending_delete`() = runTest {
+    fun `groupedItems is empty when all todos are completed or pending_delete`() = runTest {
         val completed = TodoEntity(id = 1L, task = "Done", createdAt = 0L, isCompleted = true)
         val pendingDelete = TodoEntity(id = 2L, task = "Deleted", createdAt = 0L, syncStatus = "pending_delete")
-        every { repository.allTodos } returns flowOf(listOf(completed, pendingDelete))
-        val vm = TodoViewModel(repository, authManager, syncScheduler, workManager)
-        assertEquals(emptyList<TodoEntity>(), vm.allTodos.first())
+        val vm = makeViewModel(listOf(completed, pendingDelete))
+        val grouped = vm.groupedItems.first()
+        assertTrue(grouped.today.isEmpty() && grouped.later.isEmpty())
     }
 
     // endregion
