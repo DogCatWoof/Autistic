@@ -8,6 +8,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.tasks.Tasks as GmsTasks
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -26,6 +29,9 @@ class MainActivityTest {
     fun clearState() {
         val activity = composeTestRule.activity
         TokenStore.create(activity).clear()
+        GmsTasks.await(
+            GoogleSignIn.getClient(activity, GoogleSignInOptions.DEFAULT_SIGN_IN).signOut()
+        )
         runBlocking {
             TodoDatabase.getDatabase(activity).clearAllTables()
             NavPreferencesStore.clear(activity)

@@ -132,11 +132,11 @@ class TodoViewModel(
             entity.dueAt + entity.expectedTimeMinutes * 60_000L
         entity.dailyTaskId != null -> todayEndMs
         entity.dueAt != null -> entity.dueAt
-        else -> Long.MAX_VALUE
+        else -> todayEndMs
     }
 
     private fun isToday(item: TodoListItem, todayStart: Long, todayEnd: Long): Boolean = when (item) {
-        is TodoListItem.Task -> item.entity.dueAt?.let { it in todayStart until todayEnd } ?: false
+        is TodoListItem.Task -> item.entity.dueAt?.let { it in todayStart until todayEnd } ?: true
         is TodoListItem.Event -> item.entity.startAt < todayEnd && item.entity.endAt > todayStart
     }
 

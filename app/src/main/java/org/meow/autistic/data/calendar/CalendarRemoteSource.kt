@@ -74,7 +74,6 @@ class CalendarRemoteSource(
             var pageToken: String? = null
             var syncToken = ""
             do {
-              try {
                 val request = client.events().list(PRIMARY_CALENDAR)
                   .setTimeMin(DateTime(timeMin))
                   .setTimeMax(DateTime(timeMax))
@@ -85,9 +84,6 @@ class CalendarRemoteSource(
                 response.items?.forEach { result.add(it.toRemoteEvent()) }
                 pageToken = response.nextPageToken
                 if (response.nextSyncToken != null) syncToken = response.nextSyncToken
-              } catch (e: Exception) {
-                continue
-              }
             } while (pageToken != null)
             CalendarSyncResult(result, syncToken)
         }
