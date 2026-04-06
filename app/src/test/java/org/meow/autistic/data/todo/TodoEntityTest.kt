@@ -18,6 +18,16 @@ class TodoEntityTest {
         assertNull(entity.notes)
         assertEquals("General", entity.category)
         assertFalse(entity.reminderSet)
+        assertNull(entity.expectedTimeMinutes)
+    }
+
+    @Test
+    fun `expectedTimeMinutes can be set and copied`() {
+        val entity = TodoEntity(task = "Task", createdAt = 1000L, expectedTimeMinutes = 45)
+        assertEquals(45, entity.expectedTimeMinutes)
+        val copy = entity.copy(expectedTimeMinutes = 90)
+        assertEquals(90, copy.expectedTimeMinutes)
+        assertEquals(entity.task, copy.task)
     }
 
     @Test

@@ -28,7 +28,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.meow.autistic.data.todo.TodoEntity
@@ -90,7 +92,7 @@ fun TodoListScreen(viewModel: TodoViewModel = koinViewModel()) {
         if (showAddDialog) {
             AddTodoDialog(
                 onDismiss = { showAddDialog = false },
-                onConfirm = { task, dueAt, reminder, notes ->
+                onConfirm = { task, dueAt, reminder, notes, expectedTime ->
                     viewModel.insert(
                         TodoEntity(
                             task = task,
@@ -99,7 +101,8 @@ fun TodoListScreen(viewModel: TodoViewModel = koinViewModel()) {
                             isCompleted = false,
                             reminderSet = reminder,
                             createdAt = System.currentTimeMillis(),
-                            syncStatus = "local"
+                            syncStatus = "local",
+                            expectedTimeMinutes = expectedTime,
                         )
                     )
                     showAddDialog = false
@@ -244,6 +247,16 @@ fun TodoItem(todo: TodoEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
                             color = dimColor
                         )
                     }
+                    if (todo.expectedTimeMinutes != null) {
+                        val timeLabel = if (todo.expectedTimeMinutes < 60) {
+                            "~${todo.expectedTimeMinutes} min"
+                        } else {
+                            val h = todo.expectedTimeMinutes / 60
+                            val m = todo.expectedTimeMinutes % 60
+                            if (m == 0) "~${h}h" else "~${h}h ${m}m"
+                        }
+                        Text(text = timeLabel, style = MaterialTheme.typography.bodySmall, color = dimColor)
+                    }
                 }
             }
             HorizontalDivider(
@@ -258,10 +271,11 @@ fun TodoItem(todo: TodoEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
 @Composable
 fun AddTodoDialog(
     onDismiss: () -> Unit,
-    onConfirm: (String, Long?, Boolean, String?) -> Unit
+    onConfirm: (String, Long?, Boolean, String?, Int?) -> Unit
 ) {
     var taskText by remember { mutableStateOf("") }
     var notesText by remember { mutableStateOf("") }
+    var expectedTimeText by remember { mutableStateOf("") }
     var reminderSet by remember { mutableStateOf(false) }
 
     AlertDialog(
@@ -284,6 +298,15 @@ fun AddTodoDialog(
                     minLines = 2
                 )
 
+                OutlinedTextField(
+                    value = expectedTimeText,
+                    onValueChange = { expectedTimeText = it.filter { c -> c.isDigit() } },
+                    label = { Text("Expected time (minutes)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                )
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = reminderSet, onCheckedChange = { reminderSet = it })
                     Text("Remind me")
@@ -298,7 +321,15 @@ fun AddTodoDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = { onConfirm(taskText, null, reminderSet, notesText.takeIf { it.isNotBlank() }) },
+                onClick = {
+                    onConfirm(
+                        taskText,
+                        null,
+                        reminderSet,
+                        notesText.takeIf { it.isNotBlank() },
+                        expectedTimeText.toIntOrNull(),
+                    )
+                },
                 enabled = taskText.isNotBlank()
             ) {
                 Text("Save")
