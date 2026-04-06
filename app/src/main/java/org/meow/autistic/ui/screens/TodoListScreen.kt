@@ -237,7 +237,6 @@ fun CalendarEventItem(event: CalendarEventEntity) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodoItem(todo: TodoEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit) {
-    val dateFormatter = remember { SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()) }
     val dimColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
 
     val dismissState = rememberSwipeToDismissBoxState()
@@ -286,37 +285,11 @@ fun TodoItem(todo: TodoEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(
-                        text = todo.task,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = if (todo.isCompleted) dimColor else MaterialTheme.colorScheme.onSurface
-                    )
-                    if (todo.dueAt != null) {
-                        Text(
-                            text = "Due: ${dateFormatter.format(Date(todo.dueAt))}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = dimColor
-                        )
-                    }
-                    if (!todo.notes.isNullOrEmpty()) {
-                        Text(
-                            text = todo.notes,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = dimColor
-                        )
-                    }
-                    if (todo.expectedTimeMinutes != null) {
-                        val timeLabel = if (todo.expectedTimeMinutes < 60) {
-                            "~${todo.expectedTimeMinutes} min"
-                        } else {
-                            val h = todo.expectedTimeMinutes / 60
-                            val m = todo.expectedTimeMinutes % 60
-                            if (m == 0) "~${h}h" else "~${h}h ${m}m"
-                        }
-                        Text(text = timeLabel, style = MaterialTheme.typography.bodySmall, color = dimColor)
-                    }
-                }
+                Text(
+                    text = todo.task,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (todo.isCompleted) dimColor else MaterialTheme.colorScheme.onSurface
+                )
             }
             HorizontalDivider(
                 modifier = Modifier.padding(start = 16.dp),

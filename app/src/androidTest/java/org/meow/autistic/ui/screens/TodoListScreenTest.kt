@@ -100,12 +100,13 @@ class TodoListScreenTest {
     }
 
     @Test
-    fun addDialog_notesAreShownOnTodoItem() {
+    fun addDialog_notesNotShownOnTodoItem() {
         composeTestRule.onNodeWithContentDescription("Add Todo").performClick()
         composeTestRule.onNodeWithText("Task description").performTextInput("My task")
         composeTestRule.onNodeWithText("Notes").performTextInput("Some note here")
         composeTestRule.onNodeWithText("Save").performClick()
 
-        composeTestRule.onNodeWithText("Some note here").assertIsDisplayed()
+        composeTestRule.onNodeWithText("My task").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Some note here").assertDoesNotExist()
     }
 }
