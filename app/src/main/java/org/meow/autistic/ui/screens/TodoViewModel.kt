@@ -47,6 +47,7 @@ class TodoViewModel(
         repository.allTodos,
         calendarRepository.getAllEvents(),
     ) { todos, events ->
+        val now = System.currentTimeMillis()
         val todayStart = todayStartMs()
         val todayEnd = todayEndMs()
 
@@ -54,12 +55,22 @@ class TodoViewModel(
             .filter { !it.isCompleted && it.syncStatus != "pending_delete" }
             .map { todo -> TodoListItem.Task(todo, todoSortKey(todo, todayEnd)) }
 
-        val eventItems = events.map { event -> TodoListItem.Event(event, event.endAt) }
+        // Exclude calendar events that have already ended
+        val eventItems = events
+            .filter { it.endAt >= now }
+            .map { event -> TodoListItem.Event(event, event.endAt) }
 
-        val sorted = (taskItems + eventItems).sortedBy { it.sortKey }
+        val pastDue = taskItems
+            .filter { it.sortKey < now }
+            .sortedBy { it.sortKey }
+
+        val upcoming = (taskItems.filter { it.sortKey >= now } + eventItems)
+            .sortedBy { it.sortKey }
+
         GroupedTodoItems(
-            today = sorted.filter { isToday(it, todayStart, todayEnd) },
-            later = sorted.filter { !isToday(it, todayStart, todayEnd) },
+            pastDue = pastDue,
+            today = upcoming.filter { isToday(it, todayStart, todayEnd) },
+            later = upcoming.filter { !isToday(it, todayStart, todayEnd) },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GroupedTodoItems.EMPTY)
 

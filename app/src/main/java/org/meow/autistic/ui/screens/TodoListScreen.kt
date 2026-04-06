@@ -80,6 +80,12 @@ fun TodoListScreen(viewModel: TodoViewModel = koinViewModel()) {
             }
 
             LazyColumn(modifier = Modifier.fillMaxSize()) {
+                if (grouped.pastDue.isNotEmpty()) {
+                    item(key = "header_past_due") { SectionHeader("Past Due") }
+                    items(grouped.pastDue, key = { it.itemKey }) { item ->
+                        TodoListItemRow(item, viewModel)
+                    }
+                }
                 if (grouped.today.isNotEmpty()) {
                     item(key = "header_today") { SectionHeader("Today") }
                     items(grouped.today, key = { it.itemKey }) { item ->
@@ -284,9 +290,10 @@ fun TodoItem(todo: TodoEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
                 modifier = Modifier
                     .padding(horizontal = 16.dp, vertical = 12.dp)
                     .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Column {
+                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                     Text(
                         text = todo.task,
                         style = MaterialTheme.typography.bodyLarge,
@@ -306,16 +313,16 @@ fun TodoItem(todo: TodoEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
                             color = dimColor
                         )
                     }
-                    if (todo.expectedTimeMinutes != null) {
-                        val h = todo.expectedTimeMinutes / 60
-                        val m = todo.expectedTimeMinutes % 60
-                        val timeLabel = when {
-                            h == 0 -> "~${m} min"
-                            m == 0 -> "~${h}h"
-                            else -> "~${h}h ${m}m"
-                        }
-                        Text(text = timeLabel, style = MaterialTheme.typography.bodySmall, color = dimColor)
+                }
+                if (todo.expectedTimeMinutes != null) {
+                    val h = todo.expectedTimeMinutes / 60
+                    val m = todo.expectedTimeMinutes % 60
+                    val timeLabel = when {
+                        h == 0 -> "~${m} min"
+                        m == 0 -> "~${h}h"
+                        else -> "~${h}h ${m}m"
                     }
+                    Text(text = timeLabel, style = MaterialTheme.typography.bodySmall, color = dimColor)
                 }
             }
             HorizontalDivider(

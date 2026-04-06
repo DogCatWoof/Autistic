@@ -1,8 +1,11 @@
 package org.meow.autistic.data.calendar
 
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.ZoneId
 
-private const val FULL_SYNC_WINDOW_MS = 60L * 24 * 60 * 60 * 1000 // 60 days
+private const val THREE_DAYS_MS = 3L * 24 * 60 * 60 * 1000
 private const val HTTP_GONE = 410
 
 /**
@@ -56,7 +59,17 @@ class CalendarSyncService(
 
     private suspend fun fullSync(token: String): CalendarSyncResult {
         val now = System.currentTimeMillis()
-        return remoteSource.fetchEvents(token, now, now + FULL_SYNC_WINDOW_MS)
+        return remoteSource.fetchEvents(token, now, syncWindowEndMs(now))
+    }
+
+    /** Returns the greater of: 3 days from now, or end of the coming Saturday. */
+    private fun syncWindowEndMs(now: Long): Long {
+        val today = LocalDate.now()
+        val daysUntilSaturday = ((DayOfWeek.SATURDAY.value - today.dayOfWeek.value) + 7) % 7
+        val endOfSaturday = today
+            .plusDays(daysUntilSaturday.toLong() + 1)
+            .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        return maxOf(endOfSaturday, now + THREE_DAYS_MS)
     }
 
     private suspend fun applyResult(result: CalendarSyncResult) {

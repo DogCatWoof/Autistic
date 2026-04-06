@@ -17,10 +17,11 @@ sealed class TodoListItem {
 }
 
 data class GroupedTodoItems(
+    val pastDue: List<TodoListItem>,
     val today: List<TodoListItem>,
     val later: List<TodoListItem>,
 ) {
     companion object {
-        val EMPTY = GroupedTodoItems(emptyList(), emptyList())
+        val EMPTY = GroupedTodoItems(emptyList(), emptyList(), emptyList())
     }
 }
