@@ -119,8 +119,9 @@ class TaskViewModel(
     fun insert(task: TaskEntity) = viewModelScope.launch { repository.insert(task) }
 
     fun update(task: TaskEntity) = viewModelScope.launch {
-        if (task.isCompleted) {
-            delete(task)
+        if (task.isCompleted && task.googleTaskId == null) {
+            // Local-only completed task — no sync needed, delete immediately
+            repository.delete(task)
         } else {
             repository.update(task.copy(syncStatus = "pending_push"))
         }

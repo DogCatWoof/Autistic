@@ -55,7 +55,11 @@ class GoogleTasksSyncService(
             } else {
                 remoteSource.updateTask(token, local.toRemoteTask())
             }
-            repository.markSynced(local.id, requireNotNull(remote.id), System.currentTimeMillis())
+            val googleTaskId = requireNotNull(remote.id)
+            repository.markSynced(local.id, googleTaskId, System.currentTimeMillis())
+            if (local.isCompleted) {
+                repository.delete(local)
+            }
         }
     }
 

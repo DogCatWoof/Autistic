@@ -59,7 +59,7 @@ class TaskViewModelTest {
     }
 
     @Test
-    fun `update routes completed task to delete`() = runTest {
+    fun `update deletes local-only completed task immediately`() = runTest {
         val task = TaskEntity(id = 1L, task = "Task", createdAt = 0L, isCompleted = true, googleTaskId = null)
         viewModel.update(task)
         coVerify { repository.delete(task) }
@@ -67,11 +67,11 @@ class TaskViewModelTest {
     }
 
     @Test
-    fun `update routes completed synced task to markPendingDelete`() = runTest {
+    fun `update keeps completed synced task as pending_push until sync`() = runTest {
         val task = TaskEntity(id = 1L, task = "Task", createdAt = 0L, isCompleted = true, googleTaskId = "gid")
         viewModel.update(task)
-        coVerify { repository.markPendingDelete(1L) }
-        coVerify(exactly = 0) { repository.update(any()) }
+        coVerify { repository.update(task.copy(syncStatus = "pending_push")) }
+        coVerify(exactly = 0) { repository.markPendingDelete(any()) }
     }
 
     @Test
