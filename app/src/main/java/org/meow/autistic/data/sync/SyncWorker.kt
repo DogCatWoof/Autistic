@@ -3,6 +3,7 @@ package org.meow.autistic.data.sync
 import android.content.Context
 import android.util.Log
 import androidx.datastore.core.DataStore
+import androidx.work.workDataOf
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -43,7 +44,7 @@ class SyncWorker(
 
     override suspend fun doWork(): Result {
         Log.i(TAG, "Sync started (attempt ${runAttemptCount + 1})")
-        return when (orchestrator.sync()) {
+        return when (val outcome = orchestrator.sync()) {
             SyncOutcome.Success -> {
                 Log.i(TAG, "Sync completed successfully")
                 applicationContext.syncDataStore.edit { it[LAST_SYNC_KEY] = System.currentTimeMillis() }
@@ -52,6 +53,10 @@ class SyncWorker(
             SyncOutcome.Retry -> {
                 Log.w(TAG, "Sync deferred, will retry")
                 Result.retry()
+            }
+            is SyncOutcome.Error -> {
+                Log.e(TAG, "Sync failed permanently: ${outcome.message}")
+                Result.failure(workDataOf("error" to outcome.message))
             }
         }
     }

@@ -59,6 +59,11 @@ class TokenStore(private val prefs: SharedPreferences) {
         return token.isNotEmpty() && getExpiryMs() > System.currentTimeMillis() + REFRESH_BUFFER_MS
     }
 
+    /** Clears only the access token and its expiry, leaving the account email intact. */
+    fun clearAccessToken() {
+        prefs.edit().remove(KEY_ACCESS_TOKEN).remove(KEY_TOKEN_EXPIRY_MS).apply()
+    }
+
     fun clear() {
         prefs.edit().clear().apply()
     }

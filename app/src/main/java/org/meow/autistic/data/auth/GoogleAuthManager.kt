@@ -95,6 +95,14 @@ class GoogleAuthManager(
     }
 
     /**
+     * Clears the cached access token so the next [getValidToken] call re-fetches a fresh token.
+     * Use this when an API call returns 403 due to a scope mismatch on the cached token.
+     */
+    fun invalidateTokenCache() {
+        tokenStore.clearAccessToken()
+    }
+
+    /**
      * Revokes the current session and clears all stored tokens and account data.
      */
     suspend fun signOut(): Unit = withContext(Dispatchers.IO) {

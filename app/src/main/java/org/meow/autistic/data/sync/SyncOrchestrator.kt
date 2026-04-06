@@ -1,5 +1,7 @@
 package org.meow.autistic.data.sync
 
+import android.util.Log
+import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import org.meow.autistic.data.auth.GoogleAuthManager
 import org.meow.autistic.data.calendar.CalendarSyncService
 import org.meow.autistic.data.todo.GoogleTasksSyncService
@@ -8,7 +10,11 @@ import org.meow.autistic.data.todo.GoogleTasksSyncService
 sealed interface SyncOutcome {
     data object Success : SyncOutcome
     data object Retry : SyncOutcome
+    data class Error(val message: String) : SyncOutcome
 }
+
+private const val TAG = "SyncOrchestrator"
+private const val HTTP_FORBIDDEN = 403
 
 /**
  * Orchestrates the four-step sync pipeline, composing the auth, tasks, and calendar services.
@@ -45,7 +51,17 @@ class SyncOrchestrator(
             tasksSyncService.pullAndMerge()
             calendarSyncService.pullAndMerge()
             SyncOutcome.Success
+        } catch (e: GoogleJsonResponseException) {
+            Log.e(TAG, "Sync HTTP ${e.statusCode}: ${e.message}")
+            if (e.statusCode == HTTP_FORBIDDEN) {
+                // Cached token likely lacks a required scope; force re-fetch next time.
+                authManager.invalidateTokenCache()
+                SyncOutcome.Error("Calendar access denied (403) — please re-authenticate")
+            } else {
+                SyncOutcome.Retry
+            }
         } catch (e: Exception) {
+            Log.w(TAG, "Sync failed: ${e.message}")
             SyncOutcome.Retry
         }
     }
