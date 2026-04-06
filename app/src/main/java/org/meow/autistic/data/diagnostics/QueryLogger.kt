@@ -17,6 +17,7 @@ class QueryLogger {
     val entries: StateFlow<List<QueryEntry>> = _entries.asStateFlow()
 
     fun log(label: String, durationMs: Long) {
+        if (durationMs < SLOW_QUERY_THRESHOLD_MS) return
         val entry = QueryEntry(label, durationMs, System.currentTimeMillis())
         _entries.update { (listOf(entry) + it).take(MAX_ENTRIES) }
     }
@@ -27,5 +28,6 @@ class QueryLogger {
 
     companion object {
         private const val MAX_ENTRIES = 200
+        private const val SLOW_QUERY_THRESHOLD_MS = 10_000L
     }
 }
