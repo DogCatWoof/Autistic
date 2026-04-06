@@ -79,7 +79,6 @@ class MainActivity : ComponentActivity() {
                 title = "Todo",
                 selectedIcon = Icons.Filled.Done,
                 unselectedIcon = Icons.Outlined.Done,
-                subItems = listOf("Todo", "Today", "Events"),
             ),
             NavigationItem("Scan", Icons.Filled.QrCodeScanner, Icons.Outlined.QrCodeScanner),
             NavigationItem("Notes", Icons.Filled.Create, Icons.Outlined.Create),
@@ -103,11 +102,7 @@ class MainActivity : ComponentActivity() {
                 val drawerState = rememberDrawerState(DrawerValue.Closed)
                 val scope = rememberCoroutineScope()
 
-                // Logic to determine which main tab is "active"
-                val activeNavTitle = when (currentDestination) {
-                    "Todo", "Today", "Events" -> "Todo"
-                    else -> currentDestination
-                }
+                val activeNavTitle = currentDestination
 
                 ModalNavigationDrawer(
                     drawerState = drawerState,

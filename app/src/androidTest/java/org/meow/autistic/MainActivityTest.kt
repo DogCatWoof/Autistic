@@ -46,7 +46,6 @@ class MainActivityTest {
 
     @Test
     fun clickTodoTab_showsTodoScreen() {
-        // Clicking Todo opens the sub-nav sheet; FAB remains accessible behind the sheet
         composeTestRule.onNodeWithTag("nav_tab_todo").performClick()
         composeTestRule.onNodeWithContentDescription("Add Todo").assertIsDisplayed()
     }
@@ -63,28 +62,6 @@ class MainActivityTest {
         // Notes has no sub-items — navigates directly
         composeTestRule.onNodeWithTag("nav_tab_notes").performClick()
         composeTestRule.onNodeWithText("Notes Screen").assertIsDisplayed()
-    }
-
-    @Test
-    fun drawer_showsSubItemsInline() {
-        composeTestRule.onNodeWithContentDescription("Menu").performClick()
-        // Sub-items are rendered inline below their parent in the drawer
-        composeTestRule.onNodeWithText("Today").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Events").assertIsDisplayed()
-    }
-
-    @Test
-    fun drawer_subItemClick_navigatesToTodayScreen() {
-        composeTestRule.onNodeWithContentDescription("Menu").performClick()
-        composeTestRule.onNodeWithText("Today").performClick()
-        composeTestRule.onNodeWithText("Daily Screen").assertIsDisplayed()
-    }
-
-    @Test
-    fun drawer_subItemClick_navigatesToEventsScreen() {
-        composeTestRule.onNodeWithContentDescription("Menu").performClick()
-        composeTestRule.onNodeWithText("Events").performClick()
-        composeTestRule.onNodeWithText("Events Screen").assertIsDisplayed()
     }
 
     @Test
