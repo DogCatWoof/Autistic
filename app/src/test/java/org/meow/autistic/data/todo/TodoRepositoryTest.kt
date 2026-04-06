@@ -13,68 +13,68 @@ import org.junit.Before
 import org.junit.Test
 import org.meow.autistic.data.diagnostics.QueryLogger
 
-class TodoRepositoryTest {
+class TaskRepositoryTest {
 
-    private lateinit var dao: TodoDao
-    private lateinit var repository: TodoRepository
+    private lateinit var dao: TaskDao
+    private lateinit var repository: TaskRepository
 
-    private val todo = TodoEntity(id = 1L, task = "Test task", createdAt = 1000L)
+    private val task = TaskEntity(id = 1L, task = "Test task", createdAt = 1000L)
 
     @Before
     fun setUp() {
         dao = mockk()
-        every { dao.getAllTodos() } returns flowOf(emptyList())
-        repository = TodoRepository(dao, QueryLogger())
+        every { dao.getAllTasks() } returns flowOf(emptyList())
+        repository = TaskRepository(dao, QueryLogger())
     }
 
     @Test
-    fun `allTodos exposes flow from dao`() = runTest {
-        val testDao = mockk<TodoDao>()
-        every { testDao.getAllTodos() } returns flowOf(listOf(todo))
-        val result = TodoRepository(testDao, QueryLogger()).allTodos.first()
-        assertEquals(listOf(todo), result)
+    fun `allTasks exposes flow from dao`() = runTest {
+        val testDao = mockk<TaskDao>()
+        every { testDao.getAllTasks() } returns flowOf(listOf(task))
+        val result = TaskRepository(testDao, QueryLogger()).allTasks.first()
+        assertEquals(listOf(task), result)
     }
 
     @Test
     fun `insert delegates to dao`() = runTest {
-        coEvery { dao.insertTodo(todo) } returns 1L
-        repository.insert(todo)
-        coVerify(exactly = 1) { dao.insertTodo(todo) }
+        coEvery { dao.insertTask(task) } returns 1L
+        repository.insert(task)
+        coVerify(exactly = 1) { dao.insertTask(task) }
     }
 
     @Test
     fun `update delegates to dao`() = runTest {
-        coEvery { dao.updateTodo(todo) } returns 1
-        repository.update(todo)
-        coVerify(exactly = 1) { dao.updateTodo(todo) }
+        coEvery { dao.updateTask(task) } returns 1
+        repository.update(task)
+        coVerify(exactly = 1) { dao.updateTask(task) }
     }
 
     @Test
     fun `delete delegates to dao`() = runTest {
-        coEvery { dao.deleteTodo(todo) } returns 1
-        repository.delete(todo)
-        coVerify(exactly = 1) { dao.deleteTodo(todo) }
+        coEvery { dao.deleteTask(task) } returns 1
+        repository.delete(task)
+        coVerify(exactly = 1) { dao.deleteTask(task) }
     }
 
     @Test
     fun `getPendingPush delegates to dao`() = runTest {
-        coEvery { dao.getPendingPush() } returns listOf(todo)
+        coEvery { dao.getPendingPush() } returns listOf(task)
         val result = repository.getPendingPush()
-        assertEquals(listOf(todo), result)
+        assertEquals(listOf(task), result)
     }
 
     @Test
     fun `getPendingDelete delegates to dao`() = runTest {
-        coEvery { dao.getPendingDelete() } returns listOf(todo)
+        coEvery { dao.getPendingDelete() } returns listOf(task)
         val result = repository.getPendingDelete()
-        assertEquals(listOf(todo), result)
+        assertEquals(listOf(task), result)
     }
 
     @Test
     fun `getByGoogleTaskId delegates to dao`() = runTest {
-        coEvery { dao.getByGoogleTaskId("gid") } returns todo
+        coEvery { dao.getByGoogleTaskId("gid") } returns task
         val result = repository.getByGoogleTaskId("gid")
-        assertEquals(todo, result)
+        assertEquals(task, result)
     }
 
     @Test
@@ -99,10 +99,10 @@ class TodoRepositoryTest {
     }
 
     @Test
-    fun `upsertFromRemote calls insertTodo`() = runTest {
-        coEvery { dao.insertTodo(todo) } returns 1L
-        repository.upsertFromRemote(todo)
-        coVerify { dao.insertTodo(todo) }
+    fun `upsertFromRemote calls insertTask`() = runTest {
+        coEvery { dao.insertTask(task) } returns 1L
+        repository.upsertFromRemote(task)
+        coVerify { dao.insertTask(task) }
     }
 
     @Test
@@ -112,22 +112,29 @@ class TodoRepositoryTest {
         coVerify { dao.deleteByGoogleTaskIds(listOf("gid")) }
     }
 
+    @Test
+    fun `deleteAllCompleted delegates to dao`() = runTest {
+        coEvery { dao.deleteAllCompleted() } returns 2
+        repository.deleteAllCompleted()
+        coVerify { dao.deleteAllCompleted() }
+    }
+
     @Test(expected = RuntimeException::class)
     fun `insert propagates dao exception`() = runTest {
-        coEvery { dao.insertTodo(todo) } throws RuntimeException("DB error")
-        repository.insert(todo)
+        coEvery { dao.insertTask(task) } throws RuntimeException("DB error")
+        repository.insert(task)
     }
 
     @Test(expected = RuntimeException::class)
     fun `update propagates dao exception`() = runTest {
-        coEvery { dao.updateTodo(todo) } throws RuntimeException("DB error")
-        repository.update(todo)
+        coEvery { dao.updateTask(task) } throws RuntimeException("DB error")
+        repository.update(task)
     }
 
     @Test(expected = RuntimeException::class)
     fun `delete propagates dao exception`() = runTest {
-        coEvery { dao.deleteTodo(todo) } throws RuntimeException("DB error")
-        repository.delete(todo)
+        coEvery { dao.deleteTask(task) } throws RuntimeException("DB error")
+        repository.delete(task)
     }
 
     @Test
@@ -139,7 +146,7 @@ class TodoRepositoryTest {
     @Test
     fun `getPendingPush returns empty list when none pending`() = runTest {
         coEvery { dao.getPendingPush() } returns emptyList()
-        assertEquals(emptyList<TodoEntity>(), repository.getPendingPush())
+        assertEquals(emptyList<TaskEntity>(), repository.getPendingPush())
     }
 
     @Test

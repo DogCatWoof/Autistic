@@ -17,8 +17,8 @@ import org.meow.autistic.data.auth.GoogleAuthManager
 import org.meow.autistic.data.calendar.CalendarRepository
 import org.meow.autistic.data.sync.IMMEDIATE_WORK_NAME
 import org.meow.autistic.data.sync.SyncScheduler
-import org.meow.autistic.data.todo.TodoEntity
-import org.meow.autistic.data.todo.TodoRepository
+import org.meow.autistic.data.todo.TaskEntity
+import org.meow.autistic.data.todo.TaskRepository
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -30,35 +30,35 @@ sealed class SyncState {
 }
 
 /**
- * ViewModel for the todo list screen.
+ * ViewModel for the task list screen.
  *
- * Combines [TodoRepository] and [CalendarRepository] into a single sorted, sectioned list.
+ * Combines [TaskRepository] and [CalendarRepository] into a single sorted, sectioned list.
  * Manages Google authentication state and sync scheduling.
  */
-class TodoViewModel(
-    private val repository: TodoRepository,
+class TaskViewModel(
+    private val repository: TaskRepository,
     private val calendarRepository: CalendarRepository,
     private val authManager: GoogleAuthManager,
     private val syncScheduler: SyncScheduler,
     private val workManager: WorkManager,
 ) : ViewModel() {
 
-    val groupedItems: StateFlow<GroupedTodoItems> = combine(
-        repository.allTodos,
+    val groupedItems: StateFlow<GroupedTaskItems> = combine(
+        repository.allTasks,
         calendarRepository.getAllEvents(),
-    ) { todos, events ->
+    ) { tasks, events ->
         val now = System.currentTimeMillis()
         val todayStart = todayStartMs()
         val todayEnd = todayEndMs()
 
-        val taskItems = todos
+        val taskItems = tasks
             .filter { !it.isCompleted && it.syncStatus != "pending_delete" }
-            .map { todo -> TodoListItem.Task(todo, todoSortKey(todo, todayEnd)) }
+            .map { task -> TaskListItem.Task(task, taskSortKey(task, todayEnd)) }
 
         // Exclude calendar events that have already ended
         val eventItems = events
             .filter { it.endAt >= now }
-            .map { event -> TodoListItem.Event(event, event.endAt) }
+            .map { event -> TaskListItem.Event(event, event.endAt) }
 
         val pastDue = taskItems
             .filter { it.sortKey < now }
@@ -67,12 +67,12 @@ class TodoViewModel(
         val upcoming = (taskItems.filter { it.sortKey >= now } + eventItems)
             .sortedBy { it.sortKey }
 
-        GroupedTodoItems(
+        GroupedTaskItems(
             pastDue = pastDue,
             today = upcoming.filter { isToday(it, todayStart, todayEnd) },
             later = upcoming.filter { !isToday(it, todayStart, todayEnd) },
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GroupedTodoItems.EMPTY)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GroupedTaskItems.EMPTY)
 
     private val _isAuthenticated = MutableStateFlow(false)
     val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
@@ -116,18 +116,22 @@ class TodoViewModel(
         }
     }
 
-    fun insert(todo: TodoEntity) = viewModelScope.launch { repository.insert(todo) }
+    fun insert(task: TaskEntity) = viewModelScope.launch { repository.insert(task) }
 
-    fun update(todo: TodoEntity) = viewModelScope.launch {
-        repository.update(todo.copy(syncStatus = "pending_push"))
+    fun update(task: TaskEntity) = viewModelScope.launch {
+        if (task.isCompleted) {
+            delete(task)
+        } else {
+            repository.update(task.copy(syncStatus = "pending_push"))
+        }
     }
 
-    fun delete(todo: TodoEntity) = viewModelScope.launch {
-        if (todo.googleTaskId != null) repository.markPendingDelete(todo.id)
-        else repository.delete(todo)
+    fun delete(task: TaskEntity) = viewModelScope.launch {
+        if (task.googleTaskId != null) repository.markPendingDelete(task.id)
+        else repository.delete(task)
     }
 
-    private fun todoSortKey(entity: TodoEntity, todayEndMs: Long): Long = when {
+    private fun taskSortKey(entity: TaskEntity, todayEndMs: Long): Long = when {
         entity.expectedTimeMinutes != null && entity.dueAt != null ->
             entity.dueAt + entity.expectedTimeMinutes * 60_000L
         entity.dailyTaskId != null -> todayEndMs
@@ -135,9 +139,9 @@ class TodoViewModel(
         else -> todayEndMs
     }
 
-    private fun isToday(item: TodoListItem, todayStart: Long, todayEnd: Long): Boolean = when (item) {
-        is TodoListItem.Task -> item.entity.dueAt?.let { it in todayStart until todayEnd } ?: true
-        is TodoListItem.Event -> item.entity.startAt < todayEnd && item.entity.endAt > todayStart
+    private fun isToday(item: TaskListItem, todayStart: Long, todayEnd: Long): Boolean = when (item) {
+        is TaskListItem.Task -> item.entity.dueAt?.let { it in todayStart until todayEnd } ?: true
+        is TaskListItem.Event -> item.entity.startAt < todayEnd && item.entity.endAt > todayStart
     }
 
     private fun todayStartMs(): Long =

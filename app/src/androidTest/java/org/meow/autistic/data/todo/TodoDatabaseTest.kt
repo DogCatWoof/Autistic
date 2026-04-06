@@ -12,14 +12,14 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class TodoDatabaseTest {
+class TaskDatabaseTest {
 
-    private lateinit var db: TodoDatabase
+    private lateinit var db: TaskDatabase
 
     @Before
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        db = Room.inMemoryDatabaseBuilder(context, TodoDatabase::class.java)
+        db = Room.inMemoryDatabaseBuilder(context, TaskDatabase::class.java)
             .allowMainThreadQueries()
             .build()
     }
@@ -35,8 +35,8 @@ class TodoDatabaseTest {
     }
 
     @Test
-    fun todoDao_isNotNull() {
-        assertNotNull(db.todoDao())
+    fun taskDao_isNotNull() {
+        assertNotNull(db.taskDao())
     }
 
     @Test
@@ -47,8 +47,8 @@ class TodoDatabaseTest {
     @Test
     fun getDatabase_returnsSameInstance() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val first = TodoDatabase.getDatabase(context)
-        val second = TodoDatabase.getDatabase(context)
+        val first = TaskDatabase.getDatabase(context)
+        val second = TaskDatabase.getDatabase(context)
         assertSame(first, second)
     }
 }

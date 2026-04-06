@@ -19,10 +19,10 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.meow.autistic.data.todo.TodoDatabase
+import org.meow.autistic.data.todo.TaskDatabase
 
 @RunWith(AndroidJUnit4::class)
-class TodoListScreenTest {
+class TaskListScreenTest {
 
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
@@ -30,46 +30,46 @@ class TodoListScreenTest {
     @Before
     fun setUp() {
         runBlocking {
-            TodoDatabase.getDatabase(ApplicationProvider.getApplicationContext())
+            TaskDatabase.getDatabase(ApplicationProvider.getApplicationContext())
                 .clearAllTables()
         }
-        composeTestRule.setContent { TodoListScreen() }
+        composeTestRule.setContent { TaskListScreen() }
     }
 
     @Test
     fun fab_isDisplayed() {
-        composeTestRule.onNodeWithContentDescription("Add Todo").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Add Task").assertIsDisplayed()
     }
 
     @Test
     fun fabClick_showsAddDialog() {
-        composeTestRule.onNodeWithContentDescription("Add Todo").performClick()
+        composeTestRule.onNodeWithContentDescription("Add Task").performClick()
         composeTestRule.onNodeWithText("New Task").assertIsDisplayed()
     }
 
     @Test
     fun addDialog_cancelDismissesDialog() {
-        composeTestRule.onNodeWithContentDescription("Add Todo").performClick()
+        composeTestRule.onNodeWithContentDescription("Add Task").performClick()
         composeTestRule.onNodeWithText("Cancel").performClick()
         composeTestRule.onNodeWithText("New Task").assertDoesNotExist()
     }
 
     @Test
     fun addDialog_saveDisabledWhenTaskBlank() {
-        composeTestRule.onNodeWithContentDescription("Add Todo").performClick()
+        composeTestRule.onNodeWithContentDescription("Add Task").performClick()
         composeTestRule.onNodeWithText("Save").assertIsNotEnabled()
     }
 
     @Test
     fun addDialog_saveEnabledAfterTyping() {
-        composeTestRule.onNodeWithContentDescription("Add Todo").performClick()
+        composeTestRule.onNodeWithContentDescription("Add Task").performClick()
         composeTestRule.onNodeWithText("Task description").performTextInput("Buy milk")
         composeTestRule.onNodeWithText("Save").assertIsEnabled()
     }
 
     @Test
-    fun completedTodo_isHiddenFromList() {
-        composeTestRule.onNodeWithContentDescription("Add Todo").performClick()
+    fun completedTask_isRemovedFromList() {
+        composeTestRule.onNodeWithContentDescription("Add Task").performClick()
         composeTestRule.onNodeWithText("Task description").performTextInput("Finish report")
         composeTestRule.onNodeWithText("Save").performClick()
 
@@ -81,8 +81,8 @@ class TodoListScreenTest {
     }
 
     @Test
-    fun swipeLeft_removesTodo() {
-        composeTestRule.onNodeWithContentDescription("Add Todo").performClick()
+    fun swipeLeft_removesTask() {
+        composeTestRule.onNodeWithContentDescription("Add Task").performClick()
         composeTestRule.onNodeWithText("Task description").performTextInput("Buy milk")
         composeTestRule.onNodeWithText("Save").performClick()
 
@@ -95,13 +95,13 @@ class TodoListScreenTest {
 
     @Test
     fun addDialog_notesFieldDisplayed() {
-        composeTestRule.onNodeWithContentDescription("Add Todo").performClick()
+        composeTestRule.onNodeWithContentDescription("Add Task").performClick()
         composeTestRule.onNodeWithText("Notes").assertIsDisplayed()
     }
 
     @Test
-    fun addDialog_notesAreShownOnTodoItem() {
-        composeTestRule.onNodeWithContentDescription("Add Todo").performClick()
+    fun addDialog_notesAreShownOnTaskItem() {
+        composeTestRule.onNodeWithContentDescription("Add Task").performClick()
         composeTestRule.onNodeWithText("Task description").performTextInput("My task")
         composeTestRule.onNodeWithText("Notes").performTextInput("Some note here")
         composeTestRule.onNodeWithText("Save").performClick()

@@ -60,7 +60,7 @@ import org.meow.autistic.ui.screens.NavBottomSheet
 import org.meow.autistic.ui.screens.NotesScreen
 import org.meow.autistic.ui.screens.ScanScreen
 import org.meow.autistic.ui.screens.SettingsScreen
-import org.meow.autistic.ui.screens.TodoListScreen
+import org.meow.autistic.ui.screens.TaskListScreen
 import org.meow.autistic.ui.theme.AutisticTheme
 
 data class NavigationItem(
@@ -76,7 +76,7 @@ class MainActivity : ComponentActivity() {
     companion object {
         private val BOTTOM_ITEMS = listOf(
             NavigationItem(
-                title = "Todo",
+                title = "Task",
                 selectedIcon = Icons.Filled.Done,
                 unselectedIcon = Icons.Outlined.Done,
             ),
@@ -96,7 +96,7 @@ class MainActivity : ComponentActivity() {
                 val savedEnabled by NavPreferencesStore.getEnabledFlow(context)
                     .collectAsState(initial = null)
                 val bottomItems = filterNavItems(BOTTOM_ITEMS, savedEnabled ?: allNavTitles)
-                var currentDestination by rememberSaveable { mutableStateOf("Todo") }
+                var currentDestination by rememberSaveable { mutableStateOf("Task") }
                 var showSettings by rememberSaveable { mutableStateOf(false) }
                 var bottomSheetIndex by rememberSaveable { mutableStateOf<Int?>(null) }
                 val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -189,7 +189,7 @@ class MainActivity : ComponentActivity() {
                                 SettingsScreen(allNavItems = BOTTOM_ITEMS)
                             } else {
                                 when (currentDestination) {
-                                    "Todo" -> TodoListScreen()
+                                    "Task" -> TaskListScreen()
                                     "Today" -> DailyScreen()
                                     "Events" -> EventsScreen()
                                     "Scan" -> ScanScreen()

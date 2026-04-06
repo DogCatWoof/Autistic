@@ -5,47 +5,50 @@ import kotlinx.coroutines.flow.Flow
 import org.meow.autistic.data.diagnostics.QueryLogger
 
 /**
- * Persistence layer for [TodoEntity]. Delegates to [TodoDao] and records
+ * Persistence layer for [TaskEntity]. Delegates to [TaskDao] and records
  * the duration of every suspend call via [QueryLogger].
  */
-class TodoRepository(
-    private val todoDao: TodoDao,
+class TaskRepository(
+    private val taskDao: TaskDao,
     private val queryLogger: QueryLogger,
 ) {
-    val allTodos: Flow<List<TodoEntity>> = todoDao.getAllTodos()
+    val allTasks: Flow<List<TaskEntity>> = taskDao.getAllTasks()
 
-    suspend fun insert(todo: TodoEntity) =
-        timed("TodoRepository.insert") { todoDao.insertTodo(todo) }
+    suspend fun insert(task: TaskEntity) =
+        timed("TaskRepository.insert") { taskDao.insertTask(task) }
 
-    suspend fun update(todo: TodoEntity) =
-        timed("TodoRepository.update") { todoDao.updateTodo(todo) }
+    suspend fun update(task: TaskEntity) =
+        timed("TaskRepository.update") { taskDao.updateTask(task) }
 
-    suspend fun delete(todo: TodoEntity) =
-        timed("TodoRepository.delete") { todoDao.deleteTodo(todo) }
+    suspend fun delete(task: TaskEntity) =
+        timed("TaskRepository.delete") { taskDao.deleteTask(task) }
 
-    suspend fun getPendingPush(): List<TodoEntity> =
-        timed("TodoRepository.getPendingPush") { todoDao.getPendingPush() }
+    suspend fun getPendingPush(): List<TaskEntity> =
+        timed("TaskRepository.getPendingPush") { taskDao.getPendingPush() }
 
-    suspend fun getPendingDelete(): List<TodoEntity> =
-        timed("TodoRepository.getPendingDelete") { todoDao.getPendingDelete() }
+    suspend fun getPendingDelete(): List<TaskEntity> =
+        timed("TaskRepository.getPendingDelete") { taskDao.getPendingDelete() }
 
-    suspend fun getByGoogleTaskId(googleTaskId: String): TodoEntity? =
-        timed("TodoRepository.getByGoogleTaskId") { todoDao.getByGoogleTaskId(googleTaskId) }
+    suspend fun getByGoogleTaskId(googleTaskId: String): TaskEntity? =
+        timed("TaskRepository.getByGoogleTaskId") { taskDao.getByGoogleTaskId(googleTaskId) }
 
     suspend fun markPendingPush(id: Long) =
-        timed("TodoRepository.markPendingPush") { todoDao.updateSyncStatus(id, "pending_push") }
+        timed("TaskRepository.markPendingPush") { taskDao.updateSyncStatus(id, "pending_push") }
 
     suspend fun markPendingDelete(id: Long) =
-        timed("TodoRepository.markPendingDelete") { todoDao.updateSyncStatus(id, "pending_delete") }
+        timed("TaskRepository.markPendingDelete") { taskDao.updateSyncStatus(id, "pending_delete") }
 
     suspend fun markSynced(id: Long, googleTaskId: String, lastSyncedAt: Long) =
-        timed("TodoRepository.markSynced") { todoDao.markSynced(id, googleTaskId, lastSyncedAt) }
+        timed("TaskRepository.markSynced") { taskDao.markSynced(id, googleTaskId, lastSyncedAt) }
 
-    suspend fun upsertFromRemote(entity: TodoEntity) =
-        timed("TodoRepository.upsertFromRemote") { todoDao.insertTodo(entity) }
+    suspend fun upsertFromRemote(entity: TaskEntity) =
+        timed("TaskRepository.upsertFromRemote") { taskDao.insertTask(entity) }
 
     suspend fun deleteByGoogleTaskIds(ids: List<String>) =
-        timed("TodoRepository.deleteByGoogleTaskIds") { todoDao.deleteByGoogleTaskIds(ids) }
+        timed("TaskRepository.deleteByGoogleTaskIds") { taskDao.deleteByGoogleTaskIds(ids) }
+
+    suspend fun deleteAllCompleted() =
+        timed("TaskRepository.deleteAllCompleted") { taskDao.deleteAllCompleted() }
 
     private suspend inline fun <T> timed(label: String, block: suspend () -> T): T {
         val start = SystemClock.elapsedRealtime()

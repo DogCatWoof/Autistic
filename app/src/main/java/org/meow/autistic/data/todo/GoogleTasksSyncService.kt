@@ -16,12 +16,12 @@ private const val PROPS_SEPARATOR = "---autistic-props---"
  * flushed to the remote before each pull.
  *
  * @param remoteSource Raw HTTP calls to the Google Tasks API.
- * @param repository Local persistence for todo entities.
+ * @param repository Local persistence for task entities.
  * @param tokenProvider Suspending supplier of a valid OAuth access token.
  */
 class GoogleTasksSyncService(
     private val remoteSource: GoogleTasksRemoteSource,
-    private val repository: TodoRepository,
+    private val repository: TaskRepository,
     private val tokenProvider: suspend () -> String,
 ) {
 
@@ -36,14 +36,16 @@ class GoogleTasksSyncService(
     }
 
     /**
-     * Fetches the full remote task list and merges it into the local database.
+     * Fetches incomplete remote tasks and merges them into the local database.
      * Remote-deleted tasks are removed locally; active tasks are upserted with remote data winning.
+     * Completed tasks are cleaned from the local database after merging.
      */
     suspend fun pullAndMerge() {
         val token = tokenProvider()
         val remoteTasks = remoteSource.fetchTasks(token)
         applyRemoteDeletions(remoteTasks.filter { it.deleted })
         mergeActiveTasks(remoteTasks.filter { !it.deleted })
+        repository.deleteAllCompleted()
     }
 
     private suspend fun pushCreatesAndUpdates(token: String) {
@@ -86,7 +88,7 @@ class GoogleTasksSyncService(
         }
     }
 
-    private fun mergeIntoExisting(existing: TodoEntity, remote: RemoteTask, now: Long): TodoEntity {
+    private fun mergeIntoExisting(existing: TaskEntity, remote: RemoteTask, now: Long): TaskEntity {
         val (parsedNotes, parsedProps) = parseNotesField(remote.notes)
         return existing.copy(
             task = remote.title,
@@ -101,9 +103,9 @@ class GoogleTasksSyncService(
         )
     }
 
-    private fun remoteToNewEntity(remote: RemoteTask, now: Long): TodoEntity {
+    private fun remoteToNewEntity(remote: RemoteTask, now: Long): TaskEntity {
         val (parsedNotes, parsedProps) = parseNotesField(remote.notes)
-        return TodoEntity(
+        return TaskEntity(
             task = remote.title,
             isCompleted = remote.status == "completed",
             createdAt = now,
@@ -118,7 +120,7 @@ class GoogleTasksSyncService(
     }
 }
 
-private fun TodoEntity.toRemoteTask() = RemoteTask(
+private fun TaskEntity.toRemoteTask() = RemoteTask(
     id = googleTaskId,
     title = task,
     notes = encodeNotesField(notes, extraPropertiesJson),

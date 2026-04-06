@@ -17,7 +17,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.meow.autistic.data.auth.TokenStore
 import org.meow.autistic.data.navigation.NavPreferencesStore
-import org.meow.autistic.data.todo.TodoDatabase
+import org.meow.autistic.data.todo.TaskDatabase
 
 @RunWith(AndroidJUnit4::class)
 class MainActivityTest {
@@ -33,27 +33,27 @@ class MainActivityTest {
             GoogleSignIn.getClient(activity, GoogleSignInOptions.DEFAULT_SIGN_IN).signOut()
         )
         runBlocking {
-            TodoDatabase.getDatabase(activity).clearAllTables()
+            TaskDatabase.getDatabase(activity).clearAllTables()
             NavPreferencesStore.clear(activity)
         }
     }
 
     @Test
     fun bottomNav_threeTabsDisplayed() {
-        composeTestRule.onNodeWithTag("nav_tab_todo").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("nav_tab_task").assertIsDisplayed()
         composeTestRule.onNodeWithTag("nav_tab_scan").assertIsDisplayed()
         composeTestRule.onNodeWithTag("nav_tab_notes").assertIsDisplayed()
     }
 
     @Test
     fun defaultTab_showsTodoScreen() {
-        composeTestRule.onNodeWithContentDescription("Add Todo").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Add Task").assertIsDisplayed()
     }
 
     @Test
     fun clickTodoTab_showsTodoScreen() {
-        composeTestRule.onNodeWithTag("nav_tab_todo").performClick()
-        composeTestRule.onNodeWithContentDescription("Add Todo").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("nav_tab_task").performClick()
+        composeTestRule.onNodeWithContentDescription("Add Task").assertIsDisplayed()
     }
 
     @Test
@@ -74,7 +74,7 @@ class MainActivityTest {
     fun drawerCloseButton_closesDrawer() {
         composeTestRule.onNodeWithContentDescription("Menu").performClick()
         composeTestRule.onNodeWithContentDescription("Close menu").performClick()
-        composeTestRule.onNodeWithContentDescription("Add Todo").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Add Task").assertIsDisplayed()
     }
 
     @Test
@@ -87,7 +87,7 @@ class MainActivityTest {
     fun settingsButton_togglesBackToCurrentTab() {
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
-        composeTestRule.onNodeWithContentDescription("Add Todo").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Add Task").assertIsDisplayed()
     }
 
     @Test

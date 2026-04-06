@@ -7,11 +7,11 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class TodoEntityTest {
+class TaskEntityTest {
 
     @Test
     fun `default values are applied correctly`() {
-        val entity = TodoEntity(task = "Test", createdAt = 1000L)
+        val entity = TaskEntity(task = "Test", createdAt = 1000L)
         assertEquals(0L, entity.id)
         assertFalse(entity.isCompleted)
         assertNull(entity.dueAt)
@@ -23,7 +23,7 @@ class TodoEntityTest {
 
     @Test
     fun `expectedTimeMinutes can be set and copied`() {
-        val entity = TodoEntity(task = "Task", createdAt = 1000L, expectedTimeMinutes = 45)
+        val entity = TaskEntity(task = "Task", createdAt = 1000L, expectedTimeMinutes = 45)
         assertEquals(45, entity.expectedTimeMinutes)
         val copy = entity.copy(expectedTimeMinutes = 90)
         assertEquals(90, copy.expectedTimeMinutes)
@@ -32,7 +32,7 @@ class TodoEntityTest {
 
     @Test
     fun `copy preserves unchanged fields`() {
-        val original = TodoEntity(id = 1L, task = "Original", createdAt = 1000L, category = "Work")
+        val original = TaskEntity(id = 1L, task = "Original", createdAt = 1000L, category = "Work")
         val copy = original.copy(isCompleted = true)
         assertEquals(original.id, copy.id)
         assertEquals(original.task, copy.task)
@@ -43,7 +43,7 @@ class TodoEntityTest {
 
     @Test
     fun `copy can change task`() {
-        val original = TodoEntity(id = 1L, task = "Old", createdAt = 1000L)
+        val original = TaskEntity(id = 1L, task = "Old", createdAt = 1000L)
         val updated = original.copy(task = "New")
         assertEquals("New", updated.task)
         assertEquals(original.id, updated.id)
@@ -51,34 +51,34 @@ class TodoEntityTest {
 
     @Test
     fun `equality holds for same data`() {
-        val a = TodoEntity(id = 1L, task = "Task", createdAt = 1000L)
-        val b = TodoEntity(id = 1L, task = "Task", createdAt = 1000L)
+        val a = TaskEntity(id = 1L, task = "Task", createdAt = 1000L)
+        val b = TaskEntity(id = 1L, task = "Task", createdAt = 1000L)
         assertEquals(a, b)
     }
 
     @Test
     fun `inequality when id differs`() {
-        val a = TodoEntity(id = 1L, task = "Task", createdAt = 1000L)
-        val b = TodoEntity(id = 2L, task = "Task", createdAt = 1000L)
+        val a = TaskEntity(id = 1L, task = "Task", createdAt = 1000L)
+        val b = TaskEntity(id = 2L, task = "Task", createdAt = 1000L)
         assertNotEquals(a, b)
     }
 
     @Test
     fun `inequality when task differs`() {
-        val a = TodoEntity(id = 1L, task = "A", createdAt = 1000L)
-        val b = TodoEntity(id = 1L, task = "B", createdAt = 1000L)
+        val a = TaskEntity(id = 1L, task = "A", createdAt = 1000L)
+        val b = TaskEntity(id = 1L, task = "B", createdAt = 1000L)
         assertNotEquals(a, b)
     }
 
     @Test
     fun `dueAt can be set`() {
-        val entity = TodoEntity(task = "Task", createdAt = 1000L, dueAt = 9999L)
+        val entity = TaskEntity(task = "Task", createdAt = 1000L, dueAt = 9999L)
         assertEquals(9999L, entity.dueAt)
     }
 
     @Test
     fun `sync fields default to null and local`() {
-        val entity = TodoEntity(task = "Task", createdAt = 1000L)
+        val entity = TaskEntity(task = "Task", createdAt = 1000L)
         assertNull(entity.notes)
         assertNull(entity.googleTaskId)
         assertNull(entity.googleTaskListId)
@@ -89,28 +89,28 @@ class TodoEntityTest {
 
     @Test
     fun `inequality when isCompleted differs`() {
-        val a = TodoEntity(id = 1L, task = "Task", createdAt = 1000L, isCompleted = false)
-        val b = TodoEntity(id = 1L, task = "Task", createdAt = 1000L, isCompleted = true)
+        val a = TaskEntity(id = 1L, task = "Task", createdAt = 1000L, isCompleted = false)
+        val b = TaskEntity(id = 1L, task = "Task", createdAt = 1000L, isCompleted = true)
         assertNotEquals(a, b)
     }
 
     @Test
     fun `inequality when createdAt differs`() {
-        val a = TodoEntity(id = 1L, task = "Task", createdAt = 1000L)
-        val b = TodoEntity(id = 1L, task = "Task", createdAt = 2000L)
+        val a = TaskEntity(id = 1L, task = "Task", createdAt = 1000L)
+        val b = TaskEntity(id = 1L, task = "Task", createdAt = 2000L)
         assertNotEquals(a, b)
     }
 
     @Test
     fun `inequality when syncStatus differs`() {
-        val a = TodoEntity(task = "Task", createdAt = 1000L, syncStatus = "local")
-        val b = TodoEntity(task = "Task", createdAt = 1000L, syncStatus = "synced")
+        val a = TaskEntity(task = "Task", createdAt = 1000L, syncStatus = "local")
+        val b = TaskEntity(task = "Task", createdAt = 1000L, syncStatus = "synced")
         assertNotEquals(a, b)
     }
 
     @Test
     fun `sync fields can be set`() {
-        val entity = TodoEntity(
+        val entity = TaskEntity(
             task = "Task",
             createdAt = 1000L,
             googleTaskId = "gtask-1",

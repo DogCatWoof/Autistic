@@ -66,6 +66,7 @@ class GoogleTasksRemoteSource(
             val request = client.tasks().list(DEFAULT_TASK_LIST)
                 .setShowDeleted(true)
                 .setShowHidden(true)
+                .setShowCompleted(false)
             if (pageToken != null) {
                 request.setPageToken(pageToken)
             }

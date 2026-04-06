@@ -12,18 +12,18 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.meow.autistic.data.todo.TodoDatabase
+import org.meow.autistic.data.todo.TaskDatabase
 
 @RunWith(AndroidJUnit4::class)
 class CalendarDaoTest {
 
-    private lateinit var db: TodoDatabase
+    private lateinit var db: TaskDatabase
     private lateinit var dao: CalendarDao
 
     @Before
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        db = Room.inMemoryDatabaseBuilder(context, TodoDatabase::class.java)
+        db = Room.inMemoryDatabaseBuilder(context, TaskDatabase::class.java)
             .allowMainThreadQueries()
             .build()
         dao = db.calendarDao()

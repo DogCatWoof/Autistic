@@ -10,18 +10,18 @@ import org.junit.Test
 class GoogleTasksSyncServiceTest {
 
     private val remoteSource = mockk<GoogleTasksRemoteSource>()
-    private val repository = mockk<TodoRepository>(relaxed = true)
+    private val repository = mockk<TaskRepository>(relaxed = true)
     private val token = "test-token"
     private val service = GoogleTasksSyncService(remoteSource, repository) { token }
 
-    private val localNew = TodoEntity(
+    private val localNew = TaskEntity(
         id = 1L, task = "New task", createdAt = 1000L, syncStatus = "pending_push",
     )
-    private val localExisting = TodoEntity(
+    private val localExisting = TaskEntity(
         id = 2L, task = "Existing", createdAt = 1000L,
         googleTaskId = "remote1", syncStatus = "pending_push",
     )
-    private val localPendingDelete = TodoEntity(
+    private val localPendingDelete = TaskEntity(
         id = 3L, task = "Delete me", createdAt = 1000L,
         googleTaskId = "remote2", syncStatus = "pending_delete",
     )
@@ -110,6 +110,16 @@ class GoogleTasksSyncServiceTest {
         service.pullAndMerge()
 
         coVerify(exactly = 0) { repository.deleteByGoogleTaskIds(any()) }
+    }
+
+    @Test
+    fun `pullAndMerge calls deleteAllCompleted after merging`() = runTest {
+        coEvery { remoteSource.fetchTasks(token) } returns listOf(remoteTask)
+        coEvery { repository.getByGoogleTaskId("remote1") } returns null
+
+        service.pullAndMerge()
+
+        coVerify { repository.deleteAllCompleted() }
     }
 
     // endregion

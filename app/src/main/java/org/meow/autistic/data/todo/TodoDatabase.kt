@@ -12,19 +12,19 @@ import org.meow.autistic.data.product.ProductDao
 import org.meow.autistic.data.product.ProductEntity
 
 @Database(
-    entities = [TodoEntity::class, CalendarEventEntity::class, ProductEntity::class, DailyTaskEntity::class],
-    version = 8,
+    entities = [TaskEntity::class, CalendarEventEntity::class, ProductEntity::class, DailyTaskEntity::class],
+    version = 9,
     exportSchema = false,
 )
-abstract class TodoDatabase : RoomDatabase() {
-    abstract fun todoDao(): TodoDao
+abstract class TaskDatabase : RoomDatabase() {
+    abstract fun taskDao(): TaskDao
     abstract fun calendarDao(): CalendarDao
     abstract fun productDao(): ProductDao
     abstract fun dailyTaskDao(): DailyTaskDao
 
     companion object {
         @Volatile
-        private var Instance: TodoDatabase? = null
+        private var Instance: TaskDatabase? = null
 
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -97,10 +97,16 @@ abstract class TodoDatabase : RoomDatabase() {
             }
         }
 
-        fun getDatabase(context: Context): TodoDatabase {
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE todos RENAME TO tasks")
+            }
+        }
+
+        fun getDatabase(context: Context): TaskDatabase {
             return Instance ?: synchronized(this) {
-                Room.databaseBuilder(context, TodoDatabase::class.java, "autistic_database")
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                Room.databaseBuilder(context, TaskDatabase::class.java, "autistic_database")
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
                     .build()
                     .also { Instance = it }
             }

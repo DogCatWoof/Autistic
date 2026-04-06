@@ -34,14 +34,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.meow.autistic.data.calendar.CalendarEventEntity
-import org.meow.autistic.data.todo.TodoEntity
+import org.meow.autistic.data.todo.TaskEntity
 import java.text.SimpleDateFormat
 import java.util.*
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TodoListScreen(viewModel: TodoViewModel = koinViewModel()) {
+fun TaskListScreen(viewModel: TaskViewModel = koinViewModel()) {
     val grouped by viewModel.groupedItems.collectAsState()
     val isAuthenticated by viewModel.isAuthenticated.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
@@ -68,7 +68,7 @@ fun TodoListScreen(viewModel: TodoViewModel = koinViewModel()) {
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Add Todo")
+                Icon(Icons.Default.Add, contentDescription = "Add Task")
             }
         }
     ) { padding ->
@@ -83,30 +83,30 @@ fun TodoListScreen(viewModel: TodoViewModel = koinViewModel()) {
                 if (grouped.pastDue.isNotEmpty()) {
                     item(key = "header_past_due") { SectionHeader("Past Due") }
                     items(grouped.pastDue, key = { it.itemKey }) { item ->
-                        TodoListItemRow(item, viewModel)
+                        TaskListItemRow(item, viewModel)
                     }
                 }
                 if (grouped.today.isNotEmpty()) {
                     item(key = "header_today") { SectionHeader("Today") }
                     items(grouped.today, key = { it.itemKey }) { item ->
-                        TodoListItemRow(item, viewModel)
+                        TaskListItemRow(item, viewModel)
                     }
                 }
                 if (grouped.later.isNotEmpty()) {
                     item(key = "header_later") { SectionHeader("Later") }
                     items(grouped.later, key = { it.itemKey }) { item ->
-                        TodoListItemRow(item, viewModel)
+                        TaskListItemRow(item, viewModel)
                     }
                 }
             }
         }
 
         if (showAddDialog) {
-            AddTodoDialog(
+            AddTaskDialog(
                 onDismiss = { showAddDialog = false },
                 onConfirm = { task, dueAt, reminder, notes, expectedTime ->
                     viewModel.insert(
-                        TodoEntity(
+                        TaskEntity(
                             task = task,
                             dueAt = dueAt,
                             notes = notes,
@@ -133,7 +133,7 @@ fun SyncStatusIcon(
     if (!isAuthenticated) return
 
     val rotation = remember { Animatable(0f) }
-    
+
     LaunchedEffect(syncState) {
         if (syncState is SyncState.Syncing) {
             rotation.animateTo(
@@ -198,14 +198,14 @@ fun SectionHeader(title: String) {
 }
 
 @Composable
-fun TodoListItemRow(item: TodoListItem, viewModel: TodoViewModel) {
+fun TaskListItemRow(item: TaskListItem, viewModel: TaskViewModel) {
     when (item) {
-        is TodoListItem.Task -> TodoItem(
-            todo = item.entity,
+        is TaskListItem.Task -> TaskItem(
+            task = item.entity,
             onToggle = { viewModel.update(item.entity.copy(isCompleted = it)) },
             onDelete = { viewModel.delete(item.entity) },
         )
-        is TodoListItem.Event -> CalendarEventItem(item.entity)
+        is TaskListItem.Event -> CalendarEventItem(item.entity)
     }
 }
 
@@ -242,14 +242,14 @@ fun CalendarEventItem(event: CalendarEventEntity) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TodoItem(todo: TodoEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit) {
+fun TaskItem(task: TaskEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit) {
     val dateFormatter = remember { SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()) }
     val dimColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
 
     val dismissState = rememberSwipeToDismissBoxState()
     LaunchedEffect(dismissState.currentValue) {
         when (dismissState.currentValue) {
-            SwipeToDismissBoxValue.StartToEnd -> onToggle(!todo.isCompleted)
+            SwipeToDismissBoxValue.StartToEnd -> onToggle(!task.isCompleted)
             SwipeToDismissBoxValue.EndToStart -> onDelete()
             else -> {}
         }
@@ -295,28 +295,28 @@ fun TodoItem(todo: TodoEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
             ) {
                 Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                     Text(
-                        text = todo.task,
+                        text = task.task,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = if (todo.isCompleted) dimColor else MaterialTheme.colorScheme.onSurface
+                        color = if (task.isCompleted) dimColor else MaterialTheme.colorScheme.onSurface
                     )
-                    if (todo.dueAt != null) {
+                    if (task.dueAt != null) {
                         Text(
-                            text = "Due: ${dateFormatter.format(Date(todo.dueAt))}",
+                            text = "Due: ${dateFormatter.format(Date(task.dueAt))}",
                             style = MaterialTheme.typography.bodySmall,
                             color = dimColor
                         )
                     }
-                    if (!todo.notes.isNullOrEmpty()) {
+                    if (!task.notes.isNullOrEmpty()) {
                         Text(
-                            text = todo.notes,
+                            text = task.notes,
                             style = MaterialTheme.typography.bodySmall,
                             color = dimColor
                         )
                     }
                 }
-                if (todo.expectedTimeMinutes != null) {
-                    val h = todo.expectedTimeMinutes / 60
-                    val m = todo.expectedTimeMinutes % 60
+                if (task.expectedTimeMinutes != null) {
+                    val h = task.expectedTimeMinutes / 60
+                    val m = task.expectedTimeMinutes % 60
                     val timeLabel = when {
                         h == 0 -> "~${m} min"
                         m == 0 -> "~${h}h"
@@ -335,7 +335,7 @@ fun TodoItem(todo: TodoEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTodoDialog(
+fun AddTaskDialog(
     onDismiss: () -> Unit,
     onConfirm: (String, Long?, Boolean, String?, Int?) -> Unit
 ) {
