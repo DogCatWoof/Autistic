@@ -9,3 +9,4 @@
   4. ./gradlew connectedAndroidTest` for the remaining test classes
   5. If any test needed a fix, re-run only the test classes related to that fix. If all pass, run `./gradlew test connectedAndroidTest` and repeat step 4 if there are further failures.
 - All tests must pass before the response is considered complete. Fix any failures before finishing.
+ 
