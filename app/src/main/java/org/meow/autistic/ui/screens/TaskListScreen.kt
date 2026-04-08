@@ -48,6 +48,7 @@ fun TaskListScreen(viewModel: TaskViewModel = koinViewModel()) {
     val syncState by viewModel.syncState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var selectedTask by remember { mutableStateOf<TaskEntity?>(null) }
+    var selectedEvent by remember { mutableStateOf<CalendarEventEntity?>(null) }
 
     val signInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -85,19 +86,19 @@ fun TaskListScreen(viewModel: TaskViewModel = koinViewModel()) {
                 if (grouped.pastDue.isNotEmpty()) {
                     item(key = "header_past_due") { SectionHeader("Past Due") }
                     items(grouped.pastDue, key = { it.itemKey }) { item ->
-                        TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it })
+                        TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
                     }
                 }
                 if (grouped.today.isNotEmpty()) {
                     item(key = "header_today") { SectionHeader("Today") }
                     items(grouped.today, key = { it.itemKey }) { item ->
-                        TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it })
+                        TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
                     }
                 }
                 grouped.later.forEach { (dateLabel, sectionItems) ->
                     item(key = "header_later_$dateLabel") { SectionHeader(dateLabel) }
                     items(sectionItems, key = { it.itemKey }) { item ->
-                        TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it })
+                        TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
                     }
                 }
             }
@@ -121,6 +122,21 @@ fun TaskListScreen(viewModel: TaskViewModel = koinViewModel()) {
                     )
                     showAddDialog = false
                 }
+            )
+        }
+
+        selectedEvent?.let { event ->
+            CalendarEventDialog(
+                event = event,
+                onDismiss = { selectedEvent = null },
+                onDone = {
+                    viewModel.completeEvent(event)
+                    selectedEvent = null
+                },
+                onDelete = {
+                    viewModel.deleteEvent(event)
+                    selectedEvent = null
+                },
             )
         }
 
@@ -224,7 +240,12 @@ fun SectionHeader(title: String) {
 }
 
 @Composable
-fun TaskListItemRow(item: TaskListItem, viewModel: TaskViewModel, onTaskClick: (TaskEntity) -> Unit) {
+fun TaskListItemRow(
+    item: TaskListItem,
+    viewModel: TaskViewModel,
+    onTaskClick: (TaskEntity) -> Unit,
+    onEventClick: (CalendarEventEntity) -> Unit,
+) {
     when (item) {
         is TaskListItem.Task -> TaskItem(
             task = item.entity,
@@ -232,13 +253,17 @@ fun TaskListItemRow(item: TaskListItem, viewModel: TaskViewModel, onTaskClick: (
             onDelete = { viewModel.delete(item.entity) },
             onClick = { onTaskClick(item.entity) },
         )
-        is TaskListItem.Event -> CalendarEventItem(item.entity, viewModel)
+        is TaskListItem.Event -> CalendarEventItem(
+            event = item.entity,
+            viewModel = viewModel,
+            onClick = { onEventClick(item.entity) },
+        )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalendarEventItem(event: CalendarEventEntity, viewModel: TaskViewModel) {
+fun CalendarEventItem(event: CalendarEventEntity, viewModel: TaskViewModel, onClick: () -> Unit = {}) {
     val dateFormatter = remember { SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()) }
     val dimColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
 
@@ -279,6 +304,7 @@ fun CalendarEventItem(event: CalendarEventEntity, viewModel: TaskViewModel) {
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)
+                .clickable { onClick() }
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(),
@@ -470,6 +496,47 @@ fun AddTaskDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
         }
+    )
+}
+
+@Composable
+fun CalendarEventDialog(
+    event: CalendarEventEntity,
+    onDismiss: () -> Unit,
+    onDone: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val dateFormatter = remember { SimpleDateFormat("EEE, MMM dd · HH:mm", Locale.getDefault()) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(event.title) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (event.isAllDay) {
+                    Text("All day", style = MaterialTheme.typography.bodyMedium)
+                } else {
+                    Text(
+                        dateFormatter.format(Date.from(event.startAt)),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Text(
+                        "– ${dateFormatter.format(Date.from(event.endAt))}",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDone) { Text("Done") }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = onDelete) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+            }
+        },
     )
 }
 
