@@ -87,13 +87,6 @@ fun ScanScreen(modifier: Modifier = Modifier, viewModel: ScanViewModel = koinVie
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(24.dp)
             ) {
-                Text("Product database not available", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "Download the product database to look up barcodes.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(Modifier.height(16.dp))
                 Button(onClick = { viewModel.triggerProductSync() }) {
                     Text("Download Product Database")
                 }

@@ -61,7 +61,7 @@ class MainActivityTest {
     fun clickScanTab_showsScanScreen() {
         // Scan has no sub-items — navigates directly
         composeTestRule.onNodeWithTag("nav_tab_scan").performClick()
-        composeTestRule.onNodeWithText("Product database not available").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Download Product Database").assertIsDisplayed()
     }
 
     @Test
