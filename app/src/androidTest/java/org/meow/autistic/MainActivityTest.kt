@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -17,7 +18,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.meow.autistic.data.auth.TokenStore
 import org.meow.autistic.data.navigation.NavPreferencesStore
-import org.meow.autistic.data.todo.TaskDatabase
+import org.meow.autistic.data.task.TaskDatabase
 
 @RunWith(AndroidJUnit4::class)
 class MainActivityTest {
@@ -46,12 +47,12 @@ class MainActivityTest {
     }
 
     @Test
-    fun defaultTab_showsTodoScreen() {
+    fun defaultTab_showsTaskScreen() {
         composeTestRule.onNodeWithContentDescription("Add Task").assertIsDisplayed()
     }
 
     @Test
-    fun clickTodoTab_showsTodoScreen() {
+    fun clickTaskTab_showsTaskScreen() {
         composeTestRule.onNodeWithTag("nav_tab_task").performClick()
         composeTestRule.onNodeWithContentDescription("Add Task").assertIsDisplayed()
     }
@@ -97,28 +98,28 @@ class MainActivityTest {
     }
 
     @Test
-    fun settingsScreen_syncItem_opensProductsSyncList() {
+    fun settingsScreen_syncItem_expandsInPlace() {
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.onNodeWithText("Sync").performClick()
-        composeTestRule.onNodeWithText("Open Food Facts").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Product Data").assertIsDisplayed()
     }
 
     @Test
-    fun syncScreen_showsTasksAndCalendarItems() {
+    fun syncExpanded_showsAllThreeSyncItems() {
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.onNodeWithText("Sync").performClick()
-        composeTestRule.onNodeWithText("Tasks").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Calendar").assertIsDisplayed()
+        // "Daily Tasks" exists elsewhere in settings; check the unique ones to confirm expansion
+        composeTestRule.onNodeWithText("Product Data").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Task List").performScrollTo().assertIsDisplayed()
     }
 
     @Test
-    fun settingsScreen_syncSubScreen_backReturnsToSettings() {
+    fun settingsScreen_syncCollapsesOnSecondClick() {
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.onNodeWithText("Sync").performClick()
-        composeTestRule.onNodeWithText("Open Food Facts").assertIsDisplayed()
-        composeTestRule.activityRule.scenario.onActivity { activity ->
-            activity.onBackPressedDispatcher.onBackPressed()
-        }
-        composeTestRule.onNodeWithText("Sync").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Task List").performScrollTo().assertIsDisplayed()
+        // Use the icon content description to target the header, not the sync buttons inside items
+        composeTestRule.onNodeWithContentDescription("Collapse sync").performScrollTo().performClick()
+        composeTestRule.onNodeWithText("Daily tasks, products, task list").assertIsDisplayed()
     }
 }

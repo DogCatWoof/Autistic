@@ -12,6 +12,8 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.meow.autistic.data.backup.DriveBackupService
@@ -83,6 +85,10 @@ class DailyResetWorker(
     }
 
     companion object {
+        /** Emits the date string of the last daily reset ("yyyy-MM-dd"), or null if never run. */
+        fun getLastResetFlow(context: Context): Flow<String?> =
+            context.dailyResetDataStore.data.map { it[LAST_RESET_DATE_KEY] }
+
         /** Enqueues the worker; KEEP policy prevents double-runs on rapid restarts. */
         fun enqueue(context: Context) {
             WorkManager.getInstance(context).enqueueUniqueWork(

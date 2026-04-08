@@ -10,8 +10,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -43,14 +48,12 @@ fun SettingsScreen(
     allNavItems: List<NavigationItem>,
     modifier: Modifier = Modifier,
 ) {
-    var showSync by remember { mutableStateOf(false) }
     var showQueryLog by remember { mutableStateOf(false) }
     var showNavPrefs by remember { mutableStateOf(false) }
     var showDailyTasks by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = showSync || showQueryLog || showNavPrefs || showDailyTasks) {
+    BackHandler(enabled = showQueryLog || showNavPrefs || showDailyTasks) {
         when {
-            showSync -> showSync = false
             showQueryLog -> showQueryLog = false
             showNavPrefs -> showNavPrefs = false
             showDailyTasks -> showDailyTasks = false
@@ -58,12 +61,10 @@ fun SettingsScreen(
     }
 
     when {
-        showSync -> SyncSettingsScreen(modifier = modifier)
         showQueryLog -> QueryLogScreen(modifier = modifier)
         showNavPrefs -> NavPreferencesScreen(allItems = allNavItems, modifier = modifier)
         showDailyTasks -> DailyTasksSettingsScreen(modifier = modifier)
         else -> SettingsMainList(
-            onSyncClick = { showSync = true },
             onQueryLogClick = { showQueryLog = true },
             onNavPrefsClick = { showNavPrefs = true },
             onDailyTasksClick = { showDailyTasks = true },
@@ -74,7 +75,6 @@ fun SettingsScreen(
 
 @Composable
 private fun SettingsMainList(
-    onSyncClick: () -> Unit,
     onQueryLogClick: () -> Unit,
     onNavPrefsClick: () -> Unit,
     onDailyTasksClick: () -> Unit,
@@ -86,6 +86,7 @@ private fun SettingsMainList(
     val authManager = remember { GoogleAuthManager(context, tokenStore) }
     var isAuthenticated by remember { mutableStateOf(authManager.isAuthenticated()) }
     var accountEmail by remember { mutableStateOf(tokenStore.getAccountEmail()) }
+    var syncExpanded by remember { mutableStateOf(false) }
 
     val signInLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -102,7 +103,7 @@ private fun SettingsMainList(
         if (isGranted) { showNotification(context) }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         SettingsSectionLabel("Account")
         ListItem(
             headlineContent = { Text("Google Account") },
@@ -175,15 +176,22 @@ private fun SettingsMainList(
         SettingsSectionLabel("Data")
         ListItem(
             headlineContent = { Text("Sync") },
-            supportingContent = { Text("Open Food Facts") },
+            supportingContent = { if (!syncExpanded) Text("Daily tasks, products, task list") },
             trailingContent = {
                 Icon(
-                    Icons.AutoMirrored.Filled.ArrowForwardIos,
-                    contentDescription = "Open sync settings",
+                    if (syncExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = if (syncExpanded) "Collapse sync" else "Expand sync",
                 )
             },
-            modifier = Modifier.clickable { onSyncClick() },
+            modifier = Modifier.clickable { syncExpanded = !syncExpanded },
         )
+        AnimatedVisibility(visible = syncExpanded) {
+            Column {
+                DailySyncItem()
+                ProductSyncItem()
+                TaskListSyncItem()
+            }
+        }
         HorizontalDivider()
         SettingsSectionLabel("Diagnostics")
         ListItem(
