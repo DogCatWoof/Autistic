@@ -1,7 +1,7 @@
 package org.meow.autistic.ui.screens
 
 import org.meow.autistic.data.calendar.CalendarEventEntity
-import org.meow.autistic.data.todo.TaskEntity
+import org.meow.autistic.data.task.TaskEntity
 
 sealed class TaskListItem {
     abstract val sortKey: Long

@@ -1,6 +1,7 @@
 package org.meow.autistic.data.todo
 
 import java.text.SimpleDateFormat
+import java.time.Instant
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
@@ -56,7 +57,7 @@ class GoogleTasksSyncService(
                 remoteSource.updateTask(token, local.toRemoteTask())
             }
             val googleTaskId = requireNotNull(remote.id)
-            repository.markSynced(local.id, googleTaskId, System.currentTimeMillis())
+            repository.markSynced(local.id, googleTaskId, Instant.now())
             if (local.isCompleted) {
                 repository.delete(local)
             }
@@ -80,7 +81,7 @@ class GoogleTasksSyncService(
     }
 
     private suspend fun mergeActiveTasks(active: List<RemoteTask>) {
-        val now = System.currentTimeMillis()
+        val now = Instant.now()
         active.forEach { remote ->
             val existing = remote.id?.let { repository.getByGoogleTaskId(it) }
             val entity = if (existing != null) {
@@ -92,7 +93,7 @@ class GoogleTasksSyncService(
         }
     }
 
-    private fun mergeIntoExisting(existing: TaskEntity, remote: RemoteTask, now: Long): TaskEntity {
+    private fun mergeIntoExisting(existing: TaskEntity, remote: RemoteTask, now: Instant): TaskEntity {
         val (parsedNotes, parsedProps) = parseNotesField(remote.notes)
         return existing.copy(
             task = remote.title,
@@ -107,7 +108,7 @@ class GoogleTasksSyncService(
         )
     }
 
-    private fun remoteToNewEntity(remote: RemoteTask, now: Long): TaskEntity {
+    private fun remoteToNewEntity(remote: RemoteTask, now: Instant): TaskEntity {
         val (parsedNotes, parsedProps) = parseNotesField(remote.notes)
         return TaskEntity(
             task = remote.title,
@@ -154,14 +155,14 @@ private fun parseNotesField(raw: String?): Pair<String?, String?> {
     }
 }
 
-private fun Long.toRfc3339(): String =
+private fun Instant.toRfc3339(): String =
     SimpleDateFormat(RFC3339_PATTERN, Locale.US)
         .apply { timeZone = TimeZone.getTimeZone("UTC") }
-        .format(Date(this))
+        .format(Date.from(this))
 
-private fun String.fromRfc3339(): Long? =
+private fun String.fromRfc3339(): Instant? =
     runCatching {
         SimpleDateFormat(RFC3339_PATTERN, Locale.US)
             .apply { timeZone = TimeZone.getTimeZone("UTC") }
-            .parse(this)?.time
+            .parse(this)?.toInstant()
     }.getOrNull()

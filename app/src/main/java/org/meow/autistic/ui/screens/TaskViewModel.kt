@@ -17,8 +17,8 @@ import org.meow.autistic.data.auth.GoogleAuthManager
 import org.meow.autistic.data.calendar.CalendarRepository
 import org.meow.autistic.data.sync.IMMEDIATE_WORK_NAME
 import org.meow.autistic.data.sync.SyncScheduler
-import org.meow.autistic.data.todo.TaskEntity
-import org.meow.autistic.data.todo.TaskRepository
+import org.meow.autistic.data.task.TaskEntity
+import org.meow.autistic.data.task.TaskRepository
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

@@ -1,4 +1,4 @@
-package org.meow.autistic.data.todo
+package org.meow.autistic.data.task
 
 import android.content.Context
 import androidx.room.Room
@@ -12,6 +12,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.meow.autistic.data.task.TaskDao
+import org.meow.autistic.data.task.TaskDatabase
+import org.meow.autistic.data.task.TaskEntity
 import java.time.Instant
 
 @RunWith(AndroidJUnit4::class)
@@ -96,8 +99,20 @@ class TaskDaoTest {
 
     @Test
     fun getPendingPush_returnsOnlyPendingPushItems() = runTest {
-        dao.insertTask(TaskEntity(task = "Push me", createdAt = Instant.ofEpochMilli(1000L), syncStatus = "pending_push"))
-        dao.insertTask(TaskEntity(task = "Synced", createdAt = Instant.ofEpochMilli(2000L), syncStatus = "synced"))
+        dao.insertTask(
+            TaskEntity(
+                task = "Push me",
+                createdAt = Instant.ofEpochMilli(1000L),
+                syncStatus = "pending_push"
+            )
+        )
+        dao.insertTask(
+            TaskEntity(
+                task = "Synced",
+                createdAt = Instant.ofEpochMilli(2000L),
+                syncStatus = "synced"
+            )
+        )
         val result = dao.getPendingPush()
         assertEquals(1, result.size)
         assertEquals("Push me", result[0].task)
@@ -105,8 +120,20 @@ class TaskDaoTest {
 
     @Test
     fun getPendingDelete_returnsOnlyPendingDeleteItems() = runTest {
-        dao.insertTask(TaskEntity(task = "Delete me", createdAt = Instant.ofEpochMilli(1000L), syncStatus = "pending_delete"))
-        dao.insertTask(TaskEntity(task = "Keep me", createdAt = Instant.ofEpochMilli(2000L), syncStatus = "local"))
+        dao.insertTask(
+            TaskEntity(
+                task = "Delete me",
+                createdAt = Instant.ofEpochMilli(1000L),
+                syncStatus = "pending_delete"
+            )
+        )
+        dao.insertTask(
+            TaskEntity(
+                task = "Keep me",
+                createdAt = Instant.ofEpochMilli(2000L),
+                syncStatus = "local"
+            )
+        )
         val result = dao.getPendingDelete()
         assertEquals(1, result.size)
         assertEquals("Delete me", result[0].task)
@@ -114,7 +141,13 @@ class TaskDaoTest {
 
     @Test
     fun getByGoogleTaskId_returnsMatchingEntity() = runTest {
-        dao.insertTask(TaskEntity(task = "Task", createdAt = Instant.ofEpochMilli(1000L), googleTaskId = "gid-1"))
+        dao.insertTask(
+            TaskEntity(
+                task = "Task",
+                createdAt = Instant.ofEpochMilli(1000L),
+                googleTaskId = "gid-1"
+            )
+        )
         val result = dao.getByGoogleTaskId("gid-1")
         assertEquals("Task", result?.task)
     }
@@ -127,7 +160,13 @@ class TaskDaoTest {
 
     @Test
     fun updateSyncStatus_changesStatusOnly() = runTest {
-        val id = dao.insertTask(TaskEntity(task = "Task", createdAt = Instant.ofEpochMilli(1000L), syncStatus = "local"))
+        val id = dao.insertTask(
+            TaskEntity(
+                task = "Task",
+                createdAt = Instant.ofEpochMilli(1000L),
+                syncStatus = "local"
+            )
+        )
         dao.updateSyncStatus(id, "pending_push")
         val result = dao.getAllTasks().first().first()
         assertEquals("pending_push", result.syncStatus)
@@ -136,7 +175,13 @@ class TaskDaoTest {
 
     @Test
     fun markSynced_updatesGoogleTaskIdAndLastSyncedAt() = runTest {
-        val id = dao.insertTask(TaskEntity(task = "Task", createdAt = Instant.ofEpochMilli(1000L), syncStatus = "pending_push"))
+        val id = dao.insertTask(
+            TaskEntity(
+                task = "Task",
+                createdAt = Instant.ofEpochMilli(1000L),
+                syncStatus = "pending_push"
+            )
+        )
         val syncedAt = Instant.ofEpochMilli(9999L)
         dao.markSynced(id, "gid-1", syncedAt)
         val result = dao.getAllTasks().first().first()
@@ -147,8 +192,20 @@ class TaskDaoTest {
 
     @Test
     fun deleteByGoogleTaskIds_removesMatchingItems() = runTest {
-        dao.insertTask(TaskEntity(task = "Remove", createdAt = Instant.ofEpochMilli(1000L), googleTaskId = "gid-1"))
-        dao.insertTask(TaskEntity(task = "Keep", createdAt = Instant.ofEpochMilli(2000L), googleTaskId = "gid-2"))
+        dao.insertTask(
+            TaskEntity(
+                task = "Remove",
+                createdAt = Instant.ofEpochMilli(1000L),
+                googleTaskId = "gid-1"
+            )
+        )
+        dao.insertTask(
+            TaskEntity(
+                task = "Keep",
+                createdAt = Instant.ofEpochMilli(2000L),
+                googleTaskId = "gid-2"
+            )
+        )
         dao.deleteByGoogleTaskIds(listOf("gid-1"))
         val remaining = dao.getAllTasks().first()
         assertEquals(1, remaining.size)
@@ -157,8 +214,20 @@ class TaskDaoTest {
 
     @Test
     fun deleteAllCompleted_removesOnlyCompletedTasks() = runTest {
-        dao.insertTask(TaskEntity(task = "Active", createdAt = Instant.ofEpochMilli(1000L), isCompleted = false))
-        dao.insertTask(TaskEntity(task = "Done", createdAt = Instant.ofEpochMilli(2000L), isCompleted = true))
+        dao.insertTask(
+            TaskEntity(
+                task = "Active",
+                createdAt = Instant.ofEpochMilli(1000L),
+                isCompleted = false
+            )
+        )
+        dao.insertTask(
+            TaskEntity(
+                task = "Done",
+                createdAt = Instant.ofEpochMilli(2000L),
+                isCompleted = true
+            )
+        )
         dao.deleteAllCompleted()
         val remaining = dao.getAllTasks().first()
         assertEquals(1, remaining.size)

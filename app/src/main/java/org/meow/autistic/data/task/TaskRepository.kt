@@ -1,8 +1,9 @@
-package org.meow.autistic.data.todo
+package org.meow.autistic.data.task
 
 import android.os.SystemClock
 import kotlinx.coroutines.flow.Flow
 import org.meow.autistic.data.diagnostics.QueryLogger
+import java.time.Instant
 
 /**
  * Persistence layer for [TaskEntity]. Delegates to [TaskDao] and records
@@ -38,7 +39,7 @@ class TaskRepository(
     suspend fun markPendingDelete(id: Long) =
         timed("TaskRepository.markPendingDelete") { taskDao.updateSyncStatus(id, "pending_delete") }
 
-    suspend fun markSynced(id: Long, googleTaskId: String, lastSyncedAt: Long) =
+    suspend fun markSynced(id: Long, googleTaskId: String, lastSyncedAt: Instant) =
         timed("TaskRepository.markSynced") { taskDao.markSynced(id, googleTaskId, lastSyncedAt) }
 
     suspend fun upsertFromRemote(entity: TaskEntity) =

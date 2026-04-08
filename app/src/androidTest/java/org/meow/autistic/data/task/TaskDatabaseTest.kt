@@ -1,4 +1,4 @@
-package org.meow.autistic.data.todo
+package org.meow.autistic.data.task
 
 import android.content.Context
 import androidx.room.Room
@@ -10,6 +10,7 @@ import org.junit.Assert.assertSame
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.meow.autistic.data.task.TaskDatabase
 
 @RunWith(AndroidJUnit4::class)
 class TaskDatabaseTest {

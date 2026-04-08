@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Sync
@@ -27,14 +28,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.meow.autistic.data.calendar.CalendarEventEntity
-import org.meow.autistic.data.todo.TaskEntity
+import org.meow.autistic.data.task.TaskEntity
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.util.*
@@ -242,7 +242,7 @@ fun CalendarEventItem(event: CalendarEventEntity, viewModel: TaskViewModel) {
                 contentAlignment = alignment
             ) {
                 Icon(
-                    imageVector = Icons.Default.CheckCircle,
+                    imageVector = if (isComplete) Icons.Default.CheckCircle else Icons.Default.Delete,
                     contentDescription = if (isComplete) "Complete" else "Delete",
                     tint = if (isComplete) MaterialTheme.colorScheme.onPrimaryContainer
                            else MaterialTheme.colorScheme.onErrorContainer,
@@ -311,7 +311,7 @@ fun TaskItem(task: TaskEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
                 contentAlignment = alignment
             ) {
                 Icon(
-                    imageVector = Icons.Default.CheckCircle,
+                    imageVector = if (isComplete) Icons.Default.CheckCircle else Icons.Default.Delete,
                     contentDescription = if (isComplete) "Complete" else "Delete",
                     tint = if (isComplete) MaterialTheme.colorScheme.onPrimaryContainer
                            else MaterialTheme.colorScheme.onErrorContainer,

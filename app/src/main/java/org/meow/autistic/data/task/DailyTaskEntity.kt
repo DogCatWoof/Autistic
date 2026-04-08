@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
  * A recurring daily task template.
  *
  * Each day the [DailyResetWorker] removes any unfinished todos that were generated
- * from daily tasks, then re-inserts them as new [TodoEntity] rows due today.
+ * from daily tasks, then re-inserts them as new [] rows due today.
  *
  * @param timeMinutes Minutes since midnight for the due time (e.g. 8:30 AM = 510).
  *                    Null means no specific time — the todo will be due at day start.

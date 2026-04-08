@@ -6,6 +6,12 @@ import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
+import org.meow.autistic.data.task.GoogleTasksRemoteSource
+import org.meow.autistic.data.task.GoogleTasksSyncService
+import org.meow.autistic.data.task.RemoteTask
+import org.meow.autistic.data.task.TaskEntity
+import org.meow.autistic.data.task.TaskRepository
+import java.time.Instant
 
 class GoogleTasksSyncServiceTest {
 
@@ -15,14 +21,17 @@ class GoogleTasksSyncServiceTest {
     private val service = GoogleTasksSyncService(remoteSource, repository) { token }
 
     private val localNew = TaskEntity(
-        id = 1L, task = "New task", createdAt = java.time.Instant.ofEpochMilli(1000L), syncStatus = "pending_push",
+        id = 1L,
+        task = "New task",
+        createdAt = Instant.ofEpochMilli(1000L),
+        syncStatus = "pending_push",
     )
     private val localExisting = TaskEntity(
-        id = 2L, task = "Existing", createdAt = java.time.Instant.ofEpochMilli(1000L),
+        id = 2L, task = "Existing", createdAt = Instant.ofEpochMilli(1000L),
         googleTaskId = "remote1", syncStatus = "pending_push",
     )
     private val localPendingDelete = TaskEntity(
-        id = 3L, task = "Delete me", createdAt = java.time.Instant.ofEpochMilli(1000L),
+        id = 3L, task = "Delete me", createdAt = Instant.ofEpochMilli(1000L),
         googleTaskId = "remote2", syncStatus = "pending_delete",
     )
     private val remoteTask = RemoteTask(

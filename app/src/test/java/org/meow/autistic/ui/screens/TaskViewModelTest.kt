@@ -12,15 +12,14 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.meow.autistic.data.auth.GoogleAuthManager
 import org.meow.autistic.data.calendar.CalendarRepository
 import org.meow.autistic.data.sync.SyncScheduler
-import org.meow.autistic.data.todo.TaskEntity
-import org.meow.autistic.data.todo.TaskRepository
+import org.meow.autistic.data.task.TaskEntity
+import org.meow.autistic.data.task.TaskRepository
 import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)

@@ -12,6 +12,9 @@ import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.meow.autistic.data.diagnostics.QueryLogger
+import org.meow.autistic.data.task.TaskDao
+import org.meow.autistic.data.task.TaskEntity
+import org.meow.autistic.data.task.TaskRepository
 import java.time.Instant
 
 class TaskRepositoryTest {
@@ -19,7 +22,8 @@ class TaskRepositoryTest {
     private lateinit var dao: TaskDao
     private lateinit var repository: TaskRepository
 
-    private val task = TaskEntity(id = 1L, task = "Test task", createdAt = Instant.ofEpochMilli(1000L))
+    private val task =
+        TaskEntity(id = 1L, task = "Test task", createdAt = Instant.ofEpochMilli(1000L))
 
     @Before
     fun setUp() {

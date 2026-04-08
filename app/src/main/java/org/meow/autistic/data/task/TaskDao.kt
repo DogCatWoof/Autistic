@@ -1,7 +1,8 @@
-package org.meow.autistic.data.todo
+package org.meow.autistic.data.task
 
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 
 @Dao
 interface TaskDao {
@@ -30,7 +31,7 @@ interface TaskDao {
     suspend fun updateSyncStatus(id: Long, status: String): Int
 
     @Query("UPDATE tasks SET syncStatus = 'synced', googleTaskId = :googleTaskId, lastSyncedAt = :lastSyncedAt WHERE id = :id")
-    suspend fun markSynced(id: Long, googleTaskId: String, lastSyncedAt: Long): Int
+    suspend fun markSynced(id: Long, googleTaskId: String, lastSyncedAt: Instant): Int
 
     @Query("DELETE FROM tasks WHERE googleTaskId IN (:googleTaskIds)")
     suspend fun deleteByGoogleTaskIds(googleTaskIds: List<String>): Int

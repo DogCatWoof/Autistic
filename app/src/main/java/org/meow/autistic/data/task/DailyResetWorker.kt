@@ -53,9 +53,9 @@ class DailyResetWorker(
             .toInstant()
             .toEpochMilli()
 
-        val now = System.currentTimeMillis()
+        val now = java.time.Instant.now()
         dailyTaskRepository.getAllOnce().forEach { dailyTask ->
-            val dueAt = if (dailyTask.timeMinutes != null) {
+            val dueAtMs = if (dailyTask.timeMinutes != null) {
                 todayStartMs + dailyTask.timeMinutes * 60_000L
             } else {
                 todayStartMs
@@ -64,7 +64,7 @@ class DailyResetWorker(
                 TaskEntity(
                     task = dailyTask.title,
                     category = dailyTask.category,
-                    dueAt = dueAt,
+                    dueAt = java.time.Instant.ofEpochMilli(dueAtMs),
                     createdAt = now,
                     dailyTaskId = dailyTask.id,
                     syncStatus = "local",

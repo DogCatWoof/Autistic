@@ -5,13 +5,17 @@ import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.meow.autistic.data.diagnostics.QueryLogger
+import org.meow.autistic.data.task.DailyTaskDao
+import org.meow.autistic.data.task.DailyTaskEntity
+import org.meow.autistic.data.task.DailyTaskRepository
 
 class DailyTaskRepositoryTest {
 
     private val dao = mockk<DailyTaskDao>(relaxed = true)
     private val repository = DailyTaskRepository(dao, QueryLogger())
 
-    private val sample = DailyTaskEntity(id = 1, title = "Morning run", category = "Health", timeMinutes = 420)
+    private val sample =
+        DailyTaskEntity(id = 1, title = "Morning run", category = "Health", timeMinutes = 420)
 
     @Test
     fun `insert delegates to dao`() = runTest {

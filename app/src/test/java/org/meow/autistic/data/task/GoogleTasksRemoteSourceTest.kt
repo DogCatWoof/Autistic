@@ -12,6 +12,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.meow.autistic.data.task.GoogleTasksRemoteSource
+import org.meow.autistic.data.task.RemoteTask
 
 class GoogleTasksRemoteSourceTest {
 
@@ -144,7 +146,8 @@ class GoogleTasksRemoteSourceTest {
         val result = source.createTask("token", RemoteTask(
             id = null, title = "New task", notes = null,
             status = "needsAction", due = null, completed = null, deleted = false,
-        ))
+        )
+        )
 
         assertEquals("new1", result.id)
         assertEquals("New task", result.title)
@@ -168,7 +171,8 @@ class GoogleTasksRemoteSourceTest {
         val result = source.updateTask("token", RemoteTask(
             id = "task1", title = "Updated title", notes = null,
             status = "completed", due = null, completed = null, deleted = false,
-        ))
+        )
+        )
 
         assertEquals("task1", result.id)
         assertEquals("completed", result.status)
@@ -179,7 +183,8 @@ class GoogleTasksRemoteSourceTest {
         source.updateTask("token", RemoteTask(
             id = null, title = "No ID", notes = null,
             status = "needsAction", due = null, completed = null, deleted = false,
-        ))
+        )
+        )
     }
 
     // endregion
@@ -214,7 +219,17 @@ class GoogleTasksRemoteSourceTest {
         val mockInsert = mockk<Tasks.TasksOperations.Insert>()
         every { mockOps.insert("@default", any()) } returns mockInsert
         every { mockInsert.execute() } throws IOException("Network error")
-        source.createTask("token", RemoteTask(id = null, title = "Task", notes = null, status = "needsAction", due = null, completed = null, deleted = false))
+        source.createTask("token",
+            RemoteTask(
+                id = null,
+                title = "Task",
+                notes = null,
+                status = "needsAction",
+                due = null,
+                completed = null,
+                deleted = false
+            )
+        )
     }
 
     @Test(expected = IOException::class)
@@ -222,7 +237,17 @@ class GoogleTasksRemoteSourceTest {
         val mockUpdate = mockk<Tasks.TasksOperations.Update>()
         every { mockOps.update("@default", "task1", any()) } returns mockUpdate
         every { mockUpdate.execute() } throws IOException("Network error")
-        source.updateTask("token", RemoteTask(id = "task1", title = "Task", notes = null, status = "needsAction", due = null, completed = null, deleted = false))
+        source.updateTask("token",
+            RemoteTask(
+                id = "task1",
+                title = "Task",
+                notes = null,
+                status = "needsAction",
+                due = null,
+                completed = null,
+                deleted = false
+            )
+        )
     }
 
     // region deleteTask
