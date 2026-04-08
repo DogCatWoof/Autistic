@@ -1,4 +1,4 @@
-package org.meow.autistic.data.todo
+package org.meow.autistic.data.task
 
 import java.text.SimpleDateFormat
 import java.time.Instant
@@ -161,8 +161,4 @@ private fun Instant.toRfc3339(): String =
         .format(Date.from(this))
 
 private fun String.fromRfc3339(): Instant? =
-    runCatching {
-        SimpleDateFormat(RFC3339_PATTERN, Locale.US)
-            .apply { timeZone = TimeZone.getTimeZone("UTC") }
-            .parse(this)?.toInstant()
-    }.getOrNull()
+    runCatching { Instant.parse(this) }.getOrNull()

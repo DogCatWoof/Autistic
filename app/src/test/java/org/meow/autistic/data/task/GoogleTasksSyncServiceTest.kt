@@ -1,4 +1,4 @@
-package org.meow.autistic.data.todo
+package org.meow.autistic.data.task
 
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -6,11 +6,6 @@ import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
-import org.meow.autistic.data.task.GoogleTasksRemoteSource
-import org.meow.autistic.data.task.GoogleTasksSyncService
-import org.meow.autistic.data.task.RemoteTask
-import org.meow.autistic.data.task.TaskEntity
-import org.meow.autistic.data.task.TaskRepository
 import java.time.Instant
 
 class GoogleTasksSyncServiceTest {
@@ -254,6 +249,42 @@ class GoogleTasksSyncServiceTest {
                 it.notes == "My note\n---autistic-props---\n{\"k\":\"v\"}"
             })
         }
+    }
+
+    // endregion
+
+    // region due date parsing
+
+    @Test
+    fun `pullAndMerge parses due date with milliseconds`() = runTest {
+        val withDue = remoteTask.copy(due = "2025-06-15T00:00:00.000Z")
+        coEvery { remoteSource.fetchTasks(token) } returns listOf(withDue)
+        coEvery { repository.getByGoogleTaskId("remote1") } returns null
+
+        service.pullAndMerge()
+
+        coVerify { repository.upsertFromRemote(match { it.dueAt != null }) }
+    }
+
+    @Test
+    fun `pullAndMerge parses due date without milliseconds`() = runTest {
+        val withDue = remoteTask.copy(due = "2025-06-15T00:00:00Z")
+        coEvery { remoteSource.fetchTasks(token) } returns listOf(withDue)
+        coEvery { repository.getByGoogleTaskId("remote1") } returns null
+
+        service.pullAndMerge()
+
+        coVerify { repository.upsertFromRemote(match { it.dueAt != null }) }
+    }
+
+    @Test
+    fun `pullAndMerge stores null dueAt when due is absent`() = runTest {
+        coEvery { remoteSource.fetchTasks(token) } returns listOf(remoteTask)
+        coEvery { repository.getByGoogleTaskId("remote1") } returns null
+
+        service.pullAndMerge()
+
+        coVerify { repository.upsertFromRemote(match { it.dueAt == null }) }
     }
 
     // endregion
