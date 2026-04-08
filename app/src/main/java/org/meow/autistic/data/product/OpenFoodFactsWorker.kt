@@ -110,16 +110,32 @@ class OpenFoodFactsWorker(
 
     private suspend fun importUrls(urls: List<String>) {
         var totalImported = 0L
-        for (url in urls) {
+        for ((index, url) in urls.withIndex()) {
+            val label = if (urls.size > 1) " (${index + 1} of ${urls.size})" else ""
             val response = client.newCall(Request.Builder().url(url).build()).execute()
             if (!response.isSuccessful) throw IllegalStateException("HTTP ${response.code} fetching $url")
             val body = response.body ?: throw IllegalStateException("Empty body for $url")
-            val reader = BufferedReader(InputStreamReader(GZIPInputStream(body.byteStream())))
-            totalImported += processStream(reader, totalImported)
+            val contentLengthMb = body.contentLength().let { if (it > 0) it / 1_000_000 else -1L }
+            var bytesRead = 0L
+            val countingStream = object : java.io.InputStream() {
+                private val raw = body.byteStream()
+                override fun read(): Int = raw.read().also { if (it >= 0) bytesRead++ }
+                override fun read(b: ByteArray, off: Int, len: Int): Int =
+                    raw.read(b, off, len).also { if (it > 0) bytesRead += it }
+                override fun close() = raw.close()
+            }
+            val reader = BufferedReader(InputStreamReader(GZIPInputStream(countingStream)))
+            totalImported += processStream(reader, totalImported, label, contentLengthMb) { bytesRead }
         }
     }
 
-    private suspend fun processStream(reader: BufferedReader, startCount: Long): Long {
+    private suspend fun processStream(
+        reader: BufferedReader,
+        startCount: Long,
+        label: String,
+        contentLengthMb: Long,
+        bytesRead: () -> Long,
+    ): Long {
         val batch = mutableListOf<ProductEntity>()
         var imported = 0L
         var line = reader.readLine()
@@ -138,7 +154,10 @@ class OpenFoodFactsWorker(
                     repository.upsertAll(batch.toList())
                     imported += batch.size
                     batch.clear()
-                    setProgress(status("Importing ${startCount + imported} rows…"))
+                    val mbSoFar = bytesRead() / 1_000_000
+                    val progressStr = if (contentLengthMb > 0) "$mbSoFar MB of $contentLengthMb MB"
+                                      else "$mbSoFar MB"
+                    setProgress(status("Downloading$label $progressStr · ${startCount + imported} products"))
                 }
             }
             line = reader.readLine()
