@@ -90,7 +90,23 @@ fun ScanScreen(modifier: Modifier = Modifier, viewModel: ScanViewModel = koinVie
                 Text("Product database not available", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Go to Settings → Sync Products to download the product database.",
+                    "Download the product database to look up barcodes.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(Modifier.height(16.dp))
+                Button(onClick = { viewModel.triggerProductSync() }) {
+                    Text("Download Product Database")
+                }
+            }
+
+            uiState is ScanUiState.Syncing -> Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(24.dp)
+            ) {
+                CircularProgressIndicator()
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    (uiState as ScanUiState.Syncing).status,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
