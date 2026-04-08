@@ -51,7 +51,7 @@ class GoogleAuthManagerTest {
     fun `isAuthenticated returns true when account has all permissions`() {
         val account = mockk<GoogleSignInAccount>()
         every { GoogleSignIn.getLastSignedInAccount(context) } returns account
-        every { GoogleSignIn.hasPermissions(account, any<Scope>(), any<Scope>()) } returns true
+        every { GoogleSignIn.hasPermissions(account, any<Scope>(), any<Scope>(), any<Scope>()) } returns true
         assertTrue(manager.isAuthenticated())
     }
 
@@ -59,7 +59,7 @@ class GoogleAuthManagerTest {
     fun `isAuthenticated returns false when account lacks permissions`() {
         val account = mockk<GoogleSignInAccount>()
         every { GoogleSignIn.getLastSignedInAccount(context) } returns account
-        every { GoogleSignIn.hasPermissions(account, any<Scope>(), any<Scope>()) } returns false
+        every { GoogleSignIn.hasPermissions(account, any<Scope>(), any<Scope>(), any<Scope>()) } returns false
         assertFalse(manager.isAuthenticated())
     }
 

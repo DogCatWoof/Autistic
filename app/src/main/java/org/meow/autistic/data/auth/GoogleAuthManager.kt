@@ -11,6 +11,7 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.Scope
 import com.google.android.gms.tasks.Tasks as GmsTasks
 import com.google.api.services.calendar.CalendarScopes
+import com.google.api.services.drive.DriveScopes
 import com.google.api.services.tasks.TasksScopes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -22,6 +23,7 @@ import java.util.concurrent.TimeUnit
  * Requested scopes:
  * - [TasksScopes.TASKS] — read + write access to Google Tasks
  * - [CalendarScopes.CALENDAR_READONLY] — read-only access to Google Calendar
+ * - [DriveScopes.DRIVE_APPDATA] — hidden app-data folder for DB backups
  */
 class GoogleAuthManager(
     private val context: Context,
@@ -31,13 +33,13 @@ class GoogleAuthManager(
     companion object {
         private const val TAG = "GoogleAuthManager"
         private const val SIGN_OUT_TIMEOUT_SEC = 10L
-        private val SCOPES = listOf(TasksScopes.TASKS, CalendarScopes.CALENDAR_READONLY)
+        private val SCOPES = listOf(TasksScopes.TASKS, CalendarScopes.CALENDAR_READONLY, DriveScopes.DRIVE_APPDATA)
     }
 
     private val signInClient: GoogleSignInClient by lazy {
         val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
-            .requestScopes(Scope(TasksScopes.TASKS), Scope(CalendarScopes.CALENDAR_READONLY))
+            .requestScopes(Scope(TasksScopes.TASKS), Scope(CalendarScopes.CALENDAR_READONLY), Scope(DriveScopes.DRIVE_APPDATA))
             .build()
         GoogleSignIn.getClient(context, options)
     }
@@ -49,6 +51,7 @@ class GoogleAuthManager(
             account,
             Scope(TasksScopes.TASKS),
             Scope(CalendarScopes.CALENDAR_READONLY),
+            Scope(DriveScopes.DRIVE_APPDATA),
         )
     }
 

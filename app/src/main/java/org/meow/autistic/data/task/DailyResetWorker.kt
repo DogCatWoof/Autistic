@@ -1,4 +1,4 @@
-package org.meow.autistic.data.todo
+package org.meow.autistic.data.task
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -14,6 +14,8 @@ import androidx.work.WorkerParameters
 import kotlinx.coroutines.flow.first
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.meow.autistic.data.backup.DriveBackupService
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -40,11 +42,14 @@ class DailyResetWorker(
 
     private val taskDao: TaskDao by inject()
     private val dailyTaskRepository: DailyTaskRepository by inject()
+    private val driveBackupService: DriveBackupService by inject()
 
     override suspend fun doWork(): Result {
         val today = LocalDate.now().toString()
         val prefs = context.dailyResetDataStore.data.first()
         if (prefs[LAST_RESET_DATE_KEY] == today) return Result.success()
+
+        driveBackupService.backupDatabase()
 
         taskDao.deleteUnfinishedDailyTasks()
 
@@ -53,7 +58,7 @@ class DailyResetWorker(
             .toInstant()
             .toEpochMilli()
 
-        val now = java.time.Instant.now()
+        val now = Instant.now()
         dailyTaskRepository.getAllOnce().forEach { dailyTask ->
             val dueAtMs = if (dailyTask.timeMinutes != null) {
                 todayStartMs + dailyTask.timeMinutes * 60_000L
@@ -64,7 +69,7 @@ class DailyResetWorker(
                 TaskEntity(
                     task = dailyTask.title,
                     category = dailyTask.category,
-                    dueAt = java.time.Instant.ofEpochMilli(dueAtMs),
+                    dueAt = Instant.ofEpochMilli(dueAtMs),
                     createdAt = now,
                     dailyTaskId = dailyTask.id,
                     syncStatus = "local",

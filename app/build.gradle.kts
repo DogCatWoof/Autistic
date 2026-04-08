@@ -80,6 +80,7 @@ dependencies {
     implementation(libs.google.api.client.android)
     implementation(libs.google.api.services.tasks)
     implementation(libs.google.api.services.calendar)
+    implementation(libs.google.api.services.drive)
 
     // Encrypted token storage
     implementation(libs.androidx.security.crypto)
