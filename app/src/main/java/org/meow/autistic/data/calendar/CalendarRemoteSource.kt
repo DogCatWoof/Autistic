@@ -43,7 +43,7 @@ data class CalendarSyncResult(
 )
 
 /**
- * Raw HTTP client for the Google Calendar API (read-only).
+ * Raw HTTP client for the Google Calendar API.
  *
  * All methods run on [Dispatchers.IO] and paginate automatically.
  *
@@ -113,6 +113,15 @@ class CalendarRemoteSource(
             } while (pageToken != null)
             CalendarSyncResult(result, nextSync)
         }
+
+    /**
+     * Deletes a single event from the primary calendar.
+     */
+    suspend fun deleteEvent(token: String, eventId: String) {
+        withContext(Dispatchers.IO) {
+            clientFactory(token).events().delete(PRIMARY_CALENDAR, eventId).execute()
+        }
+    }
 }
 
 private fun com.google.api.services.calendar.model.Event.toRemoteEvent() = RemoteEvent(

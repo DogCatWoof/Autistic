@@ -21,6 +21,7 @@ import org.meow.autistic.data.calendar.CalendarRepository
 import org.meow.autistic.data.sync.SyncScheduler
 import org.meow.autistic.data.todo.TaskEntity
 import org.meow.autistic.data.todo.TaskRepository
+import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TaskViewModelTest {
@@ -53,14 +54,14 @@ class TaskViewModelTest {
 
     @Test
     fun `update sets syncStatus to pending_push for incomplete task`() = runTest {
-        val task = TaskEntity(id = 1L, task = "Task", createdAt = 0L, syncStatus = "synced")
+        val task = TaskEntity(id = 1L, task = "Task", createdAt = Instant.EPOCH, syncStatus = "synced")
         viewModel.update(task)
         coVerify { repository.update(task.copy(syncStatus = "pending_push")) }
     }
 
     @Test
     fun `update deletes local-only completed task immediately`() = runTest {
-        val task = TaskEntity(id = 1L, task = "Task", createdAt = 0L, isCompleted = true, googleTaskId = null)
+        val task = TaskEntity(id = 1L, task = "Task", createdAt = Instant.EPOCH, isCompleted = true, googleTaskId = null)
         viewModel.update(task)
         coVerify { repository.delete(task) }
         coVerify(exactly = 0) { repository.update(any()) }
@@ -68,7 +69,7 @@ class TaskViewModelTest {
 
     @Test
     fun `update keeps completed synced task as pending_push until sync`() = runTest {
-        val task = TaskEntity(id = 1L, task = "Task", createdAt = 0L, isCompleted = true, googleTaskId = "gid")
+        val task = TaskEntity(id = 1L, task = "Task", createdAt = Instant.EPOCH, isCompleted = true, googleTaskId = "gid")
         viewModel.update(task)
         coVerify { repository.update(task.copy(syncStatus = "pending_push")) }
         coVerify(exactly = 0) { repository.markPendingDelete(any()) }
@@ -76,14 +77,14 @@ class TaskViewModelTest {
 
     @Test
     fun `update preserves pending_push on already-queued item`() = runTest {
-        val task = TaskEntity(id = 1L, task = "Task", createdAt = 0L, syncStatus = "pending_push")
+        val task = TaskEntity(id = 1L, task = "Task", createdAt = Instant.EPOCH, syncStatus = "pending_push")
         viewModel.update(task)
         coVerify { repository.update(task.copy(syncStatus = "pending_push")) }
     }
 
     @Test
     fun `update sets pending_push on local item`() = runTest {
-        val task = TaskEntity(id = 1L, task = "Task", createdAt = 0L, syncStatus = "local")
+        val task = TaskEntity(id = 1L, task = "Task", createdAt = Instant.EPOCH, syncStatus = "local")
         viewModel.update(task)
         coVerify { repository.update(task.copy(syncStatus = "pending_push")) }
     }
@@ -94,7 +95,7 @@ class TaskViewModelTest {
 
     @Test
     fun `delete with googleTaskId marks as pending_delete`() = runTest {
-        val task = TaskEntity(id = 1L, task = "Task", createdAt = 0L, googleTaskId = "gid")
+        val task = TaskEntity(id = 1L, task = "Task", createdAt = Instant.EPOCH, googleTaskId = "gid")
         viewModel.delete(task)
         coVerify { repository.markPendingDelete(1L) }
         coVerify(exactly = 0) { repository.delete(any()) }
@@ -102,7 +103,7 @@ class TaskViewModelTest {
 
     @Test
     fun `delete without googleTaskId deletes directly`() = runTest {
-        val task = TaskEntity(id = 1L, task = "Task", createdAt = 0L, googleTaskId = null)
+        val task = TaskEntity(id = 1L, task = "Task", createdAt = Instant.EPOCH, googleTaskId = null)
         viewModel.delete(task)
         coVerify { repository.delete(task) }
         coVerify(exactly = 0) { repository.markPendingDelete(any()) }
@@ -119,28 +120,28 @@ class TaskViewModelTest {
 
     @Test
     fun `groupedItems filters out completed tasks`() = runTest {
-        val active = TaskEntity(id = 1L, task = "Active", createdAt = 0L, isCompleted = false)
-        val completed = TaskEntity(id = 2L, task = "Done", createdAt = 0L, isCompleted = true)
+        val active = TaskEntity(id = 1L, task = "Active", createdAt = Instant.EPOCH, isCompleted = false)
+        val completed = TaskEntity(id = 2L, task = "Done", createdAt = Instant.EPOCH, isCompleted = true)
         val vm = makeViewModel(listOf(active, completed))
         val grouped = vm.groupedItems.first()
-        val allItems = grouped.today + grouped.later
+        val allItems = grouped.today + grouped.later.flatMap { it.second }
         assertTrue(allItems.all { it is TaskListItem.Task && !it.entity.isCompleted })
     }
 
     @Test
     fun `groupedItems filters out pending_delete tasks`() = runTest {
-        val active = TaskEntity(id = 1L, task = "Active", createdAt = 0L)
-        val pendingDelete = TaskEntity(id = 2L, task = "Deleted", createdAt = 0L, syncStatus = "pending_delete")
+        val active = TaskEntity(id = 1L, task = "Active", createdAt = Instant.EPOCH)
+        val pendingDelete = TaskEntity(id = 2L, task = "Deleted", createdAt = Instant.EPOCH, syncStatus = "pending_delete")
         val vm = makeViewModel(listOf(active, pendingDelete))
         val grouped = vm.groupedItems.first()
-        val allItems = grouped.today + grouped.later
+        val allItems = grouped.today + grouped.later.flatMap { it.second }
         assertTrue(allItems.none { it is TaskListItem.Task && it.entity.syncStatus == "pending_delete" })
     }
 
     @Test
     fun `groupedItems is empty when all tasks are completed or pending_delete`() = runTest {
-        val completed = TaskEntity(id = 1L, task = "Done", createdAt = 0L, isCompleted = true)
-        val pendingDelete = TaskEntity(id = 2L, task = "Deleted", createdAt = 0L, syncStatus = "pending_delete")
+        val completed = TaskEntity(id = 1L, task = "Done", createdAt = Instant.EPOCH, isCompleted = true)
+        val pendingDelete = TaskEntity(id = 2L, task = "Deleted", createdAt = Instant.EPOCH, syncStatus = "pending_delete")
         val vm = makeViewModel(listOf(completed, pendingDelete))
         val grouped = vm.groupedItems.first()
         assertTrue(grouped.today.isEmpty() && grouped.later.isEmpty())

@@ -28,13 +28,14 @@ class CalendarSyncService(
 ) {
 
     /**
-     * Fetches changes from Google Calendar and merges them into the local database.
+     * Pushes pending deletes to Google Calendar, then fetches and merges remote changes.
      *
      * Cancelled events are deleted locally; all other events are upserted.
      * The new syncToken from the response is persisted for the next incremental call.
      */
     suspend fun pullAndMerge() {
         val token = tokenProvider()
+        pushPendingDeletes(token)
         val storedSyncToken = syncTokenStore.getSyncToken()
         val result = if (storedSyncToken != null) {
             incrementalSync(token, storedSyncToken)
@@ -42,6 +43,14 @@ class CalendarSyncService(
             fullSync(token)
         }
         applyResult(result)
+    }
+
+    private suspend fun pushPendingDeletes(token: String) {
+        val pending = repository.getPendingDeletes()
+        for (event in pending) {
+            remoteSource.deleteEvent(token, event.googleEventId)
+            repository.deleteByIds(listOf(event.googleEventId))
+        }
     }
 
     private suspend fun incrementalSync(token: String, syncToken: String): CalendarSyncResult {
@@ -80,7 +89,7 @@ class CalendarSyncService(
             repository.deleteByIds(cancelled.map { it.id })
         }
         if (active.isNotEmpty()) {
-            val now = System.currentTimeMillis()
+            val now = java.time.Instant.now()
             repository.upsertEvents(active.map { it.toEntity(now) })
         }
         if (result.nextSyncToken.isNotEmpty()) {
@@ -89,11 +98,11 @@ class CalendarSyncService(
     }
 }
 
-private fun RemoteEvent.toEntity(now: Long) = CalendarEventEntity(
+private fun RemoteEvent.toEntity(now: java.time.Instant) = CalendarEventEntity(
     googleEventId = id,
     title = title,
-    startAt = startMs,
-    endAt = endMs,
+    startAt = java.time.Instant.ofEpochMilli(startMs),
+    endAt = java.time.Instant.ofEpochMilli(endMs),
     isAllDay = isAllDay,
     calendarId = "primary",
     lastSyncedAt = now,

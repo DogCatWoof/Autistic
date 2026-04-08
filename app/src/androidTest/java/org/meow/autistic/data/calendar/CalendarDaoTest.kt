@@ -13,6 +13,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.meow.autistic.data.todo.TaskDatabase
+import java.time.Instant
 
 @RunWith(AndroidJUnit4::class)
 class CalendarDaoTest {
@@ -36,8 +37,8 @@ class CalendarDaoTest {
 
     private fun event(
         id: String,
-        startAt: Long = 1000L,
-        endAt: Long = 2000L,
+        startAt: Instant = Instant.ofEpochMilli(1000L),
+        endAt: Instant = Instant.ofEpochMilli(2000L),
     ) = CalendarEventEntity(
         googleEventId = id,
         title = "Event $id",
@@ -45,7 +46,7 @@ class CalendarDaoTest {
         endAt = endAt,
         isAllDay = false,
         calendarId = "primary",
-        lastSyncedAt = System.currentTimeMillis(),
+        lastSyncedAt = Instant.now(),
     )
 
     @Test
@@ -72,10 +73,10 @@ class CalendarDaoTest {
     @Test
     fun getEventsInRange_filtersCorrectly() = runTest {
         dao.upsertEvents(listOf(
-            event("in", startAt = 500L, endAt = 900L),
-            event("out", startAt = 1500L, endAt = 2500L),
+            event("in", startAt = Instant.ofEpochMilli(500L), endAt = Instant.ofEpochMilli(900L)),
+            event("out", startAt = Instant.ofEpochMilli(1500L), endAt = Instant.ofEpochMilli(2500L)),
         ))
-        val events = dao.getEventsInRange(100L, 1000L).first()
+        val events = dao.getEventsInRange(Instant.ofEpochMilli(100L), Instant.ofEpochMilli(1000L)).first()
         assertEquals(1, events.size)
         assertEquals("in", events[0].googleEventId)
     }
@@ -94,5 +95,32 @@ class CalendarDaoTest {
         dao.upsertEvents(listOf(event("e1"), event("e2")))
         dao.deleteAll()
         assertTrue(dao.getAllEvents().first().isEmpty())
+    }
+
+    @Test
+    fun markHidden_excludesEventFromGetAllEvents() = runTest {
+        dao.upsertEvents(listOf(event("visible"), event("hidden")))
+        dao.markHidden("hidden")
+        val events = dao.getAllEvents().first()
+        assertEquals(1, events.size)
+        assertEquals("visible", events[0].googleEventId)
+    }
+
+    @Test
+    fun markPendingDelete_excludesEventFromGetAllEvents() = runTest {
+        dao.upsertEvents(listOf(event("keep"), event("delete")))
+        dao.markPendingDelete("delete")
+        val events = dao.getAllEvents().first()
+        assertEquals(1, events.size)
+        assertEquals("keep", events[0].googleEventId)
+    }
+
+    @Test
+    fun getPendingDeletes_returnsOnlyPendingDeleteEvents() = runTest {
+        dao.upsertEvents(listOf(event("synced"), event("pending")))
+        dao.markPendingDelete("pending")
+        val pending = dao.getPendingDeletes()
+        assertEquals(1, pending.size)
+        assertEquals("pending", pending[0].googleEventId)
     }
 }

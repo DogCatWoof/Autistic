@@ -3,6 +3,7 @@ package org.meow.autistic.data.calendar
 import android.os.SystemClock
 import kotlinx.coroutines.flow.Flow
 import org.meow.autistic.data.diagnostics.QueryLogger
+import java.time.Instant
 
 /**
  * Persistence layer for calendar events.
@@ -15,8 +16,8 @@ class CalendarRepository(
 ) {
     fun getAllEvents(): Flow<List<CalendarEventEntity>> = dao.getAllEvents()
 
-    fun getEventsInRange(fromMs: Long, toMs: Long): Flow<List<CalendarEventEntity>> =
-        dao.getEventsInRange(fromMs, toMs)
+    fun getEventsInRange(from: Instant, to: Instant): Flow<List<CalendarEventEntity>> =
+        dao.getEventsInRange(from, to)
 
     suspend fun upsertEvents(events: List<CalendarEventEntity>) =
         timed("CalendarRepository.upsertEvents") { dao.upsertEvents(events) }
@@ -26,6 +27,15 @@ class CalendarRepository(
 
     suspend fun deleteAll() =
         timed("CalendarRepository.deleteAll") { dao.deleteAll() }
+
+    suspend fun markHidden(googleEventId: String) =
+        timed("CalendarRepository.markHidden") { dao.markHidden(googleEventId) }
+
+    suspend fun markPendingDelete(googleEventId: String) =
+        timed("CalendarRepository.markPendingDelete") { dao.markPendingDelete(googleEventId) }
+
+    suspend fun getPendingDeletes(): List<CalendarEventEntity> =
+        timed("CalendarRepository.getPendingDeletes") { dao.getPendingDeletes() }
 
     private suspend inline fun <T> timed(label: String, block: suspend () -> T): T {
         val start = SystemClock.elapsedRealtime()

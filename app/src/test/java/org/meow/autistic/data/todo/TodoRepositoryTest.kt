@@ -12,13 +12,14 @@ import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.meow.autistic.data.diagnostics.QueryLogger
+import java.time.Instant
 
 class TaskRepositoryTest {
 
     private lateinit var dao: TaskDao
     private lateinit var repository: TaskRepository
 
-    private val task = TaskEntity(id = 1L, task = "Test task", createdAt = 1000L)
+    private val task = TaskEntity(id = 1L, task = "Test task", createdAt = Instant.ofEpochMilli(1000L))
 
     @Before
     fun setUp() {
@@ -93,9 +94,10 @@ class TaskRepositoryTest {
 
     @Test
     fun `markSynced delegates to dao`() = runTest {
-        coEvery { dao.markSynced(1L, "gid", 9999L) } returns 1
-        repository.markSynced(1L, "gid", 9999L)
-        coVerify { dao.markSynced(1L, "gid", 9999L) }
+        val ts = Instant.ofEpochMilli(9999L)
+        coEvery { dao.markSynced(1L, "gid", ts) } returns 1
+        repository.markSynced(1L, "gid", ts)
+        coVerify { dao.markSynced(1L, "gid", ts) }
     }
 
     @Test

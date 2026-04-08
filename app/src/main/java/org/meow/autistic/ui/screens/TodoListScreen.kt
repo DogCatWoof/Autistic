@@ -36,6 +36,7 @@ import org.koin.androidx.compose.koinViewModel
 import org.meow.autistic.data.calendar.CalendarEventEntity
 import org.meow.autistic.data.todo.TaskEntity
 import java.text.SimpleDateFormat
+import java.time.Instant
 import java.util.*
 
 
@@ -92,9 +93,9 @@ fun TaskListScreen(viewModel: TaskViewModel = koinViewModel()) {
                         TaskListItemRow(item, viewModel)
                     }
                 }
-                if (grouped.later.isNotEmpty()) {
-                    item(key = "header_later") { SectionHeader("Later") }
-                    items(grouped.later, key = { it.itemKey }) { item ->
+                grouped.later.forEach { (dateLabel, sectionItems) ->
+                    item(key = "header_later_$dateLabel") { SectionHeader(dateLabel) }
+                    items(sectionItems, key = { it.itemKey }) { item ->
                         TaskListItemRow(item, viewModel)
                     }
                 }
@@ -112,7 +113,7 @@ fun TaskListScreen(viewModel: TaskViewModel = koinViewModel()) {
                             notes = notes,
                             isCompleted = false,
                             reminderSet = reminder,
-                            createdAt = System.currentTimeMillis(),
+                            createdAt = Instant.now(),
                             syncStatus = "local",
                             expectedTimeMinutes = expectedTime,
                         )
@@ -205,38 +206,76 @@ fun TaskListItemRow(item: TaskListItem, viewModel: TaskViewModel) {
             onToggle = { viewModel.update(item.entity.copy(isCompleted = it)) },
             onDelete = { viewModel.delete(item.entity) },
         )
-        is TaskListItem.Event -> CalendarEventItem(item.entity)
+        is TaskListItem.Event -> CalendarEventItem(item.entity, viewModel)
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalendarEventItem(event: CalendarEventEntity) {
+fun CalendarEventItem(event: CalendarEventEntity, viewModel: TaskViewModel) {
     val dateFormatter = remember { SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()) }
     val dimColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-    Column(
-        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column {
-                Text(event.title, style = MaterialTheme.typography.bodyLarge)
-                if (event.isAllDay) {
-                    Text("All day", style = MaterialTheme.typography.bodySmall, color = dimColor)
-                } else {
-                    Text(
-                        "${dateFormatter.format(Date(event.startAt))} – ${dateFormatter.format(Date(event.endAt))}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = dimColor,
-                    )
+
+    val dismissState = rememberSwipeToDismissBoxState()
+    LaunchedEffect(dismissState.currentValue) {
+        when (dismissState.currentValue) {
+            SwipeToDismissBoxValue.StartToEnd -> viewModel.completeEvent(event)
+            SwipeToDismissBoxValue.EndToStart -> viewModel.deleteEvent(event)
+            else -> {}
+        }
+    }
+
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            val isComplete by remember {
+                derivedStateOf {
+                    try { dismissState.requireOffset() > 0f } catch (_: IllegalStateException) { false }
                 }
             }
+            val bgColor = if (isComplete) MaterialTheme.colorScheme.primaryContainer
+                          else MaterialTheme.colorScheme.errorContainer
+            val alignment = if (isComplete) Alignment.CenterStart else Alignment.CenterEnd
+            val padding = if (isComplete) Modifier.padding(start = 24.dp) else Modifier.padding(end = 24.dp)
+            Box(
+                modifier = Modifier.fillMaxSize().background(bgColor),
+                contentAlignment = alignment
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = if (isComplete) "Complete" else "Delete",
+                    tint = if (isComplete) MaterialTheme.colorScheme.onPrimaryContainer
+                           else MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = padding
+                )
+            }
         }
-        HorizontalDivider(
-            modifier = Modifier.padding(start = 16.dp),
-            color = MaterialTheme.colorScheme.outlineVariant,
-        )
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column {
+                    Text(event.title, style = MaterialTheme.typography.bodyLarge)
+                    if (event.isAllDay) {
+                        Text("All day", style = MaterialTheme.typography.bodySmall, color = dimColor)
+                    } else {
+                        Text(
+                            "${dateFormatter.format(Date.from(event.startAt))} – ${dateFormatter.format(Date.from(event.endAt))}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = dimColor,
+                        )
+                    }
+                }
+            }
+            HorizontalDivider(
+                modifier = Modifier.padding(start = 16.dp),
+                color = MaterialTheme.colorScheme.outlineVariant,
+            )
+        }
     }
 }
 
@@ -301,7 +340,7 @@ fun TaskItem(task: TaskEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
                     )
                     if (task.dueAt != null) {
                         Text(
-                            text = "Due: ${dateFormatter.format(Date(task.dueAt))}",
+                            text = "Due: ${dateFormatter.format(Date.from(task.dueAt))}",
                             style = MaterialTheme.typography.bodySmall,
                             color = dimColor
                         )
@@ -337,7 +376,7 @@ fun TaskItem(task: TaskEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
 @Composable
 fun AddTaskDialog(
     onDismiss: () -> Unit,
-    onConfirm: (String, Long?, Boolean, String?, Int?) -> Unit
+    onConfirm: (String, Instant?, Boolean, String?, Int?) -> Unit
 ) {
     var taskText by remember { mutableStateOf("") }
     var notesText by remember { mutableStateOf("") }

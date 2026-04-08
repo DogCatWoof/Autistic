@@ -21,6 +21,7 @@ import org.meow.autistic.data.todo.TaskEntity
 import org.meow.autistic.data.todo.TaskRepository
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 sealed class SyncState {
     object Idle : SyncState()
@@ -57,8 +58,8 @@ class TaskViewModel(
 
         // Exclude calendar events that have already ended
         val eventItems = events
-            .filter { it.endAt >= now }
-            .map { event -> TaskListItem.Event(event, event.endAt) }
+            .filter { it.endAt.toEpochMilli() >= now }
+            .map { event -> TaskListItem.Event(event, event.endAt.toEpochMilli()) }
 
         val pastDue = taskItems
             .filter { it.sortKey < now }
@@ -67,10 +68,18 @@ class TaskViewModel(
         val upcoming = (taskItems.filter { it.sortKey >= now } + eventItems)
             .sortedBy { it.sortKey }
 
+        val todayDate = LocalDate.now()
+        val laterByDate = upcoming
+            .filter { !isToday(it, todayStart, todayEnd) }
+            .groupBy { dateLabel(it, todayDate) }
+            .entries
+            .sortedBy { (_, items) -> items.minOf { it.sortKey } }
+            .map { (label, items) -> label to items }
+
         GroupedTaskItems(
             pastDue = pastDue,
             today = upcoming.filter { isToday(it, todayStart, todayEnd) },
-            later = upcoming.filter { !isToday(it, todayStart, todayEnd) },
+            later = laterByDate,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GroupedTaskItems.EMPTY)
 
@@ -132,17 +141,37 @@ class TaskViewModel(
         else repository.delete(task)
     }
 
+    fun completeEvent(event: org.meow.autistic.data.calendar.CalendarEventEntity) = viewModelScope.launch {
+        calendarRepository.markHidden(event.googleEventId)
+    }
+
+    fun deleteEvent(event: org.meow.autistic.data.calendar.CalendarEventEntity) = viewModelScope.launch {
+        calendarRepository.markPendingDelete(event.googleEventId)
+    }
+
     private fun taskSortKey(entity: TaskEntity, todayEndMs: Long): Long = when {
         entity.expectedTimeMinutes != null && entity.dueAt != null ->
-            entity.dueAt + entity.expectedTimeMinutes * 60_000L
+            entity.dueAt.toEpochMilli() + entity.expectedTimeMinutes * 60_000L
         entity.dailyTaskId != null -> todayEndMs
-        entity.dueAt != null -> entity.dueAt
+        entity.dueAt != null -> entity.dueAt.toEpochMilli()
         else -> todayEndMs
     }
 
     private fun isToday(item: TaskListItem, todayStart: Long, todayEnd: Long): Boolean = when (item) {
-        is TaskListItem.Task -> item.entity.dueAt?.let { it in todayStart until todayEnd } ?: true
-        is TaskListItem.Event -> item.entity.startAt < todayEnd && item.entity.endAt > todayStart
+        is TaskListItem.Task -> item.entity.dueAt?.toEpochMilli()?.let { it in todayStart until todayEnd } ?: true
+        is TaskListItem.Event -> item.entity.startAt.toEpochMilli() < todayEnd && item.entity.endAt.toEpochMilli() > todayStart
+    }
+
+    private fun dateLabel(item: TaskListItem, todayDate: LocalDate): String {
+        val instant = when (item) {
+            is TaskListItem.Task -> item.entity.dueAt
+            is TaskListItem.Event -> item.entity.startAt
+        } ?: return "Later"
+        val date = instant.atZone(ZoneId.systemDefault()).toLocalDate()
+        return when {
+            date == todayDate.plusDays(1) -> "Tomorrow"
+            else -> date.format(DateTimeFormatter.ofPattern("MMM d"))
+        }
     }
 
     private fun todayStartMs(): Long =

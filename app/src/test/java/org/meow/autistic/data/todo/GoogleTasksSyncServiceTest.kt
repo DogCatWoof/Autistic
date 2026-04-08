@@ -15,14 +15,14 @@ class GoogleTasksSyncServiceTest {
     private val service = GoogleTasksSyncService(remoteSource, repository) { token }
 
     private val localNew = TaskEntity(
-        id = 1L, task = "New task", createdAt = 1000L, syncStatus = "pending_push",
+        id = 1L, task = "New task", createdAt = java.time.Instant.ofEpochMilli(1000L), syncStatus = "pending_push",
     )
     private val localExisting = TaskEntity(
-        id = 2L, task = "Existing", createdAt = 1000L,
+        id = 2L, task = "Existing", createdAt = java.time.Instant.ofEpochMilli(1000L),
         googleTaskId = "remote1", syncStatus = "pending_push",
     )
     private val localPendingDelete = TaskEntity(
-        id = 3L, task = "Delete me", createdAt = 1000L,
+        id = 3L, task = "Delete me", createdAt = java.time.Instant.ofEpochMilli(1000L),
         googleTaskId = "remote2", syncStatus = "pending_delete",
     )
     private val remoteTask = RemoteTask(

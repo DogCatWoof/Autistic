@@ -4,18 +4,31 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverter
+import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import org.meow.autistic.data.calendar.CalendarDao
 import org.meow.autistic.data.calendar.CalendarEventEntity
 import org.meow.autistic.data.product.ProductDao
 import org.meow.autistic.data.product.ProductEntity
+import java.time.Instant
+
+/** Converts [Instant] to/from ISO 8601 TEXT for Room storage. */
+class InstantConverter {
+    @TypeConverter
+    fun fromInstant(value: Instant?): String? = value?.toString()
+
+    @TypeConverter
+    fun toInstant(value: String?): Instant? = value?.let { Instant.parse(it) }
+}
 
 @Database(
     entities = [TaskEntity::class, CalendarEventEntity::class, ProductEntity::class, DailyTaskEntity::class],
-    version = 9,
+    version = 11,
     exportSchema = false,
 )
+@TypeConverters(InstantConverter::class)
 abstract class TaskDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
     abstract fun calendarDao(): CalendarDao
@@ -103,10 +116,81 @@ abstract class TaskDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Recreate tasks with TEXT timestamp columns
+                db.execSQL("""
+                    CREATE TABLE tasks_new (
+                        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        task TEXT NOT NULL,
+                        isCompleted INTEGER NOT NULL DEFAULT 0,
+                        createdAt TEXT NOT NULL,
+                        dueAt TEXT,
+                        notes TEXT,
+                        category TEXT NOT NULL DEFAULT 'General',
+                        reminderSet INTEGER NOT NULL DEFAULT 0,
+                        googleTaskId TEXT,
+                        googleTaskListId TEXT,
+                        extraPropertiesJson TEXT,
+                        lastSyncedAt TEXT,
+                        syncStatus TEXT NOT NULL DEFAULT 'local',
+                        dailyTaskId INTEGER,
+                        expectedTimeMinutes INTEGER
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT INTO tasks_new SELECT
+                        id, task, isCompleted,
+                        strftime('%Y-%m-%dT%H:%M:%SZ', createdAt / 1000, 'unixepoch'),
+                        CASE WHEN dueAt IS NULL THEN NULL
+                             ELSE strftime('%Y-%m-%dT%H:%M:%SZ', dueAt / 1000, 'unixepoch') END,
+                        notes, category, reminderSet, googleTaskId, googleTaskListId,
+                        extraPropertiesJson,
+                        CASE WHEN lastSyncedAt IS NULL THEN NULL
+                             ELSE strftime('%Y-%m-%dT%H:%M:%SZ', lastSyncedAt / 1000, 'unixepoch') END,
+                        syncStatus, dailyTaskId, expectedTimeMinutes
+                    FROM tasks
+                """.trimIndent())
+                db.execSQL("DROP TABLE tasks")
+                db.execSQL("ALTER TABLE tasks_new RENAME TO tasks")
+
+                // Recreate calendar_events with TEXT timestamp columns
+                db.execSQL("""
+                    CREATE TABLE calendar_events_new (
+                        googleEventId TEXT NOT NULL PRIMARY KEY,
+                        title TEXT NOT NULL,
+                        startAt TEXT NOT NULL,
+                        endAt TEXT NOT NULL,
+                        isAllDay INTEGER NOT NULL,
+                        calendarId TEXT NOT NULL,
+                        lastSyncedAt TEXT NOT NULL
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT INTO calendar_events_new SELECT
+                        googleEventId, title,
+                        strftime('%Y-%m-%dT%H:%M:%SZ', startAt / 1000, 'unixepoch'),
+                        strftime('%Y-%m-%dT%H:%M:%SZ', endAt / 1000, 'unixepoch'),
+                        isAllDay, calendarId,
+                        strftime('%Y-%m-%dT%H:%M:%SZ', lastSyncedAt / 1000, 'unixepoch')
+                    FROM calendar_events
+                """.trimIndent())
+                db.execSQL("DROP TABLE calendar_events")
+                db.execSQL("ALTER TABLE calendar_events_new RENAME TO calendar_events")
+            }
+        }
+
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE calendar_events ADD COLUMN isHidden INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE calendar_events ADD COLUMN syncStatus TEXT NOT NULL DEFAULT 'synced'")
+            }
+        }
+
         fun getDatabase(context: Context): TaskDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, TaskDatabase::class.java, "autistic_database")
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
                     .build()
                     .also { Instance = it }
             }

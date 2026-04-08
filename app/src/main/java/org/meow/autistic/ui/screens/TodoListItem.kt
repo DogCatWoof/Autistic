@@ -19,7 +19,7 @@ sealed class TaskListItem {
 data class GroupedTaskItems(
     val pastDue: List<TaskListItem>,
     val today: List<TaskListItem>,
-    val later: List<TaskListItem>,
+    val later: List<Pair<String, List<TaskListItem>>>,
 ) {
     companion object {
         val EMPTY = GroupedTaskItems(emptyList(), emptyList(), emptyList())
