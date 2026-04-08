@@ -1,4 +1,4 @@
-package org.meow.autistic.data.todo
+package org.meow.autistic.data.task
 
 import com.google.api.client.http.HttpRequestInitializer
 import com.google.api.client.http.javanet.NetHttpTransport
@@ -67,6 +67,7 @@ class GoogleTasksRemoteSource(
                 .setShowDeleted(true)
                 .setShowHidden(true)
                 .setShowCompleted(false)
+                .setFields("items(id,title,notes,status,due,completed,deleted),nextPageToken")
             if (pageToken != null) {
                 request.setPageToken(pageToken)
             }

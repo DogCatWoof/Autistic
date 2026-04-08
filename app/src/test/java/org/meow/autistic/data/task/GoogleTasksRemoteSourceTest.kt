@@ -1,4 +1,4 @@
-package org.meow.autistic.data.todo
+package org.meow.autistic.data.task
 
 import com.google.api.services.tasks.Tasks
 import com.google.api.services.tasks.model.Task
@@ -12,8 +12,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.meow.autistic.data.task.GoogleTasksRemoteSource
-import org.meow.autistic.data.task.RemoteTask
 
 class GoogleTasksRemoteSourceTest {
 
@@ -35,6 +33,7 @@ class GoogleTasksRemoteSourceTest {
         every { mockList.setShowDeleted(true) } returns mockList
         every { mockList.setShowHidden(true) } returns mockList
         every { mockList.setShowCompleted(false) } returns mockList
+        every { mockList.setFields(any()) } returns mockList
         every { mockList.execute() } returns com.google.api.services.tasks.model.Tasks().apply {
             items = emptyList()
             nextPageToken = null
@@ -52,6 +51,7 @@ class GoogleTasksRemoteSourceTest {
         every { mockList.setShowDeleted(true) } returns mockList
         every { mockList.setShowHidden(true) } returns mockList
         every { mockList.setShowCompleted(false) } returns mockList
+        every { mockList.setFields(any()) } returns mockList
         every { mockList.execute() } returns com.google.api.services.tasks.model.Tasks().apply {
             items = listOf(
                 Task().apply {
@@ -86,6 +86,7 @@ class GoogleTasksRemoteSourceTest {
         every { mockList.setShowDeleted(true) } returns mockList
         every { mockList.setShowHidden(true) } returns mockList
         every { mockList.setShowCompleted(false) } returns mockList
+        every { mockList.setFields(any()) } returns mockList
         every { mockList.setPageToken("page2") } returns mockList
 
         val page1Task = Task().apply { id = "t1"; title = "Page 1"; status = "needsAction"; deleted = false }
@@ -116,6 +117,7 @@ class GoogleTasksRemoteSourceTest {
         every { mockList.setShowDeleted(true) } returns mockList
         every { mockList.setShowHidden(true) } returns mockList
         every { mockList.setShowCompleted(false) } returns mockList
+        every { mockList.setFields(any()) } returns mockList
         every { mockList.execute() } returns com.google.api.services.tasks.model.Tasks().apply {
             items = listOf(
                 Task().apply { id = "del1"; title = "Deleted"; status = "needsAction"; deleted = true },
@@ -196,6 +198,7 @@ class GoogleTasksRemoteSourceTest {
         every { mockList.setShowDeleted(true) } returns mockList
         every { mockList.setShowHidden(true) } returns mockList
         every { mockList.setShowCompleted(false) } returns mockList
+        every { mockList.setFields(any()) } returns mockList
         every { mockList.execute() } returns com.google.api.services.tasks.model.Tasks().apply {
             items = null
             nextPageToken = null
@@ -210,6 +213,7 @@ class GoogleTasksRemoteSourceTest {
         every { mockList.setShowDeleted(true) } returns mockList
         every { mockList.setShowHidden(true) } returns mockList
         every { mockList.setShowCompleted(false) } returns mockList
+        every { mockList.setFields(any()) } returns mockList
         every { mockList.execute() } throws IOException("Network error")
         source.fetchTasks("token")
     }
