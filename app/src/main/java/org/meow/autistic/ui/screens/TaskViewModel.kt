@@ -147,7 +147,6 @@ class TaskViewModel(
 
     fun deleteEvent(event: org.meow.autistic.data.calendar.CalendarEventEntity) = viewModelScope.launch {
         calendarRepository.markPendingDelete(event.googleEventId)
-        triggerSync()
     }
 
     private fun taskSortKey(entity: TaskEntity, todayEndMs: Long): Long = when {

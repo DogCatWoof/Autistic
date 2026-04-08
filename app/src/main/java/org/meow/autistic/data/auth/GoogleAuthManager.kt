@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit
  *
  * Requested scopes:
  * - [TasksScopes.TASKS] — read + write access to Google Tasks
- * - [CalendarScopes.CALENDAR_READONLY] — read-only access to Google Calendar
+ * - [CalendarScopes.CALENDAR] — read/write access to Google Calendar
  * - [DriveScopes.DRIVE_APPDATA] — hidden app-data folder for DB backups
  */
 class GoogleAuthManager(
@@ -33,13 +33,13 @@ class GoogleAuthManager(
     companion object {
         private const val TAG = "GoogleAuthManager"
         private const val SIGN_OUT_TIMEOUT_SEC = 10L
-        private val SCOPES = listOf(TasksScopes.TASKS, CalendarScopes.CALENDAR_READONLY, DriveScopes.DRIVE_APPDATA)
+        private val SCOPES = listOf(TasksScopes.TASKS, CalendarScopes.CALENDAR, DriveScopes.DRIVE_APPDATA)
     }
 
     private val signInClient: GoogleSignInClient by lazy {
         val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
-            .requestScopes(Scope(TasksScopes.TASKS), Scope(CalendarScopes.CALENDAR_READONLY), Scope(DriveScopes.DRIVE_APPDATA))
+            .requestScopes(Scope(TasksScopes.TASKS), Scope(CalendarScopes.CALENDAR), Scope(DriveScopes.DRIVE_APPDATA))
             .build()
         GoogleSignIn.getClient(context, options)
     }
@@ -50,7 +50,7 @@ class GoogleAuthManager(
         return GoogleSignIn.hasPermissions(
             account,
             Scope(TasksScopes.TASKS),
-            Scope(CalendarScopes.CALENDAR_READONLY),
+            Scope(CalendarScopes.CALENDAR),
             Scope(DriveScopes.DRIVE_APPDATA),
         )
     }
