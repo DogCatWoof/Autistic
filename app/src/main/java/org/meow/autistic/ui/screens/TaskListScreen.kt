@@ -47,6 +47,7 @@ fun TaskListScreen(viewModel: TaskViewModel = koinViewModel()) {
     val isAuthenticated by viewModel.isAuthenticated.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
+    var selectedTask by remember { mutableStateOf<TaskEntity?>(null) }
 
     val signInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -84,19 +85,19 @@ fun TaskListScreen(viewModel: TaskViewModel = koinViewModel()) {
                 if (grouped.pastDue.isNotEmpty()) {
                     item(key = "header_past_due") { SectionHeader("Past Due") }
                     items(grouped.pastDue, key = { it.itemKey }) { item ->
-                        TaskListItemRow(item, viewModel)
+                        TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it })
                     }
                 }
                 if (grouped.today.isNotEmpty()) {
                     item(key = "header_today") { SectionHeader("Today") }
                     items(grouped.today, key = { it.itemKey }) { item ->
-                        TaskListItemRow(item, viewModel)
+                        TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it })
                     }
                 }
                 grouped.later.forEach { (dateLabel, sectionItems) ->
                     item(key = "header_later_$dateLabel") { SectionHeader(dateLabel) }
                     items(sectionItems, key = { it.itemKey }) { item ->
-                        TaskListItemRow(item, viewModel)
+                        TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it })
                     }
                 }
             }
@@ -119,6 +120,30 @@ fun TaskListScreen(viewModel: TaskViewModel = koinViewModel()) {
                         )
                     )
                     showAddDialog = false
+                }
+            )
+        }
+
+        selectedTask?.let { task ->
+            EditTaskDialog(
+                task = task,
+                onDismiss = { selectedTask = null },
+                onSave = { taskText, reminder, notes, expectedTime ->
+                    viewModel.update(task.copy(
+                        task = taskText,
+                        reminderSet = reminder,
+                        notes = notes,
+                        expectedTimeMinutes = expectedTime,
+                    ))
+                    selectedTask = null
+                },
+                onComplete = {
+                    viewModel.update(task.copy(isCompleted = !task.isCompleted))
+                    selectedTask = null
+                },
+                onDelete = {
+                    viewModel.delete(task)
+                    selectedTask = null
                 }
             )
         }
@@ -199,12 +224,13 @@ fun SectionHeader(title: String) {
 }
 
 @Composable
-fun TaskListItemRow(item: TaskListItem, viewModel: TaskViewModel) {
+fun TaskListItemRow(item: TaskListItem, viewModel: TaskViewModel, onTaskClick: (TaskEntity) -> Unit) {
     when (item) {
         is TaskListItem.Task -> TaskItem(
             task = item.entity,
             onToggle = { viewModel.update(item.entity.copy(isCompleted = it)) },
             onDelete = { viewModel.delete(item.entity) },
+            onClick = { onTaskClick(item.entity) },
         )
         is TaskListItem.Event -> CalendarEventItem(item.entity, viewModel)
     }
@@ -281,7 +307,7 @@ fun CalendarEventItem(event: CalendarEventEntity, viewModel: TaskViewModel) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TaskItem(task: TaskEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit) {
+fun TaskItem(task: TaskEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit, onClick: () -> Unit) {
     val dateFormatter = remember { SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()) }
     val dimColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
 
@@ -324,6 +350,7 @@ fun TaskItem(task: TaskEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surface)
+                .clickable { onClick() }
         ) {
             Row(
                 modifier = Modifier
@@ -442,6 +469,81 @@ fun AddTaskDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditTaskDialog(
+    task: TaskEntity,
+    onDismiss: () -> Unit,
+    onSave: (String, Boolean, String?, Int?) -> Unit,
+    onComplete: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    var taskText by remember { mutableStateOf(task.task) }
+    var notesText by remember { mutableStateOf(task.notes ?: "") }
+    var expectedTimeText by remember { mutableStateOf(task.expectedTimeMinutes?.toString() ?: "") }
+    var reminderSet by remember { mutableStateOf(task.reminderSet) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Task") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = taskText,
+                    onValueChange = { taskText = it },
+                    label = { Text("Task description") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = notesText,
+                    onValueChange = { notesText = it },
+                    label = { Text("Notes") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2
+                )
+                OutlinedTextField(
+                    value = expectedTimeText,
+                    onValueChange = { expectedTimeText = it.filter { c -> c.isDigit() } },
+                    label = { Text("Expected time (minutes)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = reminderSet, onCheckedChange = { reminderSet = it })
+                    Text("Remind me")
+                    Icon(
+                        imageVector = if (reminderSet) Icons.Default.Notifications else Icons.Outlined.Notifications,
+                        contentDescription = null,
+                        modifier = Modifier.padding(start = 4.dp),
+                        tint = if (reminderSet) MaterialTheme.colorScheme.primary
+                               else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onSave(taskText, reminderSet, notesText.takeIf { it.isNotBlank() }, expectedTimeText.toIntOrNull())
+                },
+                enabled = taskText.isNotBlank()
+            ) { Text("Save") }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = onDelete) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+                TextButton(onClick = onComplete) {
+                    Text(if (task.isCompleted) "Reopen" else "Complete")
+                }
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+            }
         }
     )
 }
