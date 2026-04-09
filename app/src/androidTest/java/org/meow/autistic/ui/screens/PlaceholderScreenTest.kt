@@ -33,8 +33,8 @@ class PlaceholderScreenTest {
     }
 
     @Test
-    fun notesScreen_showsCorrectLabel() {
+    fun notesScreen_showsNotesTitle() {
         composeTestRule.setContent { NotesScreen() }
-        composeTestRule.onNodeWithText("Notes Screen").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Notes").assertIsDisplayed()
     }
 }

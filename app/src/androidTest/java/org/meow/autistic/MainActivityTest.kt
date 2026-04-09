@@ -66,9 +66,8 @@ class MainActivityTest {
 
     @Test
     fun clickNotesTab_showsNotesScreen() {
-        // Notes has no sub-items — navigates directly
         composeTestRule.onNodeWithTag("nav_tab_notes").performClick()
-        composeTestRule.onNodeWithText("Notes Screen").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("New Note").assertIsDisplayed()
     }
 
     @Test
