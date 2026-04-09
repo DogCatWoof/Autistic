@@ -12,9 +12,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.meow.autistic.data.task.TaskDao
-import org.meow.autistic.data.task.TaskDatabase
-import org.meow.autistic.data.task.TaskEntity
 import java.time.Instant
 
 @RunWith(AndroidJUnit4::class)

@@ -4,7 +4,7 @@ import android.util.Log
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import org.meow.autistic.data.auth.GoogleAuthManager
 import org.meow.autistic.data.calendar.CalendarSyncService
-import org.meow.autistic.data.todo.GoogleTasksSyncService
+import org.meow.autistic.data.task.GoogleTasksSyncService
 
 /** Outcome of a single sync run. */
 sealed interface SyncOutcome {

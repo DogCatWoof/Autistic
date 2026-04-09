@@ -1,13 +1,10 @@
-package org.meow.autistic.data.todo
+package org.meow.autistic.data.task
 
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.meow.autistic.data.diagnostics.QueryLogger
-import org.meow.autistic.data.task.DailyTaskDao
-import org.meow.autistic.data.task.DailyTaskEntity
-import org.meow.autistic.data.task.DailyTaskRepository
 
 class DailyTaskRepositoryTest {
 

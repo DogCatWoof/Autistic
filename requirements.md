@@ -2,24 +2,28 @@
 
 ## Functional Requirements
 
-### Todo Management
+### Task Management
 - Users can create, edit, complete, and delete tasks
 - Tasks have a title, optional due date, category, and optional reminder
 - Categories: General, Work, Personal, Health
 - Completing a task marks it done; it remains visible until dismissed or deleted
 - Tasks with reminders trigger a local notification at the due time
-- Only show not completed tasks / todos
+- **[CHANGE]** Task list view shows only open (not completed) tasks by default
 - **Today View**: A dedicated view showing tasks and events for the current day
-- **Full View**: A dedicated view showing all tasks and events
+- **Full View**: A dedicated view showing all tasks (including completed) and events
 - **Calendar Events (Read-Only)**: 
     - Calendar events from the user's primary Google Calendar are fetched and stored locally
     - Events are fetched over a rolling 60-day window
     - Events are displayed alongside tasks in the daily and task views
-- Under settings add a "Daily Tasks".  This will hold a list of tasks that should be repeated everyday.  They should match todos, but not be in todo list
-    - They should have an optional Time, no date
-    - Every day 
-      - remove any unfinished daily tasks from todo list.
-      - add the todos from this into Daily Tasks.  All due today (but keep the time)
+- **[CHANGE]** **Daily Tasks**: A separate management interface in Settings
+    - Holds a list of tasks that repeat every day
+    - Tasks have an optional Time (HH:mm), but no specific Date
+    - **[CHANGE]** **Daily Reset Logic (Worker)**:
+        - Runs every day at midnight (via WorkManager)
+        - Removes any *unfinished* tasks in the main Task list that were generated from Daily Tasks
+        - Re-adds all entries from the Daily Tasks list into the main Task list for the new day
+        - Sets the due date to "Today" while preserving the original time
+- **[CHANGE]** **Time Tracking**: Tasks support an `expectedTimeMinutes` field for duration estimation
 
 ### Google Tasks Sync
 - Users can connect a Google account via OAuth to enable sync
@@ -51,6 +55,9 @@
 - Connected account email is displayed
 - Users can grant or revoke notification permission
 - A test notification button is available for verification
+- **[CHANGE]** **Daily Tasks Management**: A dedicated screen to add/edit/delete repeating daily items
+- **[CHANGE]** **Diagnostics**: A "Query Log" screen displays the performance (duration in ms) of database operations
+- **[CHANGE]** **Navigation Preferences**: Users can customize which items appear in the navigation drawer/bottom bar
 
 #### Sync Section (Settings)
 - A "Sync" section lists data sources that can be downloaded locally
@@ -83,10 +90,11 @@ Sync runs as a 4-step sequence (abort with retry if no valid token):
 - Manual: one-time immediate sync via `triggerImmediate()`
 
 ### Local Database
-- Room database (SQLite), currently version 3
-- `TodoEntity` tracks: title, completion, timestamps, category, reminder flag, Google Task mapping fields (`googleTaskId`, `googleTaskListId`), `syncStatus`, `lastSyncedAt`, and `extraPropertiesJson`
+- Room database (SQLite), currently version 3 (implemented as `TaskDatabase`)
+- **[CHANGE]** `TaskEntity` tracks: title, completion, **[CHANGE]** `Instant` timestamps, category, reminder flag, Google Task mapping fields (`googleTaskId`, `googleTaskListId`), `syncStatus`, `lastSyncedAt`, `extraPropertiesJson`, **[CHANGE]** `dailyTaskId` (parent link), and **[CHANGE]** `expectedTimeMinutes`
 - `syncStatus` values: `local` | `synced` | `pending_push` | `pending_delete`
 - `CalendarEventEntity` tracks: Google event ID, title, start/end times, all-day flag, calendar ID, last synced timestamp
+- **[CHANGE]** `DailyTaskEntity` stores the templates for repeating tasks
 - Schema migrations must be provided for each version bump; no destructive migrations
 
 ### Data Integrity
@@ -105,7 +113,6 @@ Sync runs as a 4-step sequence (abort with retry if no valid token):
 - A `ProductEntity` table stores `barcode` (primary key, text) and `productJson` (text — the raw JSON-serialised CSV row as a key/value map)
 - Lookups are by exact barcode string; no full-text or partial search is required
 - The table is populated exclusively by the Open Food Facts sync worker; no manual inserts from the UI
-- Schema version must be bumped and a migration provided when the table is added
 
 ### Open Food Facts Sync Worker
 - Implemented as a `CoroutineWorker` managed by WorkManager (one-time, on-demand)
@@ -116,6 +123,10 @@ Sync runs as a 4-step sequence (abort with retry if no valid token):
 - Upserts are batched (e.g. 500 rows per transaction) to bound memory usage
 - Worker exposes progress via `setProgress` so the UI can display live row counts
 - The worker stores the completion timestamp in `DataStore<Preferences>` on success; this value is displayed in Settings
+
+### Diagnostics
+- **[CHANGE]** `QueryLogger` records the execution time of every database repository method
+- Data is stored in memory and displayed in the "Query Log" settings screen for performance monitoring
 
 ### Testing
 - Unit tests must use mocks; no test may require a live network or external service connection

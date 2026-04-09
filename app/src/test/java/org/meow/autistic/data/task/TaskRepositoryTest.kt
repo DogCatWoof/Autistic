@@ -1,4 +1,4 @@
-package org.meow.autistic.data.todo
+package org.meow.autistic.data.task
 
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -12,9 +12,6 @@ import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.meow.autistic.data.diagnostics.QueryLogger
-import org.meow.autistic.data.task.TaskDao
-import org.meow.autistic.data.task.TaskEntity
-import org.meow.autistic.data.task.TaskRepository
 import java.time.Instant
 
 class TaskRepositoryTest {

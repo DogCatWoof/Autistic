@@ -3,8 +3,8 @@ package org.meow.autistic.ui.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
-import org.meow.autistic.data.todo.DailyTaskEntity
-import org.meow.autistic.data.todo.DailyTaskRepository
+import org.meow.autistic.data.task.DailyTaskEntity
+import org.meow.autistic.data.task.DailyTaskRepository
 
 /**
  * ViewModel for the Daily Tasks settings screen.

@@ -1,4 +1,4 @@
-package org.meow.autistic.data.todo
+package org.meow.autistic.data.task
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

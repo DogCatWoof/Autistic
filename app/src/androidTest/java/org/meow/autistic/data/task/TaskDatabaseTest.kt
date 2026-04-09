@@ -10,7 +10,6 @@ import org.junit.Assert.assertSame
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.meow.autistic.data.task.TaskDatabase
 
 @RunWith(AndroidJUnit4::class)
 class TaskDatabaseTest {

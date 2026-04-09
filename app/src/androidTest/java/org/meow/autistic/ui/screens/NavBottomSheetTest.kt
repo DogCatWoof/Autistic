@@ -24,7 +24,7 @@ class NavBottomSheetTest {
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
-    private val todoNavItem = NavigationItem(
+    private val taskNavItem = NavigationItem(
         title = "Todo",
         selectedIcon = Icons.Filled.Done,
         unselectedIcon = Icons.Outlined.Done,
@@ -34,7 +34,7 @@ class NavBottomSheetTest {
     @Test
     fun navSheet_displaysAllSubItems() {
         composeTestRule.setContent {
-            NavBottomSheet(item = todoNavItem, onSubItemSelected = {}, onDismiss = {})
+            NavBottomSheet(item = taskNavItem, onSubItemSelected = {}, onDismiss = {})
         }
         // "Today" and "Events" are unique; "Todo" appears as both title and list item
         composeTestRule.onNodeWithText("Today").assertIsDisplayed()
@@ -46,7 +46,7 @@ class NavBottomSheetTest {
         var selected = ""
         composeTestRule.setContent {
             NavBottomSheet(
-                item = todoNavItem,
+                item = taskNavItem,
                 onSubItemSelected = { selected = it },
                 onDismiss = {},
             )
@@ -60,7 +60,7 @@ class NavBottomSheetTest {
         var selected = ""
         composeTestRule.setContent {
             NavBottomSheet(
-                item = todoNavItem,
+                item = taskNavItem,
                 onSubItemSelected = { selected = it },
                 onDismiss = {},
             )

@@ -10,7 +10,7 @@ import org.meow.autistic.NavigationItem
 
 class NavPreferencesScreenTest {
 
-    private val todoItem = NavigationItem(
+    private val taskItem = NavigationItem(
         title = "Todo",
         selectedIcon = Icons.Filled.Create,
         unselectedIcon = Icons.Outlined.Create,
@@ -26,7 +26,7 @@ class NavPreferencesScreenTest {
         selectedIcon = Icons.Filled.Create,
         unselectedIcon = Icons.Outlined.Create,
     )
-    private val allItems = listOf(todoItem, scanItem, notesItem)
+    private val allItems = listOf(taskItem, scanItem, notesItem)
 
     // region navTitlesFrom
 
@@ -73,8 +73,8 @@ class NavPreferencesScreenTest {
     fun `filterNavItems trims sub-items list to only enabled entries`() {
         val enabled = navTitlesFrom(allItems) - "Today" - "Events"
         val result = filterNavItems(allItems, enabled)
-        val todo = result.first { it.title == "Todo" }
-        assertEquals(listOf("Todo"), todo.subItems)
+        val task = result.first { it.title == "Todo" }
+        assertEquals(listOf("Todo"), task.subItems)
     }
 
     @Test

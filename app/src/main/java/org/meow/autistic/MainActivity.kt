@@ -50,7 +50,7 @@ import androidx.compose.ui.semantics.testTag
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.launch
 import org.meow.autistic.data.navigation.NavPreferencesStore
-import org.meow.autistic.data.todo.DailyResetWorker
+import org.meow.autistic.data.task.DailyResetWorker
 import org.meow.autistic.ui.screens.filterNavItems
 import org.meow.autistic.ui.screens.navTitlesFrom
 import org.meow.autistic.ui.screens.AppDrawerSheet

@@ -21,7 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import org.meow.autistic.data.todo.DailyTaskEntity
+import org.meow.autistic.data.task.DailyTaskEntity
 
 /**
  * Add / edit dialog for a [DailyTaskEntity].

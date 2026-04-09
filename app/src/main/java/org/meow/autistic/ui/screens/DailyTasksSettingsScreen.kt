@@ -27,7 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
-import org.meow.autistic.data.todo.DailyTaskEntity
+import org.meow.autistic.data.task.DailyTaskEntity
 
 /**
  * Settings sub-screen for managing recurring daily task templates.

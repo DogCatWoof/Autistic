@@ -1,14 +1,13 @@
 Current App Features:
-- Navigation: Bottom tabs (Todo, Daily, Events, Mood, Notes).
+- Navigation: Bottom tabs (Tasks, Daily, Events, Mood, Notes).
 - Top Bar: Settings icon in the upper right.
-- Todo Screen:
+- Task Screen:
     - Task list with completion checkboxes and strike-through.
     - Floating Action Button (FAB) to add tasks.
     - Date/Time pickers for Due Date.
     - Automatic Creation Date tracking.
     - Visual indicators for overdue tasks.
     - Individual task deletion.
-    - Categories for Todos.
     - List Dividers (Today vs. Future).
     - Data Persistence: Room Database.
     - Edit Mode for existing tasks.

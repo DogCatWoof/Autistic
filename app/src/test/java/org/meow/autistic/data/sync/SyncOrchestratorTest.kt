@@ -11,7 +11,7 @@ import org.junit.Before
 import org.junit.Test
 import org.meow.autistic.data.auth.GoogleAuthManager
 import org.meow.autistic.data.calendar.CalendarSyncService
-import org.meow.autistic.data.todo.GoogleTasksSyncService
+import org.meow.autistic.data.task.GoogleTasksSyncService
 
 class SyncOrchestratorTest {
 
