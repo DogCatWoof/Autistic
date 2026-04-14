@@ -15,21 +15,9 @@ class PlaceholderScreenTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun dailyScreen_showsCorrectLabel() {
-        composeTestRule.setContent { DailyScreen() }
-        composeTestRule.onNodeWithText("Daily Screen").assertIsDisplayed()
-    }
-
-    @Test
-    fun eventsScreen_showsCorrectLabel() {
-        composeTestRule.setContent { EventsScreen() }
-        composeTestRule.onNodeWithText("Events Screen").assertIsDisplayed()
-    }
-
-    @Test
-    fun moodScreen_showsCorrectLabel() {
+    fun moodScreen_emptyState_showsMessage() {
         composeTestRule.setContent { MoodScreen() }
-        composeTestRule.onNodeWithText("Mood Screen").assertIsDisplayed()
+        composeTestRule.onNodeWithText("No mood readings yet.").assertIsDisplayed()
     }
 
     @Test

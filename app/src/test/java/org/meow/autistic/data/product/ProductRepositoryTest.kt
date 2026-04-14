@@ -5,19 +5,27 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.meow.autistic.data.diagnostics.QueryLogger
 
 class ProductRepositoryTest {
 
     private val dao = mockk<ProductDao>(relaxed = true)
-    private val apiClient = mockk<OpenFoodFactsApiClient>(relaxed = true)
-    private val repository = ProductRepository(dao, QueryLogger(), apiClient)
+    private val usdaClient = mockk<UsdaFdcApiClient>(relaxed = true)
+    private val offClient = mockk<OpenFoodFactsApiClient>(relaxed = true)
+    private val repository = ProductRepository(dao, QueryLogger(), usdaClient, offClient)
 
-    private val sampleEntity = ProductEntity(barcode = "0123456789", productJson = """{"code":"0123456789","product_name":"Test"}""")
+    private val sampleEntity = ProductEntity(
+        barcode = "0123456789",
+        name = "Test Product",
+        brands = null,
+        quantity = null,
+        servingsPerContainer = null,
+        ingredients = null,
+        foodGroups = null,
+        nutriments = null,
+    )
 
     // region getByBarcode
 
@@ -28,13 +36,13 @@ class ProductRepositoryTest {
         val result = repository.getByBarcode("0123456789")
 
         assertEquals(sampleEntity, result)
-        coVerify(exactly = 0) { apiClient.fetchByBarcode(any()) }
+        coVerify(exactly = 0) { usdaClient.fetchByBarcode(any()) }
     }
 
     @Test
-    fun `getByBarcode falls back to api when dao finds no match`() = runTest {
+    fun `getByBarcode falls back to usda when dao finds no match`() = runTest {
         coEvery { dao.getByBarcode("unknown") } returns null
-        coEvery { apiClient.fetchByBarcode("unknown") } returns sampleEntity
+        coEvery { usdaClient.fetchByBarcode("unknown") } returns sampleEntity
 
         val result = repository.getByBarcode("unknown")
 
@@ -42,9 +50,9 @@ class ProductRepositoryTest {
     }
 
     @Test
-    fun `getByBarcode saves api result to dao on fallback hit`() = runTest {
+    fun `getByBarcode saves usda result to dao on fallback hit`() = runTest {
         coEvery { dao.getByBarcode("unknown") } returns null
-        coEvery { apiClient.fetchByBarcode("unknown") } returns sampleEntity
+        coEvery { usdaClient.fetchByBarcode("unknown") } returns sampleEntity
 
         repository.getByBarcode("unknown")
 
@@ -52,9 +60,20 @@ class ProductRepositoryTest {
     }
 
     @Test
-    fun `getByBarcode returns null when both dao and api find nothing`() = runTest {
+    fun `getByBarcode falls back to off when usda finds no match`() = runTest {
         coEvery { dao.getByBarcode("unknown") } returns null
-        coEvery { apiClient.fetchByBarcode("unknown") } returns null
+        coEvery { usdaClient.fetchByBarcode("unknown") } returns null
+        coEvery { offClient.fetchByBarcode("unknown") } returns sampleEntity
+
+        assertEquals(sampleEntity, repository.getByBarcode("unknown"))
+        coVerify { dao.upsertAll(listOf(sampleEntity)) }
+    }
+
+    @Test
+    fun `getByBarcode returns null when dao usda and off all find nothing`() = runTest {
+        coEvery { dao.getByBarcode("unknown") } returns null
+        coEvery { usdaClient.fetchByBarcode("unknown") } returns null
+        coEvery { offClient.fetchByBarcode("unknown") } returns null
 
         assertNull(repository.getByBarcode("unknown"))
     }
@@ -65,28 +84,11 @@ class ProductRepositoryTest {
         repository.getByBarcode("any")
     }
 
-    // endregion
-
-    // region hasProducts
-
-    @Test
-    fun `hasProducts returns true when count is positive`() = runTest {
-        coEvery { dao.count() } returns 42L
-
-        assertTrue(repository.hasProducts())
-    }
-
-    @Test
-    fun `hasProducts returns false when count is zero`() = runTest {
-        coEvery { dao.count() } returns 0L
-
-        assertFalse(repository.hasProducts())
-    }
-
-    @Test(expected = RuntimeException::class)
-    fun `hasProducts propagates dao exception`() = runTest {
-        coEvery { dao.count() } throws RuntimeException("db error")
-        repository.hasProducts()
+    @Test(expected = java.io.IOException::class)
+    fun `getByBarcode propagates usda IOException`() = runTest {
+        coEvery { dao.getByBarcode("unknown") } returns null
+        coEvery { usdaClient.fetchByBarcode("unknown") } throws java.io.IOException("network error")
+        repository.getByBarcode("unknown")
     }
 
     // endregion

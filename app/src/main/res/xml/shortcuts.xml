@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <shortcut
+        android:shortcutId="scan"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_scan_short"
+        android:shortcutLongLabel="@string/shortcut_scan_long">
+        <intent
+            android:action="org.meow.autistic.OPEN_SCAN"
+            android:targetPackage="org.meow.autistic"
+            android:targetClass="org.meow.autistic.MainActivity" />
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="tasks"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_tasks_short"
+        android:shortcutLongLabel="@string/shortcut_tasks_long">
+        <intent
+            android:action="org.meow.autistic.OPEN_TASKS"
+            android:targetPackage="org.meow.autistic"
+            android:targetClass="org.meow.autistic.MainActivity" />
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="notes"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_notes_short"
+        android:shortcutLongLabel="@string/shortcut_notes_long">
+        <intent
+            android:action="org.meow.autistic.OPEN_NOTES"
+            android:targetPackage="org.meow.autistic"
+            android:targetClass="org.meow.autistic.MainActivity" />
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="mood"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_mood_short"
+        android:shortcutLongLabel="@string/shortcut_mood_long">
+        <intent
+            android:action="org.meow.autistic.OPEN_MOOD"
+            android:targetPackage="org.meow.autistic"
+            android:targetClass="org.meow.autistic.MainActivity" />
+        <categories android:name="android.shortcut.conversation" />
+    </shortcut>
+
+</shortcuts>

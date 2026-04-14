@@ -1,94 +1,122 @@
 package org.meow.autistic.ui.screens
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.meow.autistic.data.product.OFF_SYNC_WORK_NAME
-import org.meow.autistic.data.product.OpenFoodFactsWorker
+import kotlinx.coroutines.suspendCancellableCoroutine
+import org.meow.autistic.data.product.ProductEntity
 import org.meow.autistic.data.product.ProductRepository
+import java.io.IOException
+import kotlin.coroutines.resume
 
-sealed class ScanUiState {
-    object Loading : ScanUiState()
-    object NeedsSync : ScanUiState()
-    data class Syncing(val status: String) : ScanUiState()
-    object Scanning : ScanUiState()
-    data class Found(val productJson: String) : ScanUiState()
-    data class NotFound(val barcode: String) : ScanUiState()
+data class ScanQueueItem(
+    val barcode: String,
+    val status: ScanStatus,
+)
+
+sealed class ScanStatus {
+    object Pending : ScanStatus()
+    object Loading : ScanStatus()
+    data class Found(val product: ProductEntity) : ScanStatus()
+    object NotFound : ScanStatus()
+    object NetworkError : ScanStatus()
 }
 
 /**
  * ViewModel for the barcode scan screen.
- * Checks whether the product database has been populated, performs barcode lookups,
- * and exposes the current [ScanUiState].
+ * Maintains a queue of scanned barcodes, fetches product data for each,
+ * and retries automatically when network connectivity is restored.
  */
 class ScanViewModel(
     private val repository: ProductRepository,
-    private val workManager: WorkManager,
-) : ViewModel() {
+    application: Application,
+) : AndroidViewModel(application) {
 
-    private val _uiState = MutableStateFlow<ScanUiState>(ScanUiState.Loading)
-    val uiState: StateFlow<ScanUiState> = _uiState.asStateFlow()
+    private val connectivityManager =
+        application.getSystemService(ConnectivityManager::class.java)
 
-    init {
-        checkDatabasePopulated()
-    }
+    private val _queue = MutableStateFlow<List<ScanQueueItem>>(emptyList())
+    val queue: StateFlow<List<ScanQueueItem>> = _queue.asStateFlow()
 
-    private fun checkDatabasePopulated() {
-        viewModelScope.launch {
-            _uiState.value = if (repository.hasProducts()) ScanUiState.Scanning else ScanUiState.NeedsSync
-        }
-    }
+    private val _selectedBarcode = MutableStateFlow<String?>(null)
+    val selectedBarcode: StateFlow<String?> = _selectedBarcode.asStateFlow()
 
-    /** Enqueues the Open Food Facts sync and tracks progress until it completes. */
-    fun triggerProductSync() {
-        workManager.enqueueUniqueWork(
-            OFF_SYNC_WORK_NAME,
-            ExistingWorkPolicy.KEEP,
-            OneTimeWorkRequestBuilder<OpenFoodFactsWorker>().build(),
-        )
-        viewModelScope.launch {
-            workManager.getWorkInfosForUniqueWorkFlow(OFF_SYNC_WORK_NAME).collect { infos ->
-                val info = infos.firstOrNull() ?: return@collect
-                when (info.state) {
-                    WorkInfo.State.RUNNING -> {
-                        val status = info.progress.getString("status") ?: "Downloading…"
-                        _uiState.value = ScanUiState.Syncing(status)
-                    }
-                    WorkInfo.State.SUCCEEDED -> {
-                        checkDatabasePopulated()
-                        return@collect
-                    }
-                    WorkInfo.State.FAILED -> {
-                        _uiState.value = ScanUiState.NeedsSync
-                        return@collect
-                    }
-                    else -> {}
-                }
-            }
-        }
-    }
-
-    /** Called when the barcode analyzer detects a barcode. Ignored unless state is [ScanUiState.Scanning]. */
+    /**
+     * Adds [barcode] to the queue and starts a lookup.
+     * Ignored if the barcode is not a valid EAN/UPC format or is already queued.
+     */
     fun onBarcodeDetected(barcode: String) {
-        if (_uiState.value !is ScanUiState.Scanning) return
-        viewModelScope.launch {
-            val product = repository.getByBarcode(barcode)
-            _uiState.value = if (product != null) {
-                ScanUiState.Found(product.productJson)
-            } else {
-                ScanUiState.NotFound(barcode)
+        if (!isValidBarcode(barcode)) return
+        if (_queue.value.any { it.barcode == barcode }) return
+        _queue.update { it + ScanQueueItem(barcode, ScanStatus.Pending) }
+        viewModelScope.launch { fetchProduct(barcode) }
+    }
+
+    /** Returns true if [barcode] is a numeric EAN-8, EAN-13, UPC-A, or similar product barcode. */
+    private fun isValidBarcode(barcode: String): Boolean =
+        barcode.length in 6..14 && barcode.all { it.isDigit() }
+
+    /** Removes an item from the queue regardless of its current status. */
+    fun dismiss(barcode: String) {
+        _queue.update { it.filter { item -> item.barcode != barcode } }
+        if (_selectedBarcode.value == barcode) _selectedBarcode.value = null
+    }
+
+    /** Toggles selection. Selecting an already-selected item deselects it. */
+    fun select(barcode: String) {
+        _selectedBarcode.value = if (_selectedBarcode.value == barcode) null else barcode
+    }
+
+    private suspend fun fetchProduct(barcode: String) {
+        val cached = repository.getLocalByBarcode(barcode)
+        if (cached != null) {
+            updateStatus(barcode, ScanStatus.Found(cached))
+            return
+        }
+        while (_queue.value.any { it.barcode == barcode }) {
+            updateStatus(barcode, ScanStatus.Loading)
+            try {
+                val product = repository.getByBarcode(barcode)
+                if (_queue.value.none { it.barcode == barcode }) return
+                updateStatus(barcode, if (product != null) ScanStatus.Found(product) else ScanStatus.NotFound)
+                return
+            } catch (e: IOException) {
+                if (_queue.value.none { it.barcode == barcode }) return
+                updateStatus(barcode, ScanStatus.NetworkError)
+                awaitNetwork()
             }
         }
     }
 
-    fun resetToScanning() {
-        _uiState.value = ScanUiState.Scanning
+    private fun updateStatus(barcode: String, status: ScanStatus) {
+        _queue.update { queue ->
+            queue.map { if (it.barcode == barcode) it.copy(status = status) else it }
+        }
+    }
+
+    /** Suspends until any network with internet capability becomes available. */
+    private suspend fun awaitNetwork() = suspendCancellableCoroutine<Unit> { cont ->
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                connectivityManager.unregisterNetworkCallback(this)
+                if (cont.isActive) cont.resume(Unit)
+            }
+        }
+        val request = NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .build()
+        connectivityManager.registerNetworkCallback(request, callback)
+        cont.invokeOnCancellation {
+            try { connectivityManager.unregisterNetworkCallback(callback) } catch (_: IllegalArgumentException) {}
+        }
     }
 }

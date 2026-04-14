@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -28,6 +29,12 @@ class MainActivityTest {
 
     @Before
     fun clearState() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.uiAutomation
+            .executeShellCommand(
+                "pm grant ${instrumentation.targetContext.packageName} android.permission.CAMERA"
+            )
+            .close()
         val activity = composeTestRule.activity
         TokenStore.create(activity).clear()
         GmsTasks.await(
@@ -40,10 +47,11 @@ class MainActivityTest {
     }
 
     @Test
-    fun bottomNav_threeTabsDisplayed() {
+    fun bottomNav_allTabsDisplayed() {
         composeTestRule.onNodeWithTag("nav_tab_task").assertIsDisplayed()
         composeTestRule.onNodeWithTag("nav_tab_scan").assertIsDisplayed()
         composeTestRule.onNodeWithTag("nav_tab_notes").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("nav_tab_mood").assertIsDisplayed()
     }
 
     @Test
@@ -59,15 +67,20 @@ class MainActivityTest {
 
     @Test
     fun clickScanTab_showsScanScreen() {
-        // Scan has no sub-items — navigates directly
         composeTestRule.onNodeWithTag("nav_tab_scan").performClick()
-        composeTestRule.onNodeWithText("Download Product Database").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("scan_screen").assertExists()
     }
 
     @Test
     fun clickNotesTab_showsNotesScreen() {
         composeTestRule.onNodeWithTag("nav_tab_notes").performClick()
         composeTestRule.onNodeWithContentDescription("New Note").assertIsDisplayed()
+    }
+
+    @Test
+    fun clickMoodTab_showsMoodScreen() {
+        composeTestRule.onNodeWithTag("nav_tab_mood").performClick()
+        composeTestRule.onNodeWithText("No mood readings yet.").assertIsDisplayed()
     }
 
     @Test
@@ -100,16 +113,16 @@ class MainActivityTest {
     fun settingsScreen_syncItem_expandsInPlace() {
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.onNodeWithText("Sync").performClick()
-        composeTestRule.onNodeWithText("Product Data").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Daily Reset").assertIsDisplayed()
     }
 
     @Test
     fun syncExpanded_showsAllThreeSyncItems() {
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
         composeTestRule.onNodeWithText("Sync").performClick()
-        // "Daily Tasks" exists elsewhere in settings; check the unique ones to confirm expansion
-        composeTestRule.onNodeWithText("Product Data").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Daily Reset").performScrollTo().assertIsDisplayed()
         composeTestRule.onNodeWithText("Task List").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Google Drive Backup").performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -119,6 +132,6 @@ class MainActivityTest {
         composeTestRule.onNodeWithText("Task List").performScrollTo().assertIsDisplayed()
         // Use the icon content description to target the header, not the sync buttons inside items
         composeTestRule.onNodeWithContentDescription("Collapse sync").performScrollTo().performClick()
-        composeTestRule.onNodeWithText("Daily tasks, products, task list").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Daily reset, task list, backup").assertIsDisplayed()
     }
 }

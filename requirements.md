@@ -5,25 +5,23 @@
 ### Task Management
 - Users can create, edit, complete, and delete tasks
 - Tasks have a title, optional due date, category, and optional reminder
-- Categories: General, Work, Personal, Health
-- Completing a task marks it done; it remains visible until dismissed or deleted
+- Categories: There is only one category
+- Completing a task marks it done; removes it from the list
 - Tasks with reminders trigger a local notification at the due time
-- **[CHANGE]** Task list view shows only open (not completed) tasks by default
-- **Today View**: A dedicated view showing tasks and events for the current day
-- **Full View**: A dedicated view showing all tasks (including completed) and events
-- **Calendar Events (Read-Only)**: 
+- Task list view shows only open (not completed or deleted) tasks by default
+- Calendar Events: 
     - Calendar events from the user's primary Google Calendar are fetched and stored locally
     - Events are fetched over a rolling 60-day window
     - Events are displayed alongside tasks in the daily and task views
-- **[CHANGE]** **Daily Tasks**: A separate management interface in Settings
+- Daily Tasks: A separate management interface in Settings
     - Holds a list of tasks that repeat every day
     - Tasks have an optional Time (HH:mm), but no specific Date
-    - **[CHANGE]** **Daily Reset Logic (Worker)**:
+    - Daily Reset Logic (Worker):
         - Runs every day at midnight (via WorkManager)
         - Removes any *unfinished* tasks in the main Task list that were generated from Daily Tasks
         - Re-adds all entries from the Daily Tasks list into the main Task list for the new day
-        - Sets the due date to "Today" while preserving the original time
-- **[CHANGE]** **Time Tracking**: Tasks support an `expectedTimeMinutes` field for duration estimation
+        - Sets the due date to "Today" while preserving the original time from the Daily
+- Time Tracking: Tasks support an `expectedTimeMinutes` field for duration estimation
 
 ### Google Tasks Sync
 - Users can connect a Google account via OAuth to enable sync
@@ -48,20 +46,25 @@
 - Scan is unavailable (with a prompt to sync) until the product database has been populated at least once
 
 ### Notes
-- Users can write and save free-form notes (not yet implemented — placeholder)
+- Users can write, edit and save free-form notes
+  - Should have a list of existing notes with just the title, or first (line that will fit on screen) show.
+  - Click on an entry in the list that brings up a view that can edit the note, or delete it.
+  - Swipe to delete a note
+  - Save to data base
+  - Add a create (+) on list to create a new note.
 
 ### Settings
 - Users can connect their Google account
 - Connected account email is displayed
 - Users can grant or revoke notification permission
 - A test notification button is available for verification
-- **[CHANGE]** **Daily Tasks Management**: A dedicated screen to add/edit/delete repeating daily items
-- **[CHANGE]** **Diagnostics**: A "Query Log" screen displays the performance (duration in ms) of database operations
-- **[CHANGE]** **Navigation Preferences**: Users can customize which items appear in the navigation drawer/bottom bar
+- Daily Tasks Management: A dedicated screen to add/edit/delete repeating daily items
+- Diagnostics: A "Query Log" screen displays the performance (duration in ms) of database operations
+- Navigation Preferences: Users can customize which items appear in the navigation drawer/bottom bar
 
 #### Sync Section (Settings)
 - A "Sync" section lists data sources that can be downloaded locally
-- **Open Food Facts**: a "Sync Products" button downloads the full product database from `https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz`, decompresses it on-device, parses each CSV row, and upserts a `barcode → JSON` record into the local product table
+- Open Food Facts: a "Sync Products" button downloads the full product database from `https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz`, decompresses it on-device, parses each CSV row, and upserts a `barcode → JSON` record into the local product table
 - Sync products only daily, when on wifi
 - During sync, progress is shown (e.g. "Downloading…", "Importing X of Y rows…"); the button is disabled while a sync is in progress
 - On completion, the last-synced timestamp is displayed beneath the button
@@ -91,10 +94,10 @@ Sync runs as a 4-step sequence (abort with retry if no valid token):
 
 ### Local Database
 - Room database (SQLite), currently version 3 (implemented as `TaskDatabase`)
-- **[CHANGE]** `TaskEntity` tracks: title, completion, **[CHANGE]** `Instant` timestamps, category, reminder flag, Google Task mapping fields (`googleTaskId`, `googleTaskListId`), `syncStatus`, `lastSyncedAt`, `extraPropertiesJson`, **[CHANGE]** `dailyTaskId` (parent link), and **[CHANGE]** `expectedTimeMinutes`
+- `TaskEntity` tracks: title, completion, `Instant` timestamps, category, reminder flag, Google Task mapping fields (`googleTaskId`, `googleTaskListId`), `syncStatus`, `lastSyncedAt`, `extraPropertiesJson`, `dailyTaskId` (parent link), and `expectedTimeMinutes`
 - `syncStatus` values: `local` | `synced` | `pending_push` | `pending_delete`
 - `CalendarEventEntity` tracks: Google event ID, title, start/end times, all-day flag, calendar ID, last synced timestamp
-- **[CHANGE]** `DailyTaskEntity` stores the templates for repeating tasks
+- `DailyTaskEntity` stores the templates for repeating tasks
 - Schema migrations must be provided for each version bump; no destructive migrations
 
 ### Data Integrity
@@ -125,7 +128,7 @@ Sync runs as a 4-step sequence (abort with retry if no valid token):
 - The worker stores the completion timestamp in `DataStore<Preferences>` on success; this value is displayed in Settings
 
 ### Diagnostics
-- **[CHANGE]** `QueryLogger` records the execution time of every database repository method
+- `QueryLogger` records the execution time of every database repository method
 - Data is stored in memory and displayed in the "Query Log" settings screen for performance monitoring
 
 ### Testing

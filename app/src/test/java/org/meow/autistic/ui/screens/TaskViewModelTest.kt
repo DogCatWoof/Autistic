@@ -29,7 +29,7 @@ class TaskViewModelTest {
     private val calendarRepository = mockk<CalendarRepository>(relaxed = true)
     private val authManager = mockk<GoogleAuthManager>()
     private val syncScheduler = mockk<SyncScheduler>(relaxed = true)
-    private val workManager = mockk<androidx.work.WorkManager>()
+    private val workManager = mockk<androidx.work.WorkManager>(relaxed = true)
     private val testDispatcher = UnconfinedTestDispatcher()
 
     private lateinit var viewModel: TaskViewModel

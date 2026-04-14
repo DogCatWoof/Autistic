@@ -18,6 +18,7 @@ import org.meow.autistic.data.calendar.CalendarRepository
 import org.meow.autistic.data.sync.IMMEDIATE_WORK_NAME
 import org.meow.autistic.data.sync.SyncScheduler
 import org.meow.autistic.data.task.TaskEntity
+import org.meow.autistic.data.task.TaskReminderWorker
 import org.meow.autistic.data.task.TaskRepository
 import java.time.LocalDate
 import java.time.ZoneId
@@ -125,20 +126,34 @@ class TaskViewModel(
         }
     }
 
-    fun insert(task: TaskEntity) = viewModelScope.launch { repository.insert(task) }
+    fun insert(task: TaskEntity) = viewModelScope.launch {
+        val id = repository.insert(task)
+        TaskReminderWorker.scheduleFor(workManager, task.copy(id = id))
+    }
 
     fun update(task: TaskEntity) = viewModelScope.launch {
         if (task.isCompleted && task.googleTaskId == null) {
             // Local-only completed task — no sync needed, delete immediately
             repository.delete(task)
+            TaskReminderWorker.cancel(workManager, task.id)
         } else {
             repository.update(task.copy(syncStatus = "pending_push"))
+            if (task.reminderMinutesBefore != null) {
+                TaskReminderWorker.scheduleFor(workManager, task)
+            } else {
+                TaskReminderWorker.cancel(workManager, task.id)
+            }
         }
     }
 
     fun delete(task: TaskEntity) = viewModelScope.launch {
+        TaskReminderWorker.cancel(workManager, task.id)
         if (task.googleTaskId != null) repository.markPendingDelete(task.id)
         else repository.delete(task)
+    }
+
+    fun insertCalendarEvent(event: org.meow.autistic.data.calendar.CalendarEventEntity) = viewModelScope.launch {
+        calendarRepository.upsertEvents(listOf(event))
     }
 
     fun completeEvent(event: org.meow.autistic.data.calendar.CalendarEventEntity) = viewModelScope.launch {

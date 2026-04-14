@@ -2,9 +2,11 @@ package org.meow.autistic.ui.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -20,14 +22,22 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.outlined.Notifications
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 import androidx.compose.material3.*
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -40,13 +50,23 @@ import java.time.Instant
 import java.util.*
 
 
+private enum class AddType { Task, Calendar, DailyTask }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TaskListScreen(viewModel: TaskViewModel = koinViewModel()) {
+fun TaskListScreen(
+    viewModel: TaskViewModel = koinViewModel(),
+    dailyViewModel: DailyTasksViewModel = koinViewModel(),
+) {
     val grouped by viewModel.groupedItems.collectAsState()
     val isAuthenticated by viewModel.isAuthenticated.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
-    var showAddDialog by remember { mutableStateOf(false) }
+    var fabExpanded by remember { mutableStateOf(false) }
+    var addType by remember { mutableStateOf<AddType?>(null) }
+    val fabRotation by animateFloatAsState(
+        targetValue = if (fabExpanded) 45f else 0f,
+        label = "fab_rotation",
+    )
     var selectedTask by remember { mutableStateOf<TaskEntity?>(null) }
     var selectedEvent by remember { mutableStateOf<CalendarEventEntity?>(null) }
 
@@ -70,8 +90,25 @@ fun TaskListScreen(viewModel: TaskViewModel = koinViewModel()) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Add Task")
+            Column(horizontalAlignment = Alignment.End) {
+                AnimatedVisibility(visible = fabExpanded) {
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.padding(bottom = 16.dp),
+                    ) {
+                        SpeedDialItem("Daily Task") { fabExpanded = false; addType = AddType.DailyTask }
+                        SpeedDialItem("Calendar Event") { fabExpanded = false; addType = AddType.Calendar }
+                        SpeedDialItem("Task") { fabExpanded = false; addType = AddType.Task }
+                    }
+                }
+                FloatingActionButton(onClick = { fabExpanded = !fabExpanded }) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "Add Task",
+                        modifier = Modifier.rotate(fabRotation),
+                    )
+                }
             }
         }
     ) { padding ->
@@ -89,11 +126,13 @@ fun TaskListScreen(viewModel: TaskViewModel = koinViewModel()) {
                         TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
                     }
                 }
-                if (grouped.today.isNotEmpty()) {
-                    item(key = "header_today") { SectionHeader("Today") }
-                    items(grouped.today, key = { it.itemKey }) { item ->
-                        TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
-                    }
+                item(key = "header_today") {
+                    val todayDate = LocalDate.now(ZoneId.systemDefault())
+                        .format(java.time.format.DateTimeFormatter.ofPattern("EEEE, MMM d"))
+                    SectionHeader("Today — $todayDate")
+                }
+                items(grouped.today, key = { it.itemKey }) { item ->
+                    TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
                 }
                 grouped.later.forEach { (dateLabel, sectionItems) ->
                     item(key = "header_later_$dateLabel") { SectionHeader(dateLabel) }
@@ -104,25 +143,62 @@ fun TaskListScreen(viewModel: TaskViewModel = koinViewModel()) {
             }
         }
 
-        if (showAddDialog) {
-            AddTaskDialog(
-                onDismiss = { showAddDialog = false },
-                onConfirm = { task, dueAt, reminder, notes, expectedTime ->
+        if (fabExpanded) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.32f))
+                    .clickable { fabExpanded = false },
+            )
+        }
+
+        when (addType) {
+            AddType.Task -> AddTaskDialog(
+                onDismiss = { addType = null },
+                onConfirm = { task, dueAt, reminderMinutesBefore, notes, expectedTime ->
                     viewModel.insert(
                         TaskEntity(
                             task = task,
                             dueAt = dueAt,
                             notes = notes,
                             isCompleted = false,
-                            reminderSet = reminder,
+                            reminderSet = reminderMinutesBefore != null,
+                            reminderMinutesBefore = reminderMinutesBefore,
                             createdAt = Instant.now(),
                             syncStatus = "local",
                             expectedTimeMinutes = expectedTime,
                         )
                     )
-                    showAddDialog = false
-                }
+                    addType = null
+                },
             )
+            AddType.Calendar -> AddCalendarEventDialog(
+                onDismiss = { addType = null },
+                onConfirm = { title, startAt, endAt, isAllDay ->
+                    viewModel.insertCalendarEvent(
+                        CalendarEventEntity(
+                            googleEventId = "local_${System.currentTimeMillis()}",
+                            title = title,
+                            startAt = startAt,
+                            endAt = endAt,
+                            isAllDay = isAllDay,
+                            calendarId = "",
+                            lastSyncedAt = Instant.now(),
+                            syncStatus = "local",
+                        )
+                    )
+                    addType = null
+                },
+            )
+            AddType.DailyTask -> DailyTaskDialog(
+                initial = null,
+                onSave = { task ->
+                    dailyViewModel.insert(task)
+                    addType = null
+                },
+                onDismiss = { addType = null },
+            )
+            null -> Unit
         }
 
         selectedEvent?.let { event ->
@@ -144,10 +220,11 @@ fun TaskListScreen(viewModel: TaskViewModel = koinViewModel()) {
             EditTaskDialog(
                 task = task,
                 onDismiss = { selectedTask = null },
-                onSave = { taskText, reminder, notes, expectedTime ->
+                onSave = { taskText, reminderMinutesBefore, notes, expectedTime ->
                     viewModel.update(task.copy(
                         task = taskText,
-                        reminderSet = reminder,
+                        reminderSet = reminderMinutesBefore != null,
+                        reminderMinutesBefore = reminderMinutesBefore,
                         notes = notes,
                         expectedTimeMinutes = expectedTime,
                     ))
@@ -234,8 +311,11 @@ fun SectionHeader(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        color = MaterialTheme.colorScheme.onPrimaryContainer,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.primaryContainer)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
     )
 }
 
@@ -425,16 +505,132 @@ fun TaskItem(task: TaskEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
     }
 }
 
+@Composable
+private fun SpeedDialItem(label: String, onClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Surface(
+            shape = MaterialTheme.shapes.small,
+            tonalElevation = 6.dp,
+            shadowElevation = 2.dp,
+            onClick = onClick,
+        ) {
+            Text(label, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+        }
+        SmallFloatingActionButton(onClick = onClick) {
+            Icon(Icons.Default.Add, contentDescription = label)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AddCalendarEventDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (title: String, startAt: Instant, endAt: Instant, isAllDay: Boolean) -> Unit,
+) {
+    var title by remember { mutableStateOf("") }
+    var isAllDay by remember { mutableStateOf(false) }
+    val today = LocalDate.now()
+    var startDate by remember { mutableStateOf(today) }
+    var endDate by remember { mutableStateOf(today) }
+    var startHour by remember { mutableStateOf("09") }
+    var startMinute by remember { mutableStateOf("00") }
+    var endHour by remember { mutableStateOf("10") }
+    var endMinute by remember { mutableStateOf("00") }
+
+    fun toInstant(date: LocalDate, hour: String, minute: String): Instant =
+        date.atTime(hour.toIntOrNull() ?: 0, minute.toIntOrNull() ?: 0)
+            .atZone(ZoneId.systemDefault()).toInstant()
+
+    val canSave = title.isNotBlank()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("New Calendar Event") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Title") },
+                    modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Switch(checked = isAllDay, onCheckedChange = { isAllDay = it })
+                    Text("All day")
+                }
+                Text("Start: ${startDate}", style = MaterialTheme.typography.labelMedium)
+                if (!isAllDay) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        OutlinedTextField(
+                            value = startHour, onValueChange = { startHour = it.take(2) },
+                            label = { Text("HH") }, singleLine = true,
+                            modifier = androidx.compose.ui.Modifier.width(64.dp),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        )
+                        Text(":", modifier = androidx.compose.ui.Modifier.align(Alignment.CenterVertically))
+                        OutlinedTextField(
+                            value = startMinute, onValueChange = { startMinute = it.take(2) },
+                            label = { Text("MM") }, singleLine = true,
+                            modifier = androidx.compose.ui.Modifier.width(64.dp),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        )
+                    }
+                }
+                Text("End: ${endDate}", style = MaterialTheme.typography.labelMedium)
+                if (!isAllDay) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        OutlinedTextField(
+                            value = endHour, onValueChange = { endHour = it.take(2) },
+                            label = { Text("HH") }, singleLine = true,
+                            modifier = androidx.compose.ui.Modifier.width(64.dp),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        )
+                        Text(":", modifier = androidx.compose.ui.Modifier.align(Alignment.CenterVertically))
+                        OutlinedTextField(
+                            value = endMinute, onValueChange = { endMinute = it.take(2) },
+                            label = { Text("MM") }, singleLine = true,
+                            modifier = androidx.compose.ui.Modifier.width(64.dp),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val startAt = if (isAllDay) startDate.atStartOfDay(ZoneId.systemDefault()).toInstant()
+                               else toInstant(startDate, startHour, startMinute)
+                    val endAt = if (isAllDay) endDate.atStartOfDay(ZoneId.systemDefault()).toInstant()
+                              else toInstant(endDate, endHour, endMinute)
+                    onConfirm(title, startAt, endAt, isAllDay)
+                },
+                enabled = canSave,
+            ) { Text("Save") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskDialog(
     onDismiss: () -> Unit,
-    onConfirm: (String, Instant?, Boolean, String?, Int?) -> Unit
+    onConfirm: (String, Instant?, Int?, String?, Int?) -> Unit,
 ) {
     var taskText by remember { mutableStateOf("") }
     var notesText by remember { mutableStateOf("") }
     var expectedTimeText by remember { mutableStateOf("") }
-    var reminderSet by remember { mutableStateOf(false) }
+    var reminderEnabled by remember { mutableStateOf(false) }
+    var reminderMinutesText by remember { mutableStateOf("15") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -445,17 +641,15 @@ fun AddTaskDialog(
                     value = taskText,
                     onValueChange = { taskText = it },
                     label = { Text("Task description") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
-
                 OutlinedTextField(
                     value = notesText,
                     onValueChange = { notesText = it },
                     label = { Text("Notes") },
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 2
+                    minLines = 2,
                 )
-
                 OutlinedTextField(
                     value = expectedTimeText,
                     onValueChange = { expectedTimeText = it.filter { c -> c.isDigit() } },
@@ -464,15 +658,25 @@ fun AddTaskDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                 )
-
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = reminderSet, onCheckedChange = { reminderSet = it })
+                    Checkbox(checked = reminderEnabled, onCheckedChange = { reminderEnabled = it })
                     Text("Remind me")
                     Icon(
-                        imageVector = if (reminderSet) Icons.Default.Notifications else Icons.Outlined.Notifications,
+                        imageVector = if (reminderEnabled) Icons.Default.Notifications else Icons.Outlined.Notifications,
                         contentDescription = null,
                         modifier = Modifier.padding(start = 4.dp),
-                        tint = if (reminderSet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        tint = if (reminderEnabled) MaterialTheme.colorScheme.primary
+                               else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    )
+                }
+                if (reminderEnabled) {
+                    OutlinedTextField(
+                        value = reminderMinutesText,
+                        onValueChange = { reminderMinutesText = it.filter { c -> c.isDigit() } },
+                        label = { Text("Minutes before due") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
                     )
                 }
             }
@@ -480,22 +684,13 @@ fun AddTaskDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    onConfirm(
-                        taskText,
-                        null,
-                        reminderSet,
-                        notesText.takeIf { it.isNotBlank() },
-                        expectedTimeText.toIntOrNull(),
-                    )
+                    val reminder = if (reminderEnabled) reminderMinutesText.toIntOrNull() ?: 15 else null
+                    onConfirm(taskText, null, reminder, notesText.takeIf { it.isNotBlank() }, expectedTimeText.toIntOrNull())
                 },
-                enabled = taskText.isNotBlank()
-            ) {
-                Text("Save")
-            }
+                enabled = taskText.isNotBlank(),
+            ) { Text("Save") }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
 }
 
@@ -545,14 +740,16 @@ fun CalendarEventDialog(
 fun EditTaskDialog(
     task: TaskEntity,
     onDismiss: () -> Unit,
-    onSave: (String, Boolean, String?, Int?) -> Unit,
+    onSave: (String, Int?, String?, Int?) -> Unit,
     onComplete: () -> Unit,
     onDelete: () -> Unit,
 ) {
     var taskText by remember { mutableStateOf(task.task) }
     var notesText by remember { mutableStateOf(task.notes ?: "") }
     var expectedTimeText by remember { mutableStateOf(task.expectedTimeMinutes?.toString() ?: "") }
-    var reminderSet by remember { mutableStateOf(task.reminderSet) }
+    val initialReminderEnabled = task.reminderMinutesBefore != null || task.reminderSet
+    var reminderEnabled by remember { mutableStateOf(initialReminderEnabled) }
+    var reminderMinutesText by remember { mutableStateOf(task.reminderMinutesBefore?.toString() ?: "15") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -563,14 +760,14 @@ fun EditTaskDialog(
                     value = taskText,
                     onValueChange = { taskText = it },
                     label = { Text("Task description") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = notesText,
                     onValueChange = { notesText = it },
                     label = { Text("Notes") },
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 2
+                    minLines = 2,
                 )
                 OutlinedTextField(
                     value = expectedTimeText,
@@ -581,14 +778,24 @@ fun EditTaskDialog(
                     singleLine = true,
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = reminderSet, onCheckedChange = { reminderSet = it })
+                    Checkbox(checked = reminderEnabled, onCheckedChange = { reminderEnabled = it })
                     Text("Remind me")
                     Icon(
-                        imageVector = if (reminderSet) Icons.Default.Notifications else Icons.Outlined.Notifications,
+                        imageVector = if (reminderEnabled) Icons.Default.Notifications else Icons.Outlined.Notifications,
                         contentDescription = null,
                         modifier = Modifier.padding(start = 4.dp),
-                        tint = if (reminderSet) MaterialTheme.colorScheme.primary
-                               else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        tint = if (reminderEnabled) MaterialTheme.colorScheme.primary
+                               else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    )
+                }
+                if (reminderEnabled) {
+                    OutlinedTextField(
+                        value = reminderMinutesText,
+                        onValueChange = { reminderMinutesText = it.filter { c -> c.isDigit() } },
+                        label = { Text("Minutes before due") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
                     )
                 }
             }
@@ -596,9 +803,10 @@ fun EditTaskDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    onSave(taskText, reminderSet, notesText.takeIf { it.isNotBlank() }, expectedTimeText.toIntOrNull())
+                    val reminder = if (reminderEnabled) reminderMinutesText.toIntOrNull() ?: 15 else null
+                    onSave(taskText, reminder, notesText.takeIf { it.isNotBlank() }, expectedTimeText.toIntOrNull())
                 },
-                enabled = taskText.isNotBlank()
+                enabled = taskText.isNotBlank(),
             ) { Text("Save") }
         },
         dismissButton = {
@@ -611,6 +819,6 @@ fun EditTaskDialog(
                 }
                 TextButton(onClick = onDismiss) { Text("Cancel") }
             }
-        }
+        },
     )
 }

@@ -6,17 +6,20 @@ import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -24,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,7 +37,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.meow.autistic.NavigationItem
 import org.meow.autistic.data.auth.GoogleAuthManager
 import org.meow.autistic.data.auth.TokenStore
@@ -80,6 +86,8 @@ private fun SettingsMainList(
     onDailyTasksClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showLogcat by remember { mutableStateOf(false) }
+    if (showLogcat) LogcatDialog(onDismiss = { showLogcat = false })
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val tokenStore = remember { TokenStore.create(context) }
@@ -176,7 +184,7 @@ private fun SettingsMainList(
         SettingsSectionLabel("Data")
         ListItem(
             headlineContent = { Text("Sync") },
-            supportingContent = { if (!syncExpanded) Text("Daily tasks, products, task list") },
+            supportingContent = { if (!syncExpanded) Text("Daily reset, task list, backup") },
             trailingContent = {
                 Icon(
                     if (syncExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -188,8 +196,8 @@ private fun SettingsMainList(
         AnimatedVisibility(visible = syncExpanded) {
             Column {
                 DailySyncItem()
-                ProductSyncItem()
-                TaskListSyncItem()
+                TaskListSyncItem(isAuthenticated = isAuthenticated)
+                DriveBackupSyncItem(isAuthenticated = isAuthenticated)
             }
         }
         HorizontalDivider()
@@ -198,14 +206,56 @@ private fun SettingsMainList(
             headlineContent = { Text("Query Log") },
             supportingContent = { Text("Recent database query timings") },
             trailingContent = {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowForwardIos,
-                    contentDescription = "Open query log",
-                )
+                Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = "Open query log")
             },
             modifier = Modifier.clickable { onQueryLogClick() },
         )
+        ListItem(
+            headlineContent = { Text("Logcat") },
+            supportingContent = { Text("Recent system log output") },
+            trailingContent = {
+                Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = "Show logcat")
+            },
+            modifier = Modifier.clickable { showLogcat = true },
+        )
     }
+}
+
+@Composable
+private fun LogcatDialog(onDismiss: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    var lines by remember { mutableStateOf("Loading…") }
+
+    LaunchedEffect(Unit) {
+        lines = withContext(Dispatchers.IO) {
+            runCatching {
+                Runtime.getRuntime()
+                    .exec(arrayOf("logcat", "-d", "-t", "100"))
+                    .inputStream
+                    .bufferedReader()
+                    .readText()
+            }.getOrElse { e -> "Failed to read logcat: ${e.message}" }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Logcat") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                Text(
+                    text = lines,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+    )
 }
 
 /**

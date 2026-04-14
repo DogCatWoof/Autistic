@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit
  * Requested scopes:
  * - [TasksScopes.TASKS] — read + write access to Google Tasks
  * - [CalendarScopes.CALENDAR] — read/write access to Google Calendar
- * - [DriveScopes.DRIVE_APPDATA] — hidden app-data folder for DB backups
+ * - [DriveScopes.DRIVE_FILE] — read/write access to files created by this app
  */
 class GoogleAuthManager(
     private val context: Context,
@@ -33,13 +33,13 @@ class GoogleAuthManager(
     companion object {
         private const val TAG = "GoogleAuthManager"
         private const val SIGN_OUT_TIMEOUT_SEC = 10L
-        private val SCOPES = listOf(TasksScopes.TASKS, CalendarScopes.CALENDAR, DriveScopes.DRIVE_APPDATA)
+        private val SCOPES = listOf(TasksScopes.TASKS, CalendarScopes.CALENDAR, DriveScopes.DRIVE_FILE)
     }
 
     private val signInClient: GoogleSignInClient by lazy {
         val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
-            .requestScopes(Scope(TasksScopes.TASKS), Scope(CalendarScopes.CALENDAR), Scope(DriveScopes.DRIVE_APPDATA))
+            .requestScopes(Scope(TasksScopes.TASKS), Scope(CalendarScopes.CALENDAR), Scope(DriveScopes.DRIVE_FILE))
             .build()
         GoogleSignIn.getClient(context, options)
     }
@@ -47,12 +47,7 @@ class GoogleAuthManager(
     /** Returns true if the user is signed in and has granted all required scopes. */
     fun isAuthenticated(): Boolean {
         val account = GoogleSignIn.getLastSignedInAccount(context) ?: return false
-        return GoogleSignIn.hasPermissions(
-            account,
-            Scope(TasksScopes.TASKS),
-            Scope(CalendarScopes.CALENDAR),
-            Scope(DriveScopes.DRIVE_APPDATA),
-        )
+        return GoogleSignIn.hasPermissions(account, *SCOPES.map { Scope(it) }.toTypedArray())
     }
 
     /** Returns the [Intent] to launch via an [ActivityResultLauncher] to start sign-in. */

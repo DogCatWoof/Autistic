@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">Autistic</string>
+    <string name="shortcut_scan_short">Scan</string>
+    <string name="shortcut_scan_long">Scan a barcode</string>
+    <string name="shortcut_tasks_short">Tasks</string>
+    <string name="shortcut_tasks_long">Open task list</string>
+    <string name="shortcut_notes_short">Notes</string>
+    <string name="shortcut_notes_long">Open notes</string>
+    <string name="shortcut_mood_short">Mood</string>
+    <string name="shortcut_mood_long">Log mood</string>
 </resources>

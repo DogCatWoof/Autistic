@@ -41,35 +41,48 @@ class TaskListScreenTest {
         composeTestRule.onNodeWithContentDescription("Add Task").assertIsDisplayed()
     }
 
-    @Test
-    fun fabClick_showsAddDialog() {
+    private fun openAddTaskDialog() {
         composeTestRule.onNodeWithContentDescription("Add Task").performClick()
+        composeTestRule.onNodeWithContentDescription("Task").performClick()
+    }
+
+    @Test
+    fun fabClick_showsSpeedDial() {
+        composeTestRule.onNodeWithContentDescription("Add Task").performClick()
+        composeTestRule.onNodeWithText("Task").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Calendar Event").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Daily Task").assertIsDisplayed()
+    }
+
+    @Test
+    fun fabClick_taskOption_showsAddDialog() {
+        openAddTaskDialog()
         composeTestRule.onNodeWithText("New Task").assertIsDisplayed()
     }
 
     @Test
     fun addDialog_cancelDismissesDialog() {
-        composeTestRule.onNodeWithContentDescription("Add Task").performClick()
+        openAddTaskDialog()
         composeTestRule.onNodeWithText("Cancel").performClick()
         composeTestRule.onNodeWithText("New Task").assertDoesNotExist()
     }
 
     @Test
     fun addDialog_saveDisabledWhenTaskBlank() {
-        composeTestRule.onNodeWithContentDescription("Add Task").performClick()
+        openAddTaskDialog()
         composeTestRule.onNodeWithText("Save").assertIsNotEnabled()
     }
 
     @Test
     fun addDialog_saveEnabledAfterTyping() {
-        composeTestRule.onNodeWithContentDescription("Add Task").performClick()
+        openAddTaskDialog()
         composeTestRule.onNodeWithText("Task description").performTextInput("Buy milk")
         composeTestRule.onNodeWithText("Save").assertIsEnabled()
     }
 
     @Test
     fun completedTask_isRemovedFromList() {
-        composeTestRule.onNodeWithContentDescription("Add Task").performClick()
+        openAddTaskDialog()
         composeTestRule.onNodeWithText("Task description").performTextInput("Finish report")
         composeTestRule.onNodeWithText("Save").performClick()
 
@@ -82,7 +95,7 @@ class TaskListScreenTest {
 
     @Test
     fun swipeLeft_removesTask() {
-        composeTestRule.onNodeWithContentDescription("Add Task").performClick()
+        openAddTaskDialog()
         composeTestRule.onNodeWithText("Task description").performTextInput("Buy milk")
         composeTestRule.onNodeWithText("Save").performClick()
 
@@ -95,13 +108,13 @@ class TaskListScreenTest {
 
     @Test
     fun addDialog_notesFieldDisplayed() {
-        composeTestRule.onNodeWithContentDescription("Add Task").performClick()
+        openAddTaskDialog()
         composeTestRule.onNodeWithText("Notes").assertIsDisplayed()
     }
 
     @Test
     fun addDialog_notesAreShownOnTaskItem() {
-        composeTestRule.onNodeWithContentDescription("Add Task").performClick()
+        openAddTaskDialog()
         composeTestRule.onNodeWithText("Task description").performTextInput("My task")
         composeTestRule.onNodeWithText("Notes").performTextInput("Some note here")
         composeTestRule.onNodeWithText("Save").performClick()

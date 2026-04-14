@@ -6,14 +6,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
+import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
+import org.meow.autistic.data.backup.DriveBackupService
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
-import org.meow.autistic.data.product.OFF_SYNC_WORK_NAME
-import org.meow.autistic.data.product.OpenFoodFactsWorker
 import org.meow.autistic.data.sync.IMMEDIATE_WORK_NAME
 import org.meow.autistic.data.sync.SyncScheduler
 import org.meow.autistic.data.sync.SyncWorker
@@ -27,6 +29,7 @@ import java.util.Locale
 @Composable
 internal fun DailySyncItem() {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val workManager = remember { WorkManager.getInstance(context) }
 
     val workInfos by workManager
@@ -43,20 +46,20 @@ internal fun DailySyncItem() {
     }
 
     ListItem(
-        headlineContent = { Text("Daily Tasks") },
+        headlineContent = { Text("Daily Reset") },
         supportingContent = { Text(status) },
         trailingContent = {
             Button(
                 enabled = !isSyncing,
-                onClick = { DailyResetWorker.enqueue(context) },
-            ) { Text("Run") }
+                onClick = { scope.launch { DailyResetWorker.forceReset(context) } },
+            ) { Text("Run Now") }
         },
     )
 }
 
 /** Sync list item for the Google Tasks + Calendar sync worker. */
 @Composable
-internal fun TaskListSyncItem() {
+internal fun TaskListSyncItem(isAuthenticated: Boolean) {
     val context = LocalContext.current
     val workManager = remember { WorkManager.getInstance(context) }
     val scheduler = remember { SyncScheduler(workManager) }
@@ -69,6 +72,7 @@ internal fun TaskListSyncItem() {
 
     val isSyncing = workInfos.firstOrNull()?.state == WorkInfo.State.RUNNING
     val status = when {
+        !isAuthenticated -> "Sign in to sync"
         isSyncing -> "Syncing…"
         lastSync != null -> "Last synced: ${formatSyncTimestamp(lastSync!!)}"
         else -> "Never synced"
@@ -78,54 +82,45 @@ internal fun TaskListSyncItem() {
         headlineContent = { Text("Task List") },
         supportingContent = { Text(status) },
         trailingContent = {
-            Button(enabled = !isSyncing, onClick = { scheduler.triggerImmediate() }) {
+            Button(enabled = isAuthenticated && !isSyncing, onClick = { scheduler.triggerImmediate() }) {
                 Text("Sync")
             }
         },
     )
 }
 
-/** Sync list item for the Open Food Facts product database worker. */
+/** Sync list item for triggering a manual Google Drive database backup. */
 @Composable
-internal fun ProductSyncItem() {
+internal fun DriveBackupSyncItem(isAuthenticated: Boolean) {
     val context = LocalContext.current
-    val workManager = remember { WorkManager.getInstance(context) }
+    val scope = rememberCoroutineScope()
+    val backupService: DriveBackupService = koinInject()
 
-    val workInfos by workManager
-        .getWorkInfosForUniqueWorkFlow(OFF_SYNC_WORK_NAME)
-        .collectAsState(initial = emptyList())
-    val lastSync by OpenFoodFactsWorker.getLastSyncFlow(context)
+    var isRunning by remember { mutableStateOf(false) }
+    val lastBackup by DriveBackupService.getLastBackupFlow(context)
         .collectAsState(initial = null)
 
-    val info = workInfos.firstOrNull()
-    val isSyncing = info?.state == WorkInfo.State.RUNNING
-    val syncError = if (info?.state == WorkInfo.State.FAILED) {
-        info.outputData.getString("error") ?: "Unknown error"
-    } else null
-
     val status = when {
-        isSyncing -> info?.progress?.getString("status") ?: "Syncing…"
-        syncError != null -> "Error: $syncError"
-        lastSync != null -> "Last synced: ${formatSyncTimestamp(lastSync!!)}"
-        else -> "Never synced"
+        !isAuthenticated -> "Sign in to back up"
+        isRunning -> "Backing up…"
+        lastBackup != null -> "Last backup: ${formatSyncTimestamp(lastBackup!!)}"
+        else -> "Never backed up"
     }
 
     ListItem(
-        headlineContent = { Text("Product Data") },
+        headlineContent = { Text("Google Drive Backup") },
         supportingContent = { Text(status) },
         trailingContent = {
             Button(
-                enabled = !isSyncing,
+                enabled = isAuthenticated && !isRunning,
                 onClick = {
-                    workManager.enqueueUniqueWork(
-                        OFF_SYNC_WORK_NAME,
-                        ExistingWorkPolicy.KEEP,
-                        OneTimeWorkRequestBuilder<OpenFoodFactsWorker>().build(),
-                    )
+                    scope.launch {
+                        isRunning = true
+                        backupService.backupDatabase()
+                        isRunning = false
+                    }
                 },
-            ) {
-                Text(if (syncError != null) "Retry" else "Sync")
-            }
+            ) { Text("Backup") }
         },
     )
 }

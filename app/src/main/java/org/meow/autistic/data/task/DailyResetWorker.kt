@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.meow.autistic.data.auth.GoogleAuthManager
 import org.meow.autistic.data.backup.DriveBackupService
 import java.time.Instant
 import java.time.LocalDate
@@ -45,13 +46,16 @@ class DailyResetWorker(
     private val taskDao: TaskDao by inject()
     private val dailyTaskRepository: DailyTaskRepository by inject()
     private val driveBackupService: DriveBackupService by inject()
+    private val authManager: GoogleAuthManager by inject()
 
     override suspend fun doWork(): Result {
         val today = LocalDate.now().toString()
         val prefs = context.dailyResetDataStore.data.first()
         if (prefs[LAST_RESET_DATE_KEY] == today) return Result.success()
 
-        driveBackupService.backupDatabase()
+        if (authManager.isAuthenticated()) {
+            driveBackupService.backupDatabase()
+        }
 
         taskDao.deleteUnfinishedDailyTasks()
 
@@ -94,6 +98,19 @@ class DailyResetWorker(
             WorkManager.getInstance(context).enqueueUniqueWork(
                 DAILY_RESET_WORK_NAME,
                 ExistingWorkPolicy.KEEP,
+                OneTimeWorkRequestBuilder<DailyResetWorker>().build(),
+            )
+        }
+
+        /**
+         * Clears the stored last-reset date then re-enqueues with REPLACE,
+         * forcing a full reset even if one already ran today.
+         */
+        suspend fun forceReset(context: Context) {
+            context.dailyResetDataStore.edit { it.remove(LAST_RESET_DATE_KEY) }
+            WorkManager.getInstance(context).enqueueUniqueWork(
+                DAILY_RESET_WORK_NAME,
+                ExistingWorkPolicy.REPLACE,
                 OneTimeWorkRequestBuilder<DailyResetWorker>().build(),
             )
         }

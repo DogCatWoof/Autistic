@@ -2,6 +2,11 @@ package org.meow.autistic.data.backup
 
 import android.content.Context
 import android.util.Log
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import com.google.api.client.http.FileContent
 import com.google.api.client.http.HttpRequestInitializer
 import com.google.api.client.http.javanet.NetHttpTransport
@@ -9,18 +14,24 @@ import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.model.File
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
 private const val APP_NAME = "Autistic"
 private const val BACKUP_FILE_NAME = "autistic_db_backup.sqlite"
 private const val DB_MIME_TYPE = "application/octet-stream"
-private const val APP_DATA_SPACE = "appDataFolder"
 private const val TAG = "DriveBackupService"
 
+private val Context.driveBackupDataStore: DataStore<Preferences>
+    by preferencesDataStore("drive_backup_prefs")
+
+private val LAST_BACKUP_KEY = longPreferencesKey("last_backup_ms")
+
 /**
- * Backs up the Room database file to the user's Google Drive app-data folder.
+ * Backs up the Room database file to the user's Google Drive (My Drive root).
  *
- * The app-data folder is hidden from the user and scoped to this app.
+ * The file is visible in drive.google.com under the name [BACKUP_FILE_NAME].
  * Only the latest backup is kept — previous backups are overwritten.
  *
  * @param context Used to locate the database file path.
@@ -30,6 +41,11 @@ class DriveBackupService(
     private val context: Context,
     private val tokenProvider: suspend () -> String,
 ) {
+    companion object {
+        /** Emits the timestamp (ms since epoch) of the last successful backup, or null. */
+        fun getLastBackupFlow(context: Context): Flow<Long?> =
+            context.driveBackupDataStore.data.map { it[LAST_BACKUP_KEY] }
+    }
 
     /**
      * Uploads the current state of `autistic_database` to Google Drive.
@@ -70,7 +86,6 @@ class DriveBackupService(
         } else {
             val metadata = File().apply {
                 name = BACKUP_FILE_NAME
-                parents = listOf(APP_DATA_SPACE)
             }
             val created = drive.files()
                 .create(metadata, content)
@@ -78,11 +93,12 @@ class DriveBackupService(
                 .execute()
             Log.i(TAG, "Database backup created (Drive file id=${created.id})")
         }
+        context.driveBackupDataStore.edit { it[LAST_BACKUP_KEY] = System.currentTimeMillis() }
     }
 
     private fun findExistingBackupId(drive: Drive): String? {
         val result = drive.files().list()
-            .setSpaces(APP_DATA_SPACE)
+            .setSpaces("drive")
             .setFields("files(id,name)")
             .setQ("name = '$BACKUP_FILE_NAME'")
             .execute()

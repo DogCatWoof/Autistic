@@ -14,6 +14,4 @@ interface ProductDao {
     @Query("SELECT * FROM products WHERE barcode = :barcode LIMIT 1")
     suspend fun getByBarcode(barcode: String): ProductEntity?
 
-    @Query("SELECT COUNT(*) FROM products")
-    suspend fun count(): Long
 }

@@ -3,21 +3,32 @@ package org.meow.autistic.data.note
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 
-/** Persistence operations for [NoteEntity]. */
 @Dao
 interface NoteDao {
-    @Query("SELECT * FROM notes ORDER BY updatedAt DESC")
-    fun getAllNotes(): Flow<List<NoteEntity>>
 
-    @Insert
-    suspend fun insert(note: NoteEntity): Long
+    @Query("SELECT * FROM notes WHERE isDeleted = 0 ORDER BY updatedAt DESC")
+    fun getActiveNotes(): Flow<List<NoteEntity>>
+
+    @Query("SELECT * FROM notes WHERE isDeleted = 1 ORDER BY updatedAt DESC")
+    fun getDeletedNotes(): Flow<List<NoteEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(note: NoteEntity)
 
     @Update
     suspend fun update(note: NoteEntity)
+
+    @Query("UPDATE notes SET isDeleted = 1, updatedAt = :updatedAt WHERE id = :id")
+    suspend fun softDelete(id: Int, updatedAt: Instant)
+
+    @Query("UPDATE notes SET isDeleted = 0, updatedAt = :updatedAt WHERE id = :id")
+    suspend fun restore(id: Int, updatedAt: Instant)
 
     @Delete
     suspend fun delete(note: NoteEntity)

@@ -28,4 +28,6 @@ data class TaskEntity(
     val dailyTaskId: Long? = null,
     /** Expected duration in minutes. Null means no estimate. */
     val expectedTimeMinutes: Int? = null,
+    /** Minutes before [dueAt] to fire a reminder. Null means no reminder scheduled. */
+    val reminderMinutesBefore: Int? = null,
 )

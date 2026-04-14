@@ -2,8 +2,10 @@ package org.meow.autistic.data.auth
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
+import androidx.core.content.edit
 import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKeys
+import androidx.security.crypto.MasterKey
 
 /**
  * Encrypted storage for OAuth tokens and account identity.
@@ -14,6 +16,7 @@ import androidx.security.crypto.MasterKeys
 class TokenStore(private val prefs: SharedPreferences) {
 
     companion object {
+        private const val TAG = "TokenStore"
         private const val FILE_NAME = "auth_token_store"
         private const val KEY_ACCOUNT_EMAIL = "account_email"
         private const val KEY_ACCESS_TOKEN = "access_token"
@@ -24,34 +27,72 @@ class TokenStore(private val prefs: SharedPreferences) {
 
         /** Creates the production [TokenStore] backed by [EncryptedSharedPreferences]. */
         fun create(context: Context): TokenStore {
-            val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+            val masterKey = MasterKey.Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
+
+            return try {
+                createEncryptedPrefs(context, masterKey)
+            } catch (e: Exception) {
+                // Handle potential KeyStore corruption (AEADBadTagException etc.)
+                // by clearing the file and retrying once.
+                Log.e(TAG, "Failed to create EncryptedSharedPreferences, retrying...", e)
+                context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE).edit(commit = true) {
+                    clear()
+                }
+                
+                try {
+                    createEncryptedPrefs(context, masterKey)
+                } catch (e2: Exception) {
+                    Log.e(TAG, "Failed to create EncryptedSharedPreferences after clear, falling back to plaintext", e2)
+                    TokenStore(context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE))
+                }
+            }
+        }
+
+        private fun createEncryptedPrefs(context: Context, masterKey: MasterKey): TokenStore {
             val encryptedPrefs = EncryptedSharedPreferences.create(
-                FILE_NAME,
-                masterKeyAlias,
                 context,
+                FILE_NAME,
+                masterKey,
                 EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             )
             return TokenStore(encryptedPrefs)
         }
     }
 
     fun saveAccount(email: String) {
-        prefs.edit().putString(KEY_ACCOUNT_EMAIL, email).apply()
+        prefs.edit { putString(KEY_ACCOUNT_EMAIL, email) }
     }
 
-    fun getAccountEmail(): String? = prefs.getString(KEY_ACCOUNT_EMAIL, null)
+    fun getAccountEmail(): String? = try {
+        prefs.getString(KEY_ACCOUNT_EMAIL, null)
+    } catch (e: Exception) {
+        Log.e(TAG, "Error reading account email", e)
+        null
+    }
 
     fun saveAccessToken(token: String, expiryMs: Long) {
-        prefs.edit()
-            .putString(KEY_ACCESS_TOKEN, token)
-            .putLong(KEY_TOKEN_EXPIRY_MS, expiryMs)
-            .apply()
+        prefs.edit {
+            putString(KEY_ACCESS_TOKEN, token)
+            putLong(KEY_TOKEN_EXPIRY_MS, expiryMs)
+        }
     }
 
-    fun getAccessToken(): String? = prefs.getString(KEY_ACCESS_TOKEN, null)
+    fun getAccessToken(): String? = try {
+        prefs.getString(KEY_ACCESS_TOKEN, null)
+    } catch (e: Exception) {
+        Log.e(TAG, "Error reading access token", e)
+        null
+    }
 
-    fun getExpiryMs(): Long = prefs.getLong(KEY_TOKEN_EXPIRY_MS, 0L)
+    fun getExpiryMs(): Long = try {
+        prefs.getLong(KEY_TOKEN_EXPIRY_MS, 0L)
+    } catch (e: Exception) {
+        Log.e(TAG, "Error reading expiry", e)
+        0L
+    }
 
     /** Returns true if a cached token exists and won't expire within [REFRESH_BUFFER_MS]. */
     fun isTokenValid(): Boolean {
@@ -61,10 +102,13 @@ class TokenStore(private val prefs: SharedPreferences) {
 
     /** Clears only the access token and its expiry, leaving the account email intact. */
     fun clearAccessToken() {
-        prefs.edit().remove(KEY_ACCESS_TOKEN).remove(KEY_TOKEN_EXPIRY_MS).apply()
+        prefs.edit {
+            remove(KEY_ACCESS_TOKEN)
+            remove(KEY_TOKEN_EXPIRY_MS)
+        }
     }
 
     fun clear() {
-        prefs.edit().clear().apply()
+        prefs.edit { clear() }
     }
 }

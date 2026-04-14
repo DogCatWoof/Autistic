@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -16,12 +17,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Mood
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Create
 import androidx.compose.material.icons.outlined.Done
+import androidx.compose.material.icons.outlined.Mood
 import androidx.compose.material.icons.outlined.QrCodeScanner
+import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Settings
+import androidx.activity.compose.BackHandler
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -32,9 +39,11 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,15 +57,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.core.app.NotificationCompat
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import org.meow.autistic.data.mood.MoodCheckInWorker
 import org.meow.autistic.data.navigation.NavPreferencesStore
+import org.meow.autistic.data.navigation.NavStateStore
 import org.meow.autistic.data.task.DailyResetWorker
+import org.meow.autistic.data.task.REMINDER_CHANNEL_ID
 import org.meow.autistic.ui.screens.filterNavItems
 import org.meow.autistic.ui.screens.navTitlesFrom
 import org.meow.autistic.ui.screens.AppDrawerSheet
-import org.meow.autistic.ui.screens.DailyScreen
-import org.meow.autistic.ui.screens.EventsScreen
 import org.meow.autistic.ui.screens.NavBottomSheet
+import org.meow.autistic.ui.screens.KetoScreen
+import org.meow.autistic.ui.screens.MoodScreen
 import org.meow.autistic.ui.screens.NotesScreen
 import org.meow.autistic.ui.screens.ScanScreen
 import org.meow.autistic.ui.screens.SettingsScreen
@@ -82,13 +96,25 @@ class MainActivity : ComponentActivity() {
             ),
             NavigationItem("Scan", Icons.Filled.QrCodeScanner, Icons.Outlined.QrCodeScanner),
             NavigationItem("Notes", Icons.Filled.Create, Icons.Outlined.Create),
+            NavigationItem("Mood", Icons.Filled.Mood, Icons.Outlined.Mood),
+            NavigationItem("Keto", Icons.Filled.Restaurant, Icons.Outlined.Restaurant),
         )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         createNotificationChannel()
         DailyResetWorker.enqueue(this)
+        MoodCheckInWorker.enqueue(this)
+        val savedDestination = runBlocking { NavStateStore.getDestinationFlow(this@MainActivity).first() }
+        val initialDestination = when (intent?.action) {
+            "org.meow.autistic.OPEN_SCAN"  -> "Scan"
+            "org.meow.autistic.OPEN_TASKS" -> "Task"
+            "org.meow.autistic.OPEN_NOTES" -> "Notes"
+            "org.meow.autistic.OPEN_MOOD"  -> "Mood"
+            else -> savedDestination ?: "Task"
+        }
         setContent {
             AutisticTheme {
                 val context = LocalContext.current
@@ -96,11 +122,31 @@ class MainActivity : ComponentActivity() {
                 val savedEnabled by NavPreferencesStore.getEnabledFlow(context)
                     .collectAsState(initial = null)
                 val bottomItems = filterNavItems(BOTTOM_ITEMS, savedEnabled ?: allNavTitles)
-                var currentDestination by rememberSaveable { mutableStateOf("Task") }
+                var currentDestination by rememberSaveable { mutableStateOf(initialDestination) }
                 var showSettings by rememberSaveable { mutableStateOf(false) }
                 var bottomSheetIndex by rememberSaveable { mutableStateOf<Int?>(null) }
                 val drawerState = rememberDrawerState(DrawerValue.Closed)
                 val scope = rememberCoroutineScope()
+
+                LaunchedEffect(currentDestination) {
+                    NavStateStore.saveDestination(context, currentDestination)
+                }
+
+                var showExitDialog by remember { mutableStateOf(false) }
+                BackHandler { showExitDialog = true }
+                if (showExitDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showExitDialog = false },
+                        title = { Text("Exit app?") },
+                        text = { Text("Are you sure you want to exit?") },
+                        confirmButton = {
+                            TextButton(onClick = { finish() }) { Text("Exit") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showExitDialog = false }) { Text("Cancel") }
+                        },
+                    )
+                }
 
                 val activeNavTitle = currentDestination
 
@@ -190,10 +236,10 @@ class MainActivity : ComponentActivity() {
                             } else {
                                 when (currentDestination) {
                                     "Task" -> TaskListScreen()
-                                    "Today" -> DailyScreen()
-                                    "Events" -> EventsScreen()
                                     "Scan" -> ScanScreen()
                                     "Notes" -> NotesScreen()
+                                    "Mood" -> MoodScreen()
+                                    "Keto" -> KetoScreen()
                                 }
                             }
                         }
@@ -217,13 +263,15 @@ class MainActivity : ComponentActivity() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                "test_channel",
-                "Test Channel",
-                NotificationManager.IMPORTANCE_DEFAULT,
-            ).apply { description = "Test Channel Description" }
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+            notificationManager.createNotificationChannel(
+                NotificationChannel("test_channel", "Test Channel", NotificationManager.IMPORTANCE_DEFAULT)
+                    .apply { description = "Test Channel Description" }
+            )
+            notificationManager.createNotificationChannel(
+                NotificationChannel(REMINDER_CHANNEL_ID, "Task Reminders", NotificationManager.IMPORTANCE_HIGH)
+                    .apply { description = "Reminders for upcoming tasks" }
+            )
         }
     }
 }
@@ -234,8 +282,8 @@ fun showNotification(context: Context) {
     val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     val builder = NotificationCompat.Builder(context, "test_channel")
         .setSmallIcon(R.drawable.ic_launcher_foreground)
-        .setContentTitle("Test Notification")
-        .setContentText("This is a test notification.")
+        .setContentTitle("😊 How are you feeling?")
+        .setContentText("Tap to log your mood.")
         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
         .setContentIntent(pendingIntent)
         .setAutoCancel(true)
