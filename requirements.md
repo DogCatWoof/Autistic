@@ -30,9 +30,6 @@
 - A "Connect Google Tasks" banner is shown when the user is not authenticated
 - On a metered (cellular) network, a confirmation dialog is shown before manual sync
 
-### Daily View
-- Combines tasks and calendar events for the current day in a single chronological list
-
 ### Scan and Lookup Groceries
 - Users scan grocery product barcodes using the device camera
 - A live barcode detector identifies the first valid code; the camera pauses on detection
@@ -81,14 +78,6 @@ Reduces three loads in real-time social situations: decoding intent, deciding wh
 - **Architecture** (offline-first): (1) fully local — MVP default; (2) hybrid — local for common cases, optional cloud for complex phrasing; (3) cloud-first — explicit opt-in only. Principle: never fail without internet; only improve when it exists
 - **MVP scope**: push-to-talk, on-device transcription, rule-based intent classifier (question/command/social/other), 3 response templates per class with tone settings, quick-tap UI, end-of-session feedback
 - **Extensions**: meeting mode (action items), script packs (medical/interview), multilingual layer
-
-### Habit Stabilizer
-- Users define repeating habits (daily or weekly) they want to build or track
-- Each habit displays a current streak and a completion history (calendar heatmap)
-- Tapping a habit marks it complete for today; undo is available within the session
-- Habits carry an optional energy cost that feeds into the Energy Budgeting model
-- Habits can be reordered and archived; archived habits are hidden but their history is retained
-- Managed in Settings (no separate nav tab); habits surface on the Task screen or a dedicated panel
 
 ### Location-based Actions
 - Users define geofence triggers: label, location (map pick or address), radius, and action
@@ -194,14 +183,6 @@ Runs as a 4-step sequence (abort with retry if no valid token):
 ---
 
 ## Plan
-
-### Habit Stabilizer
-1. **Data layer** — `HabitEntity` (id, name, targetFrequency, energyCostUnits, isArchived, sortOrder); `HabitCompletionEntity` (id, habitId, completedAt); `HabitDao`; `HabitRepository`
-2. **Room migration** — bump DB version; add both tables; write migration script
-3. **ViewModel** — `HabitViewModel`: `habits: StateFlow<List<HabitWithStreak>>`, `complete(habit)`, `undo()`, `archive(habit)`
-4. **Screens** — `HabitListScreen` (streak + heatmap row per habit, tap-to-complete, swipe-to-archive); `HabitEditorDialog` (add/edit); surfaced under Settings → Habits
-5. **Energy integration** — on completion of a habit with `energyCostUnits > 0`, call `EnergyRepository.logActivity()`
-6. **Tests** — unit tests for streak calculation edge cases; instrumented test for tap-to-complete flow
 
 ### Location-based Actions
 1. **Data layer** — `LocationTriggerEntity` (id, label, latitude, longitude, radiusMeters, actionType, actionPayload, isEnabled); `LocationTriggerDao`; `LocationTriggerRepository`
