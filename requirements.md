@@ -117,6 +117,30 @@ Reduces three loads in real-time social situations: decoding intent, deciding wh
 
 **Extensions**: meeting mode (action items), script packs (medical visits, interviews), multilingual layer
 
+### Habit Stabilizer
+- Users can define repeating habits (daily or weekly) they want to build or track
+- Each habit shows a current streak and a completion history (calendar heatmap)
+- Tap to mark a habit complete for today; undo is available within the session
+- Habits carry an optional energy cost that feeds into the Energy Budgeting model
+- Habits can be reordered; archived habits are hidden but retained for history
+- Settings entry for add/edit/delete; no separate nav tab (habits surface on the Task screen or a dedicated panel)
+
+### Location-based Actions
+- Users can define geofence triggers: a label, a location (map pick or address), a radius, and an action
+- Actions include: show a reminder notification, open a specific screen, or add a predefined task
+- Examples: "When I arrive at the supermarket → show shopping list"; "When I leave work → log commute"
+- Triggers are managed in Settings; on/off toggle per trigger
+- Permissions required: `ACCESS_FINE_LOCATION`, `ACCESS_BACKGROUND_LOCATION`
+- Geofences re-register on device reboot via `BootCompletedReceiver`
+
+### Sequences
+- A sequence is an ordered checklist of named steps for a complex, repeating multi-part task
+- Each step has: instruction text, optional estimated time, and a completion checkbox
+- Examples: morning routine, packing for a trip, preparing for a medical visit
+- Users can start a "run" of a sequence; the current step is highlighted; progress is saved
+- A sequence run can be paused and resumed; completed runs are stored as history
+- Sequences are managed in Settings; a running sequence surfaces as a persistent notification or widget
+
 ### Energy Budgeting
 Models cognitive load over time as a pacing system, not just a to-do list. Prevents overload by simulating the rest of the day before decisions are made.
 
@@ -161,6 +185,15 @@ Models cognitive load over time as a pacing system, not just a to-do list. Preve
 ---
 
 ## Technical Requirements
+
+### Data Survival Across Reinstall
+- All user data (tasks, notes, habits, sequences, energy logs, settings) must be restorable after a reinstall
+- Primary mechanism: automatic backup to Google Drive app-data folder (`APPDATA` scope — hidden from user's Drive)
+- Backup runs as a WorkManager task on WiFi; stores last backup timestamp in DataStore
+- On first launch after reinstall, app detects missing local data and offers a restore prompt
+- Restore downloads the backup JSON, validates it, and repopulates the Room database
+- Manual backup/restore controls available in Settings
+- Backup payload is encrypted before upload; decrypted on restore using a key derived from the user's Google account
 
 ### Authentication & Token Storage
 - OAuth 2.0 via Google Sign-In with scopes: Tasks (read+write) and Calendar (read-only)
@@ -221,3 +254,62 @@ Sync runs as a 4-step sequence (abort with retry if no valid token):
 ### Testing
 - Unit tests must use mocks; no test may require a live network or external service connection
   _(see global `~/.claude/CLAUDE.md` — "Tests must be deterministic and not depend on external services")_
+
+### Plan
+
+#### Habit Stabilizer
+1. **Data layer** — `HabitEntity` (id, name, targetFrequency, energyCostUnits, isArchived, sortOrder), `HabitCompletionEntity` (id, habitId, completedAt); `HabitDao` with queries for streak, history, today's completions; `HabitRepository`
+2. **Room migration** — bump DB version, add both tables, write migration script
+3. **ViewModel** — `HabitViewModel`: `habits: StateFlow<List<HabitWithStreak>>`, `complete(habit)`, `undo()`, `archive(habit)`
+4. **Screens** — `HabitListScreen` (streak counter + heatmap row per habit, tap-to-complete, swipe-to-archive); `HabitEditorDialog` (add/edit); surfaced under Settings → Habits and as a panel on the Task screen
+5. **Energy integration** — when a habit has `energyCostUnits > 0`, `EnergyRepository.logActivity()` is called on completion
+6. **Tests** — unit tests for streak calculation edge cases; instrumented test for tap-to-complete flow
+
+#### Location-based Actions
+1. **Data layer** — `LocationTriggerEntity` (id, label, latitude, longitude, radiusMeters, actionType, actionPayload, isEnabled); `LocationTriggerDao`; `LocationTriggerRepository`
+2. **Room migration** — bump DB version, add table
+3. **Geofencing** — `GeofenceManager` wraps `GeofencingClient`: registers/deregisters geofences from `LocationTriggerEntity`; `GeofenceBroadcastReceiver` dispatches to `LocationActionHandler` (shows notification, enqueues task, or deep-links into the app)
+4. **Boot receiver** — `BootCompletedReceiver` re-registers all enabled geofences on device restart
+5. **Permissions** — runtime request for `ACCESS_FINE_LOCATION` + `ACCESS_BACKGROUND_LOCATION`; settings screen warns when background permission is missing
+6. **ViewModel + Screen** — `LocationTriggerViewModel`, `LocationTriggersScreen` (list with enable toggle + map thumbnail); map-pick flow for choosing location
+7. **Tests** — unit tests for `LocationActionHandler` dispatch logic; mock `GeofencingClient` in repository tests
+
+#### Sequences
+1. **Data layer** — `SequenceEntity` (id, name, description); `SequenceStepEntity` (id, sequenceId, stepIndex, instruction, estimatedMinutes); `SequenceRunEntity` (id, sequenceId, startedAt, completedAt?, isPaused); `SequenceStepProgressEntity` (runId, stepId, completedAt?); DAOs and `SequenceRepository`
+2. **Room migration** — bump DB version, add four tables
+3. **ViewModel** — `SequenceViewModel`: list of sequences; `SequenceRunViewModel`: active run state, `completeStep()`, `pause()`, `resume()`, `abandon()`
+4. **Screens** — `SequenceListScreen` (list + start button); `SequenceRunScreen` (current step highlighted, progress bar, next/previous); `SequenceEditorScreen` (drag-to-reorder steps)
+5. **Persistent notification** — active run shows a sticky notification with current step + "Mark done" action; updates in real-time
+6. **Settings integration** — Sequences entry under Settings for management
+7. **Tests** — unit tests for step progression and pause/resume state machine
+
+#### Conversation Scaffolding (MVP)
+1. **ResponseTemplateRepository** — static JSON asset: map of `IntentClass → List<ResponseTemplate>` (3 per class, 3 tone variants each); load at startup, cache in memory
+2. **IntentClassifier** — rule-based (keyword + question-mark heuristic): classifies text as `Question | Command | Social | Sarcasm | Unknown`; returns confidence score
+3. **ConversationViewModel** — `transcribedText: StateFlow`, `chips: StateFlow<List<ResponseChip>>`, `isListening: StateFlow`; calls `SpeechRecognizer` (push-to-talk); pipes result through `IntentClassifier` → `ResponseTemplateRepository`
+4. **ConversationScreen** — large push-to-talk button; chip row (2–4 chips, tap to copy/speak); expandable alternatives panel; urgency color cue strip; turn-taking idle indicator
+5. **TonePreferencesStore** — `DataStore<Preferences>` for tone (neutral/polite/direct) and verbosity; exposed in Settings
+6. **TTS** — `TextToSpeech` for earbud output; optional, toggleable
+7. **Nav tab** — add "Talk" tab to `BOTTOM_ITEMS`; update `NavPreferencesStore` default
+8. **Privacy** — no audio buffers persisted; `SpeechRecognizer` results discarded after chip generation
+9. **Tests** — unit tests for `IntentClassifier` across all classes; unit tests for chip selection ordering
+
+#### Energy Budgeting (MVP)
+1. **Data layer** — `EnergyProfileEntity` (dailyCapacity, mode); `ActivityCostEntity` (activityType, baseCost, learnedCost, sampleCount); `EnergyLogEntity` (date, activityType, startAt, endAt, reportedDifficulty); `StartOfDayCheckEntity` (date, sleepQuality, stressLevel, physicalState, baselineMultiplier); DAOs and `EnergyRepository`
+2. **Room migration** — bump DB version, add tables
+3. **EnergyRepository** — `getTodayBalance()`: sums costs for today's logs against baseline; `getProjection(pendingActivities)`: simulates forward balance; `calibrateDay()`: weighted moving-average update to `learnedCost` per activity type
+4. **ViewModel** — `EnergyViewModel`: `todayBalance: StateFlow<EnergyBalance>`, `projection: StateFlow<ProjectionResult>`, `logActivity()`, `submitStartOfDay()`, `rateLastBlock()`
+5. **EnergyScreen** — budget bar with confidence band; day timeline colored green→red; start-of-day check bottom sheet; quick-tag FAB; forward projection card
+6. **DailyCalibrationWorker** — runs at midnight; calls `calibrateDay()` for the closing day; updates `learnedCost` values
+7. **Calendar integration** — `TaskViewModel` annotates calendar events with estimated energy cost on fetch; meeting title keywords map to activity types
+8. **Nav tab** — add "Energy" tab
+9. **Tests** — unit tests for balance calculation, projection logic, and calibration math
+
+#### Data Survival Across Reinstall
+1. **Backup serializer** — `BackupSerializer`: serializes all Room tables to a single JSON object; `BackupDeserializer`: validates schema version and repopulates tables in a transaction
+2. **Drive client** — `DriveBackupClient`: wraps Google Drive REST API (`APPDATA` scope); `upload(encrypted: ByteArray)`, `download(): ByteArray?`, `lastModified(): Instant?`
+3. **Encryption** — AES-256-GCM; key derived from account sub via Android Keystore; encrypt before upload, decrypt after download
+4. **BackupWorker** — `CoroutineWorker`; constraint: `NetworkType.UNMETERED`; runs daily; stores last backup timestamp in DataStore
+5. **RestorePrompt** — on first launch, if local DB is empty and Drive backup exists, show restore dialog; `RestoreWorker` downloads, decrypts, and applies
+6. **Settings UI** — "Backup & Restore" section: last backup timestamp, manual backup button, manual restore button
+7. **Tests** — unit tests for serializer round-trip; unit test for encryption/decryption; mock Drive client in worker tests
