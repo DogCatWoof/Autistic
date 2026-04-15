@@ -46,6 +46,9 @@ class MainActivityTest {
             NavPreferencesStore.clear(activity)
             NavStateStore.clear(activity)
         }
+        // Activity already launched with persisted destination; navigate to Task for a clean baseline.
+        composeTestRule.onNodeWithTag("nav_tab_task").performClick()
+        composeTestRule.waitForIdle()
     }
 
     @Test

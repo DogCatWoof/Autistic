@@ -72,15 +72,91 @@
 - The sync runs as a background WorkManager task so it survives the app being backgrounded
 
 ### Conversation Scaffolding (Social Support)
-- Assists adult autistic users in real-time social situations by suggesting phrasing and responses
-- Must work fully offline; internet connection may improve quality but must never be required
-- Architecture options (preferred order):
-  1. **Fully local** (MVP default): on-device speech-to-text, intent detection, suggestion generation, and text-to-speech
-  2. **Hybrid**: local processing for common/fast cases; optional cloud model for complex phrasing
-  3. **Cloud-first**: all reasoning sent to an online model (requires internet; not the default)
-- Design principle: never fail because internet is unavailable; only improve when internet exists
-- Offline-first means live conversation scaffolding is always available; cloud enhancement is optional
-- Privacy: sensitive conversation data must not be sent to any external service without explicit user consent
+Reduces three loads in real-time social situations: decoding intent, deciding what to say, and managing timing.
+
+**Core loop (sub-second)**
+- Push-to-talk captures a short audio window (MVP); continuous listening as an extension
+- On-device transcription → classify intent, sentiment, question type, ambiguity
+- Generate 2–4 candidate response chips + 1 clarifying question
+- Display as quick taps; optionally spoken via earbud (whisper TTS)
+
+**UI**
+- Default: single "next move" line; expandable panel with alternatives
+- Color/edge cues for urgency (e.g. direct question requiring answer)
+- Turn-taking indicator (speaking pace, gaps; "safe to speak now" cue)
+- Pace coach: nudge if speaking too long or fast
+
+**Response types**: direct answer, clarifier, deferral ("I need a minute"), social glue, boundary-setting
+
+**Context modeling**
+- Conversation state: topic, roles (peer/manager/service), formality
+- User preferences: tone (neutral/polite/direct), verbosity
+- Known scripts: recurring situations (check-in desk, meetings, small talk)
+
+**Learning loop**: track selected/edited suggestions; adjust preferred tone, length, and per-contact patterns
+
+**Failure modes**
+- Mis-transcription → neutral fallback ("Could you repeat that?")
+- Low-assist mode: turn-taking cues + one suggestion only
+- Latency spike → cached generic responses
+
+**Privacy architecture**
+- On-device ASR + intent model by default; no raw audio stored; ephemeral buffers
+- Per-contact opt-in indicator (visible to others if required by law/policy)
+- No audio/text sent to external services without explicit user consent
+
+**Hardware integration**: earbud tap gestures, watch haptics for turn-taking/overload, lock-screen widget
+
+**Architecture** (offline-first):
+1. Fully local (MVP default): on-device STT + intent classifier + template generation + TTS
+2. Hybrid: local for common cases; optional cloud for complex phrasing
+3. Cloud-first: not the default; requires explicit opt-in
+- Design principle: never fail because internet is unavailable; only improve when it exists
+
+**MVP scope**: push-to-talk, on-device transcription, simple intent classifier (question/command/other), 3 response templates per class with tone settings, quick-tap UI, end-of-session feedback
+
+**Extensions**: meeting mode (action items), script packs (medical visits, interviews), multilingual layer
+
+### Energy Budgeting
+Models cognitive load over time as a pacing system, not just a to-do list. Prevents overload by simulating the rest of the day before decisions are made.
+
+**Core model**
+- Daily capacity represented as finite energy units
+- Each activity has a cost; recovery activities restore units
+- Costs are personalized and learned over time (not fixed estimates)
+- Recovery is nonlinear: short breaks = partial recovery; longer quiet periods = full restoration
+
+**User inputs (lightweight)**
+- Start-of-day check: sleep quality, baseline stress, physical state
+- Optional quick tags during the day: "focused work", "meeting", "errand", "social", "commute"
+- End-of-block 1–2 tap rating: easier / normal / harder than expected
+- Avoid requiring constant logging; infer as much as possible
+
+**Automatic signals**
+- Calendar parsing (meetings vs. solo work)
+- Location transitions (home → store → home)
+- Wearables if available (heart rate, HRV)
+- Phone usage patterns (screen time bursts, app categories)
+
+**Key features**
+- Live budget bar: remaining units with a confidence band (not a single number)
+- Forward projection: "If you attend this meeting at 3pm, projected end-of-day balance: −2 units (overload risk: high)"
+- Swap suggestions: propose moving/splitting tasks to keep balance ≥ 0
+- Stop cues: alert when next activity cost exceeds remaining capacity
+- Recovery prescriptions: suggest short interventions that have worked before
+
+**Personalization loop**
+- After each day: compare predicted vs. actual fatigue; update per-activity costs
+- Track hidden costs: transitions, commuting, context switching
+- Modes: Conservative (higher cost estimates), Learning (explore to improve model), Protection (hard cap, blocks new commitments when projected negative)
+
+**Visualizations**: day timeline colored by load (green → red), weekly overload patterns, trigger correlations (noise, social density, sleep vs. energy dips)
+
+**Integrations**: Google Calendar (auto-tag meetings), wearables, optional clinician export
+
+**Privacy**: on-device modeling by default; user can disable any signal source; inspectable logs
+
+**MVP scope**: manual tagging + calendar import, fixed initial cost table with quick user adjustments, live budget bar + forward projection, end-of-day calibration
 
 ---
 
