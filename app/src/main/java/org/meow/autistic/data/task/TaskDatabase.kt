@@ -41,7 +41,7 @@ abstract class TaskDatabase : RoomDatabase() {
 
     /** Flushes WAL to the main database file. Call before reading the raw file for backup. */
     fun checkpoint() {
-        openHelper.writableDatabase.execSQL("PRAGMA wal_checkpoint(TRUNCATE)")
+        openHelper.writableDatabase.query("PRAGMA wal_checkpoint(TRUNCATE)", emptyArray<Any>()).close()
     }
 
     companion object {
