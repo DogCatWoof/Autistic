@@ -117,14 +117,6 @@ Reduces three loads in real-time social situations: decoding intent, deciding wh
 
 **Extensions**: meeting mode (action items), script packs (medical visits, interviews), multilingual layer
 
-### Habit Stabilizer
-- Users can define repeating habits (daily or weekly) they want to build or track
-- Each habit shows a current streak and a completion history (calendar heatmap)
-- Tap to mark a habit complete for today; undo is available within the session
-- Habits carry an optional energy cost that feeds into the Energy Budgeting model
-- Habits can be reordered; archived habits are hidden but retained for history
-- Settings entry for add/edit/delete; no separate nav tab (habits surface on the Task screen or a dedicated panel)
-
 ### Location-based Actions
 - Users can define geofence triggers: a label, a location (map pick or address), a radius, and an action
 - Actions include: show a reminder notification, open a specific screen, or add a predefined task
@@ -187,13 +179,14 @@ Models cognitive load over time as a pacing system, not just a to-do list. Preve
 ## Technical Requirements
 
 ### Data Survival Across Reinstall
-- All user data (tasks, notes, habits, sequences, energy logs, settings) must be restorable after a reinstall
+- All user data (tasks, notes, sequences, energy logs, settings) must be restorable after a reinstall
 - Primary mechanism: automatic backup to Google Drive app-data folder (`APPDATA` scope — hidden from user's Drive)
 - Backup runs as a WorkManager task on WiFi; stores last backup timestamp in DataStore
 - On first launch after reinstall, app detects missing local data and offers a restore prompt
 - Restore downloads the backup JSON, validates it, and repopulates the Room database
 - Manual backup/restore controls available in Settings
 - Backup payload is encrypted before upload; decrypted on restore using a key derived from the user's Google account
+- Let's put the saved data in a folder "Autism Backups" and let's keep 7 days.
 
 ### Authentication & Token Storage
 - OAuth 2.0 via Google Sign-In with scopes: Tasks (read+write) and Calendar (read-only)
@@ -256,14 +249,6 @@ Sync runs as a 4-step sequence (abort with retry if no valid token):
   _(see global `~/.claude/CLAUDE.md` — "Tests must be deterministic and not depend on external services")_
 
 ### Plan
-
-#### Habit Stabilizer
-1. **Data layer** — `HabitEntity` (id, name, targetFrequency, energyCostUnits, isArchived, sortOrder), `HabitCompletionEntity` (id, habitId, completedAt); `HabitDao` with queries for streak, history, today's completions; `HabitRepository`
-2. **Room migration** — bump DB version, add both tables, write migration script
-3. **ViewModel** — `HabitViewModel`: `habits: StateFlow<List<HabitWithStreak>>`, `complete(habit)`, `undo()`, `archive(habit)`
-4. **Screens** — `HabitListScreen` (streak counter + heatmap row per habit, tap-to-complete, swipe-to-archive); `HabitEditorDialog` (add/edit); surfaced under Settings → Habits and as a panel on the Task screen
-5. **Energy integration** — when a habit has `energyCostUnits > 0`, `EnergyRepository.logActivity()` is called on completion
-6. **Tests** — unit tests for streak calculation edge cases; instrumented test for tap-to-complete flow
 
 #### Location-based Actions
 1. **Data layer** — `LocationTriggerEntity` (id, label, latitude, longitude, radiusMeters, actionType, actionPayload, isEnabled); `LocationTriggerDao`; `LocationTriggerRepository`

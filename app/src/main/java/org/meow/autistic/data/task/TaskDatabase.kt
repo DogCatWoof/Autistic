@@ -39,6 +39,11 @@ abstract class TaskDatabase : RoomDatabase() {
     abstract fun moodDao(): MoodDao
     abstract fun ketoDao(): KetoDao
 
+    /** Flushes WAL to the main database file. Call before reading the raw file for backup. */
+    fun checkpoint() {
+        openHelper.writableDatabase.execSQL("PRAGMA wal_checkpoint(TRUNCATE)")
+    }
+
     companion object {
         @Volatile
         private var Instance: TaskDatabase? = null
@@ -49,6 +54,17 @@ abstract class TaskDatabase : RoomDatabase() {
                     .fallbackToDestructiveMigration()
                     .build()
                     .also { Instance = it }
+            }
+        }
+
+        /**
+         * Closes and clears the singleton so the next [getDatabase] call reopens it.
+         * Must be called before overwriting the database file on restore.
+         */
+        fun closeInstance() {
+            synchronized(this) {
+                Instance?.close()
+                Instance = null
             }
         }
     }
