@@ -9,7 +9,7 @@
 - Tasks with reminders trigger a local notification at the specified time before the due date
 - Task list shows only open (not completed) tasks by default
 - Tasks support an `expectedTimeMinutes` field for duration estimation
-
+remo
 #### Calendar Events
 - Calendar events from the user's primary Google Calendar are fetched and stored locally
 - Events are fetched over a rolling 60-day window

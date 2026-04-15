@@ -42,24 +42,24 @@ class KetoDaoTest {
 
     @Test
     fun upsert_then_getByDate_returnsEntry() = runTest {
-        dao.upsert(KetoLogEntry(date = "2026-04-14", fat = 50.0, protein = 80.0))
+        dao.upsert(KetoLogEntry(date = "2026-04-14", totalCarbs = 18.0, fiber = 4.0))
         val entry = dao.getByDate("2026-04-14").first()
         assertNotNull(entry)
-        assertEquals(50.0, entry!!.fat, 0.001)
-        assertEquals(80.0, entry.protein, 0.001)
+        assertEquals(18.0, entry!!.totalCarbs, 0.001)
+        assertEquals(4.0, entry.fiber, 0.001)
     }
 
     @Test
     fun upsert_replacesExistingEntry() = runTest {
-        dao.upsert(KetoLogEntry(date = "2026-04-14", fat = 50.0))
-        dao.upsert(KetoLogEntry(date = "2026-04-14", fat = 90.0))
+        dao.upsert(KetoLogEntry(date = "2026-04-14", totalCarbs = 10.0))
+        dao.upsert(KetoLogEntry(date = "2026-04-14", totalCarbs = 20.0))
         val entry = dao.getByDate("2026-04-14").first()
-        assertEquals(90.0, entry!!.fat, 0.001)
+        assertEquals(20.0, entry!!.totalCarbs, 0.001)
     }
 
     @Test
     fun getByDate_doesNotReturnOtherDates() = runTest {
-        dao.upsert(KetoLogEntry(date = "2026-04-13", fat = 10.0))
+        dao.upsert(KetoLogEntry(date = "2026-04-13", totalCarbs = 10.0))
         assertNull(dao.getByDate("2026-04-14").first())
     }
 

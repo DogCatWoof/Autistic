@@ -12,8 +12,6 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "keto_log")
 data class KetoLogEntry(
     @PrimaryKey val date: String,
-    val fat: Double = 0.0,
-    val protein: Double = 0.0,
     val totalCarbs: Double = 0.0,
     val fiber: Double = 0.0,
     val totalSugars: Double = 0.0,

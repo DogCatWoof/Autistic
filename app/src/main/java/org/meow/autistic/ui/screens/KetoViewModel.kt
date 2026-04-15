@@ -17,7 +17,7 @@ import java.time.LocalDate
 
 /** Fields that can be incremented or decremented on the keto screen. */
 enum class KetoField {
-    FAT, PROTEIN, TOTAL_CARBS, FIBER, TOTAL_SUGARS, ADDED_SUGARS, SUGAR_ALCOHOLS
+    TOTAL_CARBS, FIBER, TOTAL_SUGARS, ADDED_SUGARS, SUGAR_ALCOHOLS
 }
 
 /**
@@ -45,8 +45,6 @@ class KetoViewModel(private val repository: KetoRepository) : ViewModel() {
         viewModelScope.launch {
             val e = entry.value
             val updated = when (field) {
-                KetoField.FAT -> e.copy(fat = (e.fat + delta).coerceAtLeast(0.0))
-                KetoField.PROTEIN -> e.copy(protein = (e.protein + delta).coerceAtLeast(0.0))
                 KetoField.TOTAL_CARBS -> e.copy(totalCarbs = (e.totalCarbs + delta).coerceAtLeast(0.0))
                 KetoField.FIBER -> e.copy(fiber = (e.fiber + delta).coerceAtLeast(0.0))
                 KetoField.TOTAL_SUGARS -> e.copy(totalSugars = (e.totalSugars + delta).coerceAtLeast(0.0))

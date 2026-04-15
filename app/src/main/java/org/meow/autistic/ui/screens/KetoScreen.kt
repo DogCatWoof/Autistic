@@ -27,7 +27,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -36,8 +35,6 @@ import org.koin.androidx.compose.koinViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-private const val GOAL_FAT = 155.0
-private const val GOAL_PROTEIN = 100.0
 private const val GOAL_NET_CARBS = 20.0
 
 private val Double.fmt: String
@@ -60,10 +57,6 @@ fun KetoScreen(modifier: Modifier = Modifier, viewModel: KetoViewModel = koinVie
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            SectionLabel("Macros")
-            MacroRow("Fat", entry.fat, GOAL_FAT, "g") { viewModel.adjust(KetoField.FAT, it) }
-            MacroRow("Protein", entry.protein, GOAL_PROTEIN, "g") { viewModel.adjust(KetoField.PROTEIN, it) }
-
             SectionLabel("Carbohydrates")
             CarbRow("Total Carbs", entry.totalCarbs, "g", indent = 0.dp) {
                 viewModel.adjust(KetoField.TOTAL_CARBS, it)
@@ -94,47 +87,6 @@ private fun SectionLabel(text: String) {
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
     )
-}
-
-/** Progress-bar row with [−][+] steppers; used for Fat and Protein. */
-@Composable
-private fun MacroRow(
-    label: String,
-    value: Double,
-    goal: Double,
-    unit: String,
-    onAdjust: (Double) -> Unit,
-) {
-    val progress = (value / goal).toFloat().coerceIn(0f, 1f)
-    val reachedGoal = value >= goal
-    val barColor = if (reachedGoal) MaterialTheme.colorScheme.primary else Color(0xFFF9A825)
-
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IconButton(onClick = { onAdjust(-1.0) }) {
-            Icon(Icons.Default.Remove, contentDescription = "Decrease $label")
-        }
-        Column(modifier = Modifier.weight(1f).padding(horizontal = 4.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                Text(
-                    "${value.fmt} / ${goal.toInt()}$unit",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
-                )
-            }
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier.fillMaxWidth().padding(top = 3.dp),
-                color = barColor,
-            )
-        }
-        IconButton(onClick = { onAdjust(1.0) }) {
-            Icon(Icons.Default.Add, contentDescription = "Increase $label")
-        }
-    }
 }
 
 /** Value row with [−][+] steppers and optional left indent; used for carb sub-fields. */
