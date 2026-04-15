@@ -222,6 +222,3 @@ Runs as a 4-step sequence (abort with retry if no valid token):
 7. **Calendar integration** — annotate calendar events with estimated energy cost on fetch; meeting keywords map to activity types
 8. **Nav tab** — add "Energy" tab
 9. **Tests** — unit tests for balance calculation, projection logic, calibration math
-
-### Backup — Remaining Work
-- Scope change: migrate from `DRIVE_FILE` to `DRIVE_APPDATA` if cross-device restore is desired (requires re-authentication)
