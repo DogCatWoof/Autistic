@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface KetoDao {
-    @Query("SELECT * FROM keto_log WHERE date = :date ORDER BY id ASC")
+    @Query("SELECT * FROM keto_log WHERE date = :date ORDER BY id DESC")
     fun getByDate(date: String): Flow<List<KetoLogEntry>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
