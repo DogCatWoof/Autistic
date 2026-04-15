@@ -4,24 +4,21 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * A single food entry in the keto daily food log.
- * [date] is ISO format "yyyy-MM-dd". [netCarbs] and [calories] are derived properties.
+ * One record per calendar day, keyed by ISO date ("yyyy-MM-dd").
+ * Sub-components of Total Carbs follow nutrition-label hierarchy:
+ *   Total Carbs ⊇ Dietary Fiber, Total Sugars (⊇ Added Sugars), Sugar Alcohols
+ * Net Carbs (keto) = Total Carbs − Dietary Fiber − Sugar Alcohols.
  */
 @Entity(tableName = "keto_log")
 data class KetoLogEntry(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    /** ISO date "yyyy-MM-dd" this entry belongs to. */
-    val date: String,
-    val foodName: String,
+    @PrimaryKey val date: String,
     val fat: Double = 0.0,
     val protein: Double = 0.0,
     val totalCarbs: Double = 0.0,
     val fiber: Double = 0.0,
-    /** Milligrams. */
-    val sodium: Double = 0.0,
-    /** Fluid ounces. */
-    val water: Double = 0.0,
+    val totalSugars: Double = 0.0,
+    val addedSugars: Double = 0.0,
+    val sugarAlcohols: Double = 0.0,
 ) {
-    val netCarbs: Double get() = (totalCarbs - fiber).coerceAtLeast(0.0)
-    val calories: Double get() = fat * 9.0 + protein * 4.0 + totalCarbs * 4.0
+    val netCarbs: Double get() = (totalCarbs - fiber - sugarAlcohols).coerceAtLeast(0.0)
 }

@@ -8,7 +8,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,54 +35,61 @@ class KetoDaoTest {
         db.close()
     }
 
-    private fun entry(foodName: String, date: String = "2026-04-14") = KetoLogEntry(
-        date = date,
-        foodName = foodName,
-        fat = 10.0,
-        protein = 5.0,
-        totalCarbs = 3.0,
-        fiber = 1.0,
-    )
-
     @Test
-    fun getByDate_returnsEmptyInitially() = runTest {
-        assertTrue(dao.getByDate("2026-04-14").first().isEmpty())
+    fun getByDate_returnsNullInitially() = runTest {
+        assertNull(dao.getByDate("2026-04-14").first())
     }
 
     @Test
-    fun insert_and_getByDate_returnsEntry() = runTest {
-        dao.insert(entry("Eggs"))
-        val entries = dao.getByDate("2026-04-14").first()
-        assertEquals(1, entries.size)
-        assertEquals("Eggs", entries[0].foodName)
+    fun upsert_then_getByDate_returnsEntry() = runTest {
+        dao.upsert(KetoLogEntry(date = "2026-04-14", fat = 50.0, protein = 80.0))
+        val entry = dao.getByDate("2026-04-14").first()
+        assertNotNull(entry)
+        assertEquals(50.0, entry!!.fat, 0.001)
+        assertEquals(80.0, entry.protein, 0.001)
     }
 
     @Test
-    fun getByDate_filtersOtherDates() = runTest {
-        dao.insert(entry("Today", date = "2026-04-14"))
-        dao.insert(entry("Yesterday", date = "2026-04-13"))
-        val entries = dao.getByDate("2026-04-14").first()
-        assertEquals(1, entries.size)
-        assertEquals("Today", entries[0].foodName)
+    fun upsert_replacesExistingEntry() = runTest {
+        dao.upsert(KetoLogEntry(date = "2026-04-14", fat = 50.0))
+        dao.upsert(KetoLogEntry(date = "2026-04-14", fat = 90.0))
+        val entry = dao.getByDate("2026-04-14").first()
+        assertEquals(90.0, entry!!.fat, 0.001)
     }
 
     @Test
-    fun getByDate_returnsNewestFirst() = runTest {
-        dao.insert(entry("First"))
-        dao.insert(entry("Second"))
-        dao.insert(entry("Third"))
-        val entries = dao.getByDate("2026-04-14").first()
-        assertEquals(3, entries.size)
-        assertEquals("Third", entries[0].foodName)
-        assertEquals("Second", entries[1].foodName)
-        assertEquals("First", entries[2].foodName)
+    fun getByDate_doesNotReturnOtherDates() = runTest {
+        dao.upsert(KetoLogEntry(date = "2026-04-13", fat = 10.0))
+        assertNull(dao.getByDate("2026-04-14").first())
     }
 
     @Test
-    fun delete_removesEntry() = runTest {
-        val id = dao.insert(entry("Bacon"))
-        val inserted = dao.getByDate("2026-04-14").first().first { it.id == id }
-        dao.delete(inserted)
-        assertTrue(dao.getByDate("2026-04-14").first().none { it.id == id })
+    fun deleteOlderThan_removesOldRecords() = runTest {
+        dao.upsert(KetoLogEntry(date = "2026-04-01"))
+        dao.upsert(KetoLogEntry(date = "2026-04-10"))
+        dao.upsert(KetoLogEntry(date = "2026-04-14"))
+
+        dao.deleteOlderThan("2026-04-10")
+
+        assertNull(dao.getByDate("2026-04-01").first())
+        assertNotNull(dao.getByDate("2026-04-10").first())
+        assertNotNull(dao.getByDate("2026-04-14").first())
+    }
+
+    @Test
+    fun netCarbs_subtractsFiberAndSugarAlcohols() {
+        val entry = KetoLogEntry(
+            date = "2026-04-14",
+            totalCarbs = 20.0,
+            fiber = 5.0,
+            sugarAlcohols = 3.0,
+        )
+        assertEquals(12.0, entry.netCarbs, 0.001)
+    }
+
+    @Test
+    fun netCarbs_clampedToZeroWhenNegative() {
+        val entry = KetoLogEntry(date = "2026-04-14", totalCarbs = 5.0, fiber = 10.0)
+        assertEquals(0.0, entry.netCarbs, 0.001)
     }
 }

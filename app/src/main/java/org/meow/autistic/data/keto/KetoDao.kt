@@ -1,7 +1,6 @@
 package org.meow.autistic.data.keto
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -9,12 +8,13 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface KetoDao {
-    @Query("SELECT * FROM keto_log WHERE date = :date ORDER BY id DESC")
-    fun getByDate(date: String): Flow<List<KetoLogEntry>>
+    @Query("SELECT * FROM keto_log WHERE date = :date")
+    fun getByDate(date: String): Flow<KetoLogEntry?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(entry: KetoLogEntry): Long
+    suspend fun upsert(entry: KetoLogEntry)
 
-    @Delete
-    suspend fun delete(entry: KetoLogEntry): Int
+    /** Deletes all records with a date strictly before [cutoffDate] (ISO "yyyy-MM-dd"). */
+    @Query("DELETE FROM keto_log WHERE date < :cutoffDate")
+    suspend fun deleteOlderThan(cutoffDate: String)
 }

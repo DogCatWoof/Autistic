@@ -18,6 +18,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.meow.autistic.data.auth.GoogleAuthManager
 import org.meow.autistic.data.backup.DriveBackupService
+import org.meow.autistic.data.keto.KetoRepository
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -47,6 +48,7 @@ class DailyResetWorker(
     private val dailyTaskRepository: DailyTaskRepository by inject()
     private val driveBackupService: DriveBackupService by inject()
     private val authManager: GoogleAuthManager by inject()
+    private val ketoRepository: KetoRepository by inject()
 
     override suspend fun doWork(): Result {
         val today = LocalDate.now().toString()
@@ -56,6 +58,9 @@ class DailyResetWorker(
         if (authManager.isAuthenticated()) {
             driveBackupService.backupDatabase()
         }
+
+        val ketoRetentionCutoff = LocalDate.now().minusDays(14).toString()
+        ketoRepository.deleteOlderThan(ketoRetentionCutoff)
 
         taskDao.deleteUnfinishedDailyTasks()
 
