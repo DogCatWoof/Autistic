@@ -19,6 +19,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.meow.autistic.data.auth.TokenStore
 import org.meow.autistic.data.navigation.NavPreferencesStore
+import org.meow.autistic.data.navigation.NavStateStore
 import org.meow.autistic.data.task.TaskDatabase
 
 @RunWith(AndroidJUnit4::class)
@@ -43,6 +44,7 @@ class MainActivityTest {
         runBlocking {
             TaskDatabase.getDatabase(activity).clearAllTables()
             NavPreferencesStore.clear(activity)
+            NavStateStore.clear(activity)
         }
     }
 

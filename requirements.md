@@ -71,6 +71,17 @@
 - On failure, an error message is shown with a retry option
 - The sync runs as a background WorkManager task so it survives the app being backgrounded
 
+### Conversation Scaffolding (Social Support)
+- Assists adult autistic users in real-time social situations by suggesting phrasing and responses
+- Must work fully offline; internet connection may improve quality but must never be required
+- Architecture options (preferred order):
+  1. **Fully local** (MVP default): on-device speech-to-text, intent detection, suggestion generation, and text-to-speech
+  2. **Hybrid**: local processing for common/fast cases; optional cloud model for complex phrasing
+  3. **Cloud-first**: all reasoning sent to an online model (requires internet; not the default)
+- Design principle: never fail because internet is unavailable; only improve when internet exists
+- Offline-first means live conversation scaffolding is always available; cloud enhancement is optional
+- Privacy: sensitive conversation data must not be sent to any external service without explicit user consent
+
 ---
 
 ## Technical Requirements

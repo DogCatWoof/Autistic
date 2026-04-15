@@ -24,4 +24,8 @@ object NavStateStore {
     suspend fun saveDestination(context: Context, destination: String) {
         context.navStateDataStore.edit { it[LAST_DESTINATION_KEY] = destination }
     }
+
+    suspend fun clear(context: Context) {
+        context.navStateDataStore.edit { it.clear() }
+    }
 }
