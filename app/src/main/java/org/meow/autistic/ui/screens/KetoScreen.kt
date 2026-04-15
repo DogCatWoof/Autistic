@@ -37,8 +37,12 @@ import java.time.format.DateTimeFormatter
 
 private const val GOAL_NET_CARBS = 20.0
 
+/** At most 4 characters: whole number up to 9999, one decimal up to 999.9, no decimals above that. */
 private val Double.fmt: String
-    get() = if (this == kotlin.math.floor(this)) this.toInt().toString() else "%.1f".format(this)
+    get() = when {
+        this >= 1000.0 || this == kotlin.math.floor(this) -> this.toInt().toString()
+        else -> "%.1f".format(this)
+    }
 
 @Composable
 fun KetoScreen(modifier: Modifier = Modifier, viewModel: KetoViewModel = koinViewModel()) {
@@ -54,7 +58,7 @@ fun KetoScreen(modifier: Modifier = Modifier, viewModel: KetoViewModel = koinVie
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(start = 16.dp, end = 24.dp, top = 8.dp, bottom = 8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             SectionLabel("Carbohydrates")
