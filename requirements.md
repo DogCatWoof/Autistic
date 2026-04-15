@@ -224,6 +224,4 @@ Runs as a 4-step sequence (abort with retry if no valid token):
 9. **Tests** — unit tests for balance calculation, projection logic, calibration math
 
 ### Backup — Remaining Work
-- Move backup file into a Drive folder named "Autism Backups" (currently uploaded to Drive root)
-- Retain only the last 7 daily backups; delete older files after each successful backup
 - Scope change: migrate from `DRIVE_FILE` to `DRIVE_APPDATA` if cross-device restore is desired (requires re-authentication)
