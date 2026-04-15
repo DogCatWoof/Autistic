@@ -121,12 +121,12 @@ fun TaskListScreen(
 
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 if (grouped.pastDue.isNotEmpty()) {
-                    item(key = "header_past_due") { SectionHeader("Past Due") }
+                    stickyHeader(key = "header_past_due") { SectionHeader("Past Due") }
                     items(grouped.pastDue, key = { it.itemKey }) { item ->
                         TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
                     }
                 }
-                item(key = "header_today") {
+                stickyHeader(key = "header_today") {
                     val todayDate = LocalDate.now(ZoneId.systemDefault())
                         .format(java.time.format.DateTimeFormatter.ofPattern("EEEE, MMM d"))
                     SectionHeader("Today — $todayDate")
@@ -135,7 +135,7 @@ fun TaskListScreen(
                     TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
                 }
                 grouped.later.forEach { (dateLabel, sectionItems) ->
-                    item(key = "header_later_$dateLabel") { SectionHeader(dateLabel) }
+                    stickyHeader(key = "header_later_$dateLabel") { SectionHeader(dateLabel) }
                     items(sectionItems, key = { it.itemKey }) { item ->
                         TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
                     }
