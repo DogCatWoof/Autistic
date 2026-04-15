@@ -32,9 +32,6 @@
 - A "Connect Google Tasks" banner is shown when the user is not authenticated
 - On a metered (cellular) network, a confirmation dialog is shown before a manual sync
 
-### Daily View
-- A daily view combines tasks and calendar events for the current day
-
 ### Scan and Lookup Groceries
 - Users can scan grocery product barcodes using the device camera (icon: Barcode)
 - A camera preview fills the scan screen; a live barcode detector identifies the first valid barcode

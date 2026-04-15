@@ -22,6 +22,7 @@ import org.meow.autistic.data.navigation.NavPreferencesStore
 import org.meow.autistic.data.navigation.NavStateStore
 import org.meow.autistic.data.task.TaskDatabase
 
+@Suppress("DEPRECATION")
 @RunWith(AndroidJUnit4::class)
 class MainActivityTest {
 
