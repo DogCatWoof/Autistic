@@ -1,5 +1,6 @@
 package org.meow.autistic.data.task
 
+import android.util.Log
 import com.google.api.client.http.HttpRequestInitializer
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
@@ -75,6 +76,9 @@ class GoogleTasksRemoteSource(
             response.items?.forEach { result.add(it.toRemoteTask()) }
             pageToken = response.nextPageToken
         } while (pageToken != null)
+        result.forEach { task ->
+            Log.d("GoogleTasksRemoteSource", "Fetched task: title=${task.title}, due=${task.due ?: "none"}, completed=${task.completed ?: "none"}")
+        }
         result
     }
 
