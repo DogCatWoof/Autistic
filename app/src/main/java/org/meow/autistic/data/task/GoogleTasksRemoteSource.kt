@@ -68,17 +68,17 @@ class GoogleTasksRemoteSource(
                 .setShowDeleted(true)
                 .setShowHidden(true)
                 .setShowCompleted(false)
-                .setFields("items(id,title,notes,status,due,completed,deleted),nextPageToken")
+                .setFields("items(id,title,notes,status,due,completed,updated,deleted),nextPageToken")
             if (pageToken != null) {
                 request.setPageToken(pageToken)
             }
             val response = request.execute()
-            response.items?.forEach { result.add(it.toRemoteTask()) }
+            response.items?.forEach { task ->
+                Log.d("GoogleTasksRemoteSource", "Fetched task raw: ${task}")
+                result.add(task.toRemoteTask())
+            }
             pageToken = response.nextPageToken
         } while (pageToken != null)
-        result.forEach { task ->
-            Log.d("GoogleTasksRemoteSource", "Fetched task: title=${task.title}, due=${task.due ?: "none"}, completed=${task.completed ?: "none"}")
-        }
         result
     }
 
