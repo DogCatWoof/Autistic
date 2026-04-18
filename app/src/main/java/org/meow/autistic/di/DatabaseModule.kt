@@ -16,9 +16,10 @@ val databaseModule = module {
     single { get<TaskDatabase>().noteDao() }
     single { get<TaskDatabase>().moodDao() }
     single { get<TaskDatabase>().ketoDao() }
+    single { get<TaskDatabase>().ketoItemDao() }
     single { NoteRepository(get()) }
     single { MoodRepository(get()) }
-    single { KetoRepository(get()) }
+    single { KetoRepository(get(), get()) }
     single { ProductDatabase.getDatabase(androidContext()) }
     single { get<ProductDatabase>().productDao() }
 }

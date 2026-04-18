@@ -9,6 +9,8 @@ import androidx.room.TypeConverters
 import org.meow.autistic.data.calendar.CalendarDao
 import org.meow.autistic.data.calendar.CalendarEventEntity
 import org.meow.autistic.data.keto.KetoDao
+import org.meow.autistic.data.keto.KetoItemDao
+import org.meow.autistic.data.keto.KetoItemEntry
 import org.meow.autistic.data.keto.KetoLogEntry
 import org.meow.autistic.data.mood.MoodDao
 import org.meow.autistic.data.mood.MoodEntity
@@ -26,8 +28,8 @@ class InstantConverter {
 }
 
 @Database(
-    entities = [TaskEntity::class, CalendarEventEntity::class, DailyTaskEntity::class, NoteEntity::class, MoodEntity::class, KetoLogEntry::class],
-    version = 3,
+    entities = [TaskEntity::class, CalendarEventEntity::class, DailyTaskEntity::class, NoteEntity::class, MoodEntity::class, KetoLogEntry::class, KetoItemEntry::class],
+    version = 4,
     exportSchema = false,
 )
 @TypeConverters(InstantConverter::class)
@@ -38,6 +40,7 @@ abstract class TaskDatabase : RoomDatabase() {
     abstract fun noteDao(): NoteDao
     abstract fun moodDao(): MoodDao
     abstract fun ketoDao(): KetoDao
+    abstract fun ketoItemDao(): KetoItemDao
 
     /** Flushes WAL to the main database file. Call before reading the raw file for backup. */
     fun checkpoint() {
