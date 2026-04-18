@@ -26,9 +26,6 @@ class KetoViewModel(private val repository: KetoRepository) : ViewModel() {
     private val _date = MutableStateFlow(LocalDate.now().toString())
     val date: StateFlow<String> = _date.asStateFlow()
 
-    private val _showNewEntryOptions = MutableStateFlow(false)
-    val showNewEntryOptions: StateFlow<Boolean> = _showNewEntryOptions.asStateFlow()
-
     val items: StateFlow<List<KetoItemEntry>> = _date
         .flatMapLatest { repository.getItemsByDate(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -50,8 +47,6 @@ class KetoViewModel(private val repository: KetoRepository) : ViewModel() {
 
     fun previousDay() { _date.value = LocalDate.parse(_date.value).minusDays(1).toString() }
     fun nextDay() { _date.value = LocalDate.parse(_date.value).plusDays(1).toString() }
-
-    fun toggleNewEntryOptions() { _showNewEntryOptions.value = !_showNewEntryOptions.value }
 
     fun addItem(item: KetoItemEntry) {
         viewModelScope.launch { repository.insertItem(item.copy(id = 0, date = _date.value)) }
