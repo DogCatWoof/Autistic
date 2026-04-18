@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -27,7 +29,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -55,10 +56,13 @@ import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.meow.autistic.data.keto.KetoItemEntry
 import org.meow.autistic.data.keto.KetoLogEntry
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
-private const val GOAL_NET_CARBS = 20.0
+private val timeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 
 /** At most 4 characters: whole number up to 9999, one decimal up to 999.9, no decimals above that. */
 private val Double.fmt: String
@@ -88,7 +92,7 @@ fun KetoScreen(modifier: Modifier = Modifier, viewModel: KetoViewModel = koinVie
 
     Scaffold(
         modifier = modifier,
-        topBar = { KetoDateBar(date = date, onPrev = viewModel::previousDay, onNext = viewModel::nextDay) },
+        topBar = { FoodLogDateBar(date = date, onPrev = viewModel::previousDay, onNext = viewModel::nextDay) },
         floatingActionButton = {
             Column(horizontalAlignment = Alignment.End) {
                 AnimatedVisibility(visible = fabExpanded) {
@@ -142,24 +146,37 @@ fun KetoScreen(modifier: Modifier = Modifier, viewModel: KetoViewModel = koinVie
 @Composable
 private fun NutritionSummary(totals: KetoLogEntry) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 16.dp, end = 24.dp, top = 8.dp, bottom = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 24.dp, top = 8.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text(
-            "Carbohydrates",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
-        )
-        NutritionRow("Total Carbs", totals.totalCarbs, "g", indent = 0.dp)
-        NutritionRow("Dietary Fiber", totals.fiber, "g", indent = 16.dp)
-        NutritionRow("Total Sugars", totals.totalSugars, "g", indent = 16.dp)
-        NutritionRow("Added Sugars", totals.addedSugars, "g", indent = 32.dp)
-        NutritionRow("Sugar Alcohols", totals.sugarAlcohols, "g", indent = 16.dp)
-        NetCarbsRow(netCarbs = totals.netCarbs)
+        NutritionSection("Calories")
+        NutritionRow("Calories", totals.calories, "kcal", 0.dp)
+        NutritionSection("Fat")
+        NutritionRow("Total Fat", totals.totalFat, "g", 0.dp)
+        NutritionRow("Saturated Fat", totals.saturatedFat, "g", 16.dp)
+        NutritionRow("Trans Fat", totals.transFat, "g", 16.dp)
+        NutritionSection("Carbohydrates")
+        NutritionRow("Total Carbs", totals.totalCarbs, "g", 0.dp)
+        NutritionRow("Dietary Fiber", totals.fiber, "g", 16.dp)
+        NutritionRow("Total Sugars", totals.totalSugars, "g", 16.dp)
+        NutritionRow("Added Sugars", totals.addedSugars, "g", 32.dp)
+        NutritionRow("Sugar Alcohols", totals.sugarAlcohols, "g", 16.dp)
+        NutritionRow("Net Carbs", totals.netCarbs, "g", 16.dp)
+        NutritionSection("Protein & Other")
+        NutritionRow("Protein", totals.protein, "g", 0.dp)
+        NutritionRow("Cholesterol", totals.cholesterol, "mg", 0.dp)
+        NutritionRow("Sodium", totals.sodium, "mg", 0.dp)
     }
+}
+
+@Composable
+private fun NutritionSection(label: String) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = 10.dp, bottom = 2.dp),
+    )
 }
 
 @Composable
@@ -174,43 +191,24 @@ private fun NutritionRow(label: String, value: Double, unit: String, indent: Dp)
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.End,
-            modifier = Modifier.widthIn(min = 52.dp),
-        )
-    }
-}
-
-@Composable
-private fun NetCarbsRow(netCarbs: Double) {
-    val progress = (netCarbs / GOAL_NET_CARBS).toFloat().coerceIn(0f, 1f)
-    val overGoal = netCarbs > GOAL_NET_CARBS
-    val barColor = if (overGoal) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-
-    Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp, start = 48.dp, end = 48.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Net Carbs", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-            Text(
-                "${netCarbs.fmt} / ${GOAL_NET_CARBS.toInt()}g",
-                style = MaterialTheme.typography.bodySmall,
-                color = if (overGoal) MaterialTheme.colorScheme.error
-                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
-            )
-        }
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier.fillMaxWidth().padding(top = 3.dp),
-            color = barColor,
+            modifier = Modifier.widthIn(min = 60.dp),
         )
     }
 }
 
 @Composable
 private fun EntryListItem(item: KetoItemEntry, onDelete: () -> Unit) {
+    val timeLabel = item.loggedAt.atZone(ZoneId.systemDefault()).format(timeFormatter)
+    val supporting = buildString {
+        if (item.description != null) append("${item.description} · ")
+        append("${item.calories.fmt} kcal · ${item.netCarbs.fmt}g net carbs")
+    }
     ListItem(
-        headlineContent = { Text(item.name) },
-        supportingContent = { Text("${item.netCarbs.fmt}g net carbs · ${item.totalCarbs.fmt}g total") },
+        headlineContent = { Text(timeLabel) },
+        supportingContent = { Text(supporting) },
         trailingContent = {
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete ${item.name}")
+                Icon(Icons.Default.Delete, contentDescription = "Delete entry")
             }
         },
     )
@@ -222,12 +220,7 @@ private fun SpeedDialItem(label: String, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Surface(
-            shape = MaterialTheme.shapes.small,
-            tonalElevation = 6.dp,
-            shadowElevation = 2.dp,
-            onClick = onClick,
-        ) {
+        Surface(shape = MaterialTheme.shapes.small, tonalElevation = 6.dp, shadowElevation = 2.dp, onClick = onClick) {
             Text(label, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
         }
         SmallFloatingActionButton(onClick = onClick) {
@@ -238,59 +231,89 @@ private fun SpeedDialItem(label: String, onClick: () -> Unit) {
 
 @Composable
 private fun AddEntryDialog(onDismiss: () -> Unit, onConfirm: (KetoItemEntry) -> Unit) {
-    var name by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var calories by remember { mutableStateOf("") }
+    var totalFat by remember { mutableStateOf("") }
+    var saturatedFat by remember { mutableStateOf("") }
+    var transFat by remember { mutableStateOf("") }
     var totalCarbs by remember { mutableStateOf("") }
     var fiber by remember { mutableStateOf("") }
     var totalSugars by remember { mutableStateOf("") }
     var addedSugars by remember { mutableStateOf("") }
     var sugarAlcohols by remember { mutableStateOf("") }
+    var protein by remember { mutableStateOf("") }
+    var cholesterol by remember { mutableStateOf("") }
+    var sodium by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Entry") },
+        title = { Text("Log Entry") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Name") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
+                    value = description, onValueChange = { description = it },
+                    label = { Text("Description (optional)") },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true,
                 )
-                CarbField("Total Carbs (g)", totalCarbs) { totalCarbs = it }
-                CarbField("Fiber (g)", fiber) { fiber = it }
-                CarbField("Total Sugars (g)", totalSugars) { totalSugars = it }
-                CarbField("Added Sugars (g)", addedSugars) { addedSugars = it }
-                CarbField("Sugar Alcohols (g)", sugarAlcohols) { sugarAlcohols = it }
+                DialogSection("Calories")
+                NutrientField("Calories (kcal)", calories) { calories = it }
+                DialogSection("Fat")
+                NutrientField("Total Fat (g)", totalFat) { totalFat = it }
+                NutrientField("Saturated Fat (g)", saturatedFat) { saturatedFat = it }
+                NutrientField("Trans Fat (g)", transFat) { transFat = it }
+                DialogSection("Carbohydrates")
+                NutrientField("Total Carbs (g)", totalCarbs) { totalCarbs = it }
+                NutrientField("Dietary Fiber (g)", fiber) { fiber = it }
+                NutrientField("Total Sugars (g)", totalSugars) { totalSugars = it }
+                NutrientField("Added Sugars (g)", addedSugars) { addedSugars = it }
+                NutrientField("Sugar Alcohols (g)", sugarAlcohols) { sugarAlcohols = it }
+                DialogSection("Protein & Other")
+                NutrientField("Protein (g)", protein) { protein = it }
+                NutrientField("Cholesterol (mg)", cholesterol) { cholesterol = it }
+                NutrientField("Sodium (mg)", sodium) { sodium = it }
             }
         },
         confirmButton = {
-            TextButton(
-                onClick = {
-                    onConfirm(
-                        KetoItemEntry(
-                            date = "",
-                            name = name.trim(),
-                            totalCarbs = totalCarbs.toDoubleOrNull() ?: 0.0,
-                            fiber = fiber.toDoubleOrNull() ?: 0.0,
-                            totalSugars = totalSugars.toDoubleOrNull() ?: 0.0,
-                            addedSugars = addedSugars.toDoubleOrNull() ?: 0.0,
-                            sugarAlcohols = sugarAlcohols.toDoubleOrNull() ?: 0.0,
-                        )
-                    )
-                },
-                enabled = name.isNotBlank(),
-            ) { Text("Add") }
+            TextButton(onClick = {
+                onConfirm(KetoItemEntry(
+                    date = "", loggedAt = Instant.now(),
+                    description = description.trim().takeIf { it.isNotEmpty() },
+                    calories = calories.toDoubleOrNull() ?: 0.0,
+                    totalFat = totalFat.toDoubleOrNull() ?: 0.0,
+                    saturatedFat = saturatedFat.toDoubleOrNull() ?: 0.0,
+                    transFat = transFat.toDoubleOrNull() ?: 0.0,
+                    totalCarbs = totalCarbs.toDoubleOrNull() ?: 0.0,
+                    fiber = fiber.toDoubleOrNull() ?: 0.0,
+                    totalSugars = totalSugars.toDoubleOrNull() ?: 0.0,
+                    addedSugars = addedSugars.toDoubleOrNull() ?: 0.0,
+                    sugarAlcohols = sugarAlcohols.toDoubleOrNull() ?: 0.0,
+                    protein = protein.toDoubleOrNull() ?: 0.0,
+                    cholesterol = cholesterol.toDoubleOrNull() ?: 0.0,
+                    sodium = sodium.toDoubleOrNull() ?: 0.0,
+                ))
+            }) { Text("Add") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
 }
 
 @Composable
-private fun CarbField(label: String, value: String, onValueChange: (String) -> Unit) {
+private fun DialogSection(label: String) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.secondary,
+        modifier = Modifier.padding(top = 4.dp),
+    )
+}
+
+@Composable
+private fun NutrientField(label: String, value: String, onValueChange: (String) -> Unit) {
     OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
+        value = value, onValueChange = onValueChange,
         label = { Text(label) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         modifier = Modifier.fillMaxWidth(),
@@ -300,7 +323,7 @@ private fun CarbField(label: String, value: String, onValueChange: (String) -> U
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun KetoDateBar(date: String, onPrev: () -> Unit, onNext: () -> Unit) {
+private fun FoodLogDateBar(date: String, onPrev: () -> Unit, onNext: () -> Unit) {
     val today = LocalDate.now()
     val parsed = LocalDate.parse(date)
     val label = when (parsed) {
@@ -310,7 +333,7 @@ private fun KetoDateBar(date: String, onPrev: () -> Unit, onNext: () -> Unit) {
         else -> parsed.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
     }
     TopAppBar(
-        title = { Text("Keto · $label") },
+        title = { Text("Food Log · $label") },
         navigationIcon = {
             IconButton(onClick = onPrev) {
                 Icon(Icons.Default.KeyboardArrowLeft, contentDescription = "Previous day")

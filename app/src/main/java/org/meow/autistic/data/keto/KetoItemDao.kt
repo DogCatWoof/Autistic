@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface KetoItemDao {
-    @Query("SELECT * FROM keto_items WHERE date = :date ORDER BY id ASC")
+    @Query("SELECT * FROM keto_items WHERE date = :date ORDER BY loggedAt ASC")
     fun getByDate(date: String): Flow<List<KetoItemEntry>>
 
     @Insert

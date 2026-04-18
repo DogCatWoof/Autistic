@@ -78,12 +78,7 @@ class KetoDaoTest {
 
     @Test
     fun netCarbs_subtractsFiberAndSugarAlcohols() {
-        val entry = KetoLogEntry(
-            date = "2026-04-14",
-            totalCarbs = 20.0,
-            fiber = 5.0,
-            sugarAlcohols = 3.0,
-        )
+        val entry = KetoLogEntry(date = "2026-04-14", totalCarbs = 20.0, fiber = 5.0, sugarAlcohols = 3.0)
         assertEquals(12.0, entry.netCarbs, 0.001)
     }
 

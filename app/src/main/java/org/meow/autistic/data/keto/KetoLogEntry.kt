@@ -4,19 +4,26 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * One record per calendar day, keyed by ISO date ("yyyy-MM-dd").
- * Sub-components of Total Carbs follow nutrition-label hierarchy:
- *   Total Carbs ⊇ Dietary Fiber, Total Sugars (⊇ Added Sugars), Sugar Alcohols
- * Net Carbs (keto) = Total Carbs − Dietary Fiber − Sugar Alcohols.
+ * Daily aggregate of all [KetoItemEntry] records for a given date.
+ * Derived by the ViewModel; not written directly.
+ *
+ * Net Carbs = Total Carbs − Dietary Fiber − Sugar Alcohols.
  */
 @Entity(tableName = "keto_log")
 data class KetoLogEntry(
     @PrimaryKey val date: String,
+    val calories: Double = 0.0,
+    val totalFat: Double = 0.0,
+    val saturatedFat: Double = 0.0,
+    val transFat: Double = 0.0,
+    val cholesterol: Double = 0.0,
+    val sodium: Double = 0.0,
     val totalCarbs: Double = 0.0,
     val fiber: Double = 0.0,
     val totalSugars: Double = 0.0,
     val addedSugars: Double = 0.0,
     val sugarAlcohols: Double = 0.0,
+    val protein: Double = 0.0,
 ) {
     val netCarbs: Double get() = (totalCarbs - fiber - sugarAlcohols).coerceAtLeast(0.0)
 }

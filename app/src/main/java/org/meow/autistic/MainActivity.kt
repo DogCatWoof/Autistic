@@ -99,7 +99,7 @@ class MainActivity : ComponentActivity() {
             NavigationItem("Scan", Icons.Filled.QrCodeScanner, Icons.Outlined.QrCodeScanner),
             NavigationItem("Notes", Icons.Filled.Create, Icons.Outlined.Create),
             NavigationItem("Mood", Icons.Filled.Mood, Icons.Outlined.Mood),
-            NavigationItem("Keto", Icons.Filled.Restaurant, Icons.Outlined.Restaurant),
+            NavigationItem("Food Log", Icons.Filled.Restaurant, Icons.Outlined.Restaurant),
         )
     }
 
@@ -247,7 +247,7 @@ class MainActivity : ComponentActivity() {
                                     "Scan" -> ScanScreen()
                                     "Notes" -> NotesScreen()
                                     "Mood" -> MoodScreen()
-                                    "Keto" -> KetoScreen()
+                                    "Food Log" -> KetoScreen()
                                 }
                             }
                         }

@@ -33,11 +33,18 @@ class KetoViewModel(private val repository: KetoRepository) : ViewModel() {
     val totals: StateFlow<KetoLogEntry> = combine(_date, items) { date, list ->
         KetoLogEntry(
             date = date,
+            calories = list.sumOf { it.calories },
+            totalFat = list.sumOf { it.totalFat },
+            saturatedFat = list.sumOf { it.saturatedFat },
+            transFat = list.sumOf { it.transFat },
+            cholesterol = list.sumOf { it.cholesterol },
+            sodium = list.sumOf { it.sodium },
             totalCarbs = list.sumOf { it.totalCarbs },
             fiber = list.sumOf { it.fiber },
             totalSugars = list.sumOf { it.totalSugars },
             addedSugars = list.sumOf { it.addedSugars },
             sugarAlcohols = list.sumOf { it.sugarAlcohols },
+            protein = list.sumOf { it.protein },
         )
     }.stateIn(
         viewModelScope,
@@ -49,7 +56,9 @@ class KetoViewModel(private val repository: KetoRepository) : ViewModel() {
     fun nextDay() { _date.value = LocalDate.parse(_date.value).plusDays(1).toString() }
 
     fun addItem(item: KetoItemEntry) {
-        viewModelScope.launch { repository.insertItem(item.copy(id = 0, date = _date.value)) }
+        viewModelScope.launch {
+            repository.insertItem(item.copy(id = 0, date = _date.value, loggedAt = java.time.Instant.now()))
+        }
     }
 
     fun deleteItem(item: KetoItemEntry) {
