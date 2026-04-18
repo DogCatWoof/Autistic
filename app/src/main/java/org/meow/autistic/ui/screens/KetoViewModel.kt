@@ -34,17 +34,11 @@ class KetoViewModel(private val repository: KetoRepository) : ViewModel() {
         KetoLogEntry(
             date = date,
             calories = list.sumOf { it.calories },
-            totalFat = list.sumOf { it.totalFat },
-            saturatedFat = list.sumOf { it.saturatedFat },
-            transFat = list.sumOf { it.transFat },
-            cholesterol = list.sumOf { it.cholesterol },
-            sodium = list.sumOf { it.sodium },
             totalCarbs = list.sumOf { it.totalCarbs },
             fiber = list.sumOf { it.fiber },
             totalSugars = list.sumOf { it.totalSugars },
             addedSugars = list.sumOf { it.addedSugars },
             sugarAlcohols = list.sumOf { it.sugarAlcohols },
-            protein = list.sumOf { it.protein },
         )
     }.stateIn(
         viewModelScope,

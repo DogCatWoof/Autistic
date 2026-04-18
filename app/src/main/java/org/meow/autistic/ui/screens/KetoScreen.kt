@@ -12,12 +12,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -40,6 +39,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -151,10 +151,6 @@ private fun NutritionSummary(totals: KetoLogEntry) {
     ) {
         NutritionSection("Calories")
         NutritionRow("Calories", totals.calories, "kcal", 0.dp)
-        NutritionSection("Fat")
-        NutritionRow("Total Fat", totals.totalFat, "g", 0.dp)
-        NutritionRow("Saturated Fat", totals.saturatedFat, "g", 16.dp)
-        NutritionRow("Trans Fat", totals.transFat, "g", 16.dp)
         NutritionSection("Carbohydrates")
         NutritionRow("Total Carbs", totals.totalCarbs, "g", 0.dp)
         NutritionRow("Dietary Fiber", totals.fiber, "g", 16.dp)
@@ -162,10 +158,6 @@ private fun NutritionSummary(totals: KetoLogEntry) {
         NutritionRow("Added Sugars", totals.addedSugars, "g", 32.dp)
         NutritionRow("Sugar Alcohols", totals.sugarAlcohols, "g", 16.dp)
         NutritionRow("Net Carbs", totals.netCarbs, "g", 16.dp)
-        NutritionSection("Protein & Other")
-        NutritionRow("Protein", totals.protein, "g", 0.dp)
-        NutritionRow("Cholesterol", totals.cholesterol, "mg", 0.dp)
-        NutritionRow("Sodium", totals.sodium, "mg", 0.dp)
     }
 }
 
@@ -233,47 +225,61 @@ private fun SpeedDialItem(label: String, onClick: () -> Unit) {
 private fun AddEntryDialog(onDismiss: () -> Unit, onConfirm: (KetoItemEntry) -> Unit) {
     var description by remember { mutableStateOf("") }
     var calories by remember { mutableStateOf("") }
-    var totalFat by remember { mutableStateOf("") }
-    var saturatedFat by remember { mutableStateOf("") }
-    var transFat by remember { mutableStateOf("") }
     var totalCarbs by remember { mutableStateOf("") }
     var fiber by remember { mutableStateOf("") }
     var totalSugars by remember { mutableStateOf("") }
     var addedSugars by remember { mutableStateOf("") }
     var sugarAlcohols by remember { mutableStateOf("") }
-    var protein by remember { mutableStateOf("") }
-    var cholesterol by remember { mutableStateOf("") }
-    var sodium by remember { mutableStateOf("") }
+
+    val netCarbs by remember {
+        derivedStateOf {
+            val tc = totalCarbs.toDoubleOrNull() ?: 0.0
+            val f = fiber.toDoubleOrNull() ?: 0.0
+            val sa = sugarAlcohols.toDoubleOrNull() ?: 0.0
+            (tc - f - sa).coerceAtLeast(0.0)
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Log Entry") },
         text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 OutlinedTextField(
                     value = description, onValueChange = { description = it },
                     label = { Text("Description (optional)") },
                     modifier = Modifier.fillMaxWidth(), singleLine = true,
                 )
-                DialogSection("Calories")
-                NutrientField("Calories (kcal)", calories) { calories = it }
-                DialogSection("Fat")
-                NutrientField("Total Fat (g)", totalFat) { totalFat = it }
-                NutrientField("Saturated Fat (g)", saturatedFat) { saturatedFat = it }
-                NutrientField("Trans Fat (g)", transFat) { transFat = it }
-                DialogSection("Carbohydrates")
-                NutrientField("Total Carbs (g)", totalCarbs) { totalCarbs = it }
-                NutrientField("Dietary Fiber (g)", fiber) { fiber = it }
-                NutrientField("Total Sugars (g)", totalSugars) { totalSugars = it }
-                NutrientField("Added Sugars (g)", addedSugars) { addedSugars = it }
-                NutrientField("Sugar Alcohols (g)", sugarAlcohols) { sugarAlcohols = it }
-                DialogSection("Protein & Other")
-                NutrientField("Protein (g)", protein) { protein = it }
-                NutrientField("Cholesterol (mg)", cholesterol) { cholesterol = it }
-                NutrientField("Sodium (mg)", sodium) { sodium = it }
+                DialogLabel("Calories")
+                NutrientInputRow("Calories", calories, "kcal") { calories = it }
+                DialogLabel("Carbohydrates")
+                NutrientInputRow("Total Carbs", totalCarbs, "g") { totalCarbs = it }
+                NutrientInputRow("Dietary Fiber", fiber, "g") { fiber = it }
+                NutrientInputRow("Total Sugars", totalSugars, "g") { totalSugars = it }
+                NutrientInputRow("Added Sugars", addedSugars, "g") { addedSugars = it }
+                NutrientInputRow("Sugar Alcohols", sugarAlcohols, "g") { sugarAlcohols = it }
+                Surface(
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "Net Carbs",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(
+                            "${netCarbs.fmt}g",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
@@ -282,17 +288,11 @@ private fun AddEntryDialog(onDismiss: () -> Unit, onConfirm: (KetoItemEntry) -> 
                     date = "", loggedAt = Instant.now(),
                     description = description.trim().takeIf { it.isNotEmpty() },
                     calories = calories.toDoubleOrNull() ?: 0.0,
-                    totalFat = totalFat.toDoubleOrNull() ?: 0.0,
-                    saturatedFat = saturatedFat.toDoubleOrNull() ?: 0.0,
-                    transFat = transFat.toDoubleOrNull() ?: 0.0,
                     totalCarbs = totalCarbs.toDoubleOrNull() ?: 0.0,
                     fiber = fiber.toDoubleOrNull() ?: 0.0,
                     totalSugars = totalSugars.toDoubleOrNull() ?: 0.0,
                     addedSugars = addedSugars.toDoubleOrNull() ?: 0.0,
                     sugarAlcohols = sugarAlcohols.toDoubleOrNull() ?: 0.0,
-                    protein = protein.toDoubleOrNull() ?: 0.0,
-                    cholesterol = cholesterol.toDoubleOrNull() ?: 0.0,
-                    sodium = sodium.toDoubleOrNull() ?: 0.0,
                 ))
             }) { Text("Add") }
         },
@@ -301,7 +301,7 @@ private fun AddEntryDialog(onDismiss: () -> Unit, onConfirm: (KetoItemEntry) -> 
 }
 
 @Composable
-private fun DialogSection(label: String) {
+private fun DialogLabel(label: String) {
     Text(
         text = label,
         style = MaterialTheme.typography.labelSmall,
@@ -311,14 +311,26 @@ private fun DialogSection(label: String) {
 }
 
 @Composable
-private fun NutrientField(label: String, value: String, onValueChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = value, onValueChange = onValueChange,
-        label = { Text(label) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+private fun NutrientInputRow(label: String, value: String, unit: String, onValueChange: (String) -> Unit) {
+    Row(
         modifier = Modifier.fillMaxWidth(),
-        singleLine = true,
-    )
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f),
+        )
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            suffix = { Text(unit) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyMedium.copy(textAlign = TextAlign.End),
+            modifier = Modifier.width(96.dp),
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

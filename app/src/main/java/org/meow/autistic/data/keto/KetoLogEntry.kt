@@ -13,17 +13,11 @@ import androidx.room.PrimaryKey
 data class KetoLogEntry(
     @PrimaryKey val date: String,
     val calories: Double = 0.0,
-    val totalFat: Double = 0.0,
-    val saturatedFat: Double = 0.0,
-    val transFat: Double = 0.0,
-    val cholesterol: Double = 0.0,
-    val sodium: Double = 0.0,
     val totalCarbs: Double = 0.0,
     val fiber: Double = 0.0,
     val totalSugars: Double = 0.0,
     val addedSugars: Double = 0.0,
     val sugarAlcohols: Double = 0.0,
-    val protein: Double = 0.0,
 ) {
     val netCarbs: Double get() = (totalCarbs - fiber - sugarAlcohols).coerceAtLeast(0.0)
 }
