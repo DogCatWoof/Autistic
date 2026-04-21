@@ -18,6 +18,7 @@ data class FoodLogItemEntry(
     val date: String,
     val loggedAt: Instant,
     val description: String? = null,
+    val imagePath: String? = null,
     val calories: Double = 0.0,
     val protein: Double = 0.0,
     val totalFat: Double = 0.0,

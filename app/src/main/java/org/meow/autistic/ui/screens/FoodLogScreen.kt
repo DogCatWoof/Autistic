@@ -1,7 +1,12 @@
 package org.meow.autistic.ui.screens
 
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -9,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,6 +33,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -34,6 +41,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
@@ -53,14 +61,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import org.koin.androidx.compose.koinViewModel
 import org.meow.autistic.data.foodlog.FoodLogEntry
 import org.meow.autistic.data.foodlog.FoodLogItemEntry
+import java.io.File
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -78,12 +91,27 @@ private val Double.fmt: String
 
 @Composable
 fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = koinViewModel()) {
+    val context = LocalContext.current
     val date by viewModel.date.collectAsState()
     val totals by viewModel.totals.collectAsState()
     val entryList by viewModel.items.collectAsState()
     var fabExpanded by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
+    var previewUri by remember { mutableStateOf<Uri?>(null) }
     val fabRotation by animateFloatAsState(targetValue = if (fabExpanded) 45f else 0f, label = "fab_rotation")
+
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { captured ->
+        if (captured) fabExpanded = false
+        else previewUri = null
+    }
+
+    fun launchCamera() {
+        val tempDir = File(context.cacheDir, "camera_temp").also { it.mkdirs() }
+        val tempFile = File(tempDir, "temp_food_photo.jpg")
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", tempFile)
+        previewUri = uri
+        cameraLauncher.launch(uri)
+    }
 
     if (showAddDialog) {
         AddFoodEntryDialog(
@@ -106,7 +134,7 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.padding(bottom = 16.dp),
                     ) {
-                        FoodLogSpeedDialItem("Photo") { fabExpanded = false }
+                        FoodLogSpeedDialItem("Photo") { launchCamera() }
                         FoodLogSpeedDialItem("Manual") { fabExpanded = false; showAddDialog = true }
                     }
                 }
@@ -146,6 +174,78 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
             )
         }
     }
+
+    // Photo preview overlay — shown after the camera returns a captured image
+    val uri = previewUri
+    if (uri != null) {
+        PhotoPreviewOverlay(
+            uri = uri,
+            onRetake = { launchCamera() },
+            onAccept = {
+                val destDir = File(context.filesDir, "food_log_images").also { it.mkdirs() }
+                val destFile = File(destDir, "${System.currentTimeMillis()}.jpg")
+                File(context.cacheDir, "camera_temp/temp_food_photo.jpg").copyTo(destFile, overwrite = true)
+                viewModel.addItem(FoodLogItemEntry(date = "", loggedAt = Instant.now(), imagePath = destFile.absolutePath))
+                previewUri = null
+            },
+            onDismiss = { previewUri = null },
+        )
+    }
+}
+
+@Composable
+private fun PhotoPreviewOverlay(
+    uri: Uri,
+    onRetake: () -> Unit,
+    onAccept: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
+    val bitmap = remember(uri) {
+        context.contentResolver.openInputStream(uri)?.use { stream ->
+            val opts = BitmapFactory.Options().apply { inSampleSize = 2 }
+            BitmapFactory.decodeStream(stream, null, opts)
+        }?.asImageBitmap()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .clickable(enabled = false) {},
+    ) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap,
+                contentDescription = "Captured photo",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit,
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp, vertical = 32.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            OutlinedButton(
+                onClick = onRetake,
+                modifier = Modifier.weight(1f),
+            ) { Text("Retake") }
+            Spacer(modifier = Modifier.width(16.dp))
+            Button(
+                onClick = onAccept,
+                modifier = Modifier.weight(1f),
+            ) { Text("Accept") }
+        }
+
+        TextButton(
+            onClick = onDismiss,
+            modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+        ) { Text("Cancel", color = Color.White) }
+    }
 }
 
 @Composable
@@ -179,7 +279,6 @@ private fun CalorieBreakdown(totals: FoodLogEntry) {
     val carbFrac = (totals.netCarbCalories / total).toFloat().coerceIn(0f, 1f)
     val remaining = (1f - proteinFrac - fatFrac - carbFrac).coerceAtLeast(0f)
 
-    // Total
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text("Total", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
         Text(
@@ -191,7 +290,6 @@ private fun CalorieBreakdown(totals: FoodLogEntry) {
         )
     }
 
-    // Stacked bar
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -199,21 +297,12 @@ private fun CalorieBreakdown(totals: FoodLogEntry) {
             .height(10.dp)
             .clip(RoundedCornerShape(5.dp)),
     ) {
-        if (proteinFrac > 0f) {
-            Box(Modifier.weight(proteinFrac).fillMaxHeight().background(proteinColor))
-        }
-        if (fatFrac > 0f) {
-            Box(Modifier.weight(fatFrac).fillMaxHeight().background(fatColor))
-        }
-        if (carbFrac > 0f) {
-            Box(Modifier.weight(carbFrac).fillMaxHeight().background(carbColor))
-        }
-        if (remaining > 0f) {
-            Box(Modifier.weight(remaining).fillMaxHeight().background(emptyColor))
-        }
+        if (proteinFrac > 0f) Box(Modifier.weight(proteinFrac).fillMaxHeight().background(proteinColor))
+        if (fatFrac > 0f) Box(Modifier.weight(fatFrac).fillMaxHeight().background(fatColor))
+        if (carbFrac > 0f) Box(Modifier.weight(carbFrac).fillMaxHeight().background(carbColor))
+        if (remaining > 0f) Box(Modifier.weight(remaining).fillMaxHeight().background(emptyColor))
     }
 
-    // Legend rows
     CalorieLegendRow("Protein", totals.proteinCalories, total, proteinColor)
     CalorieLegendRow("Fat", totals.fatCalories, total, fatColor)
     CalorieLegendRow("Net Carbs", totals.netCarbCalories, total, carbColor)
@@ -226,12 +315,7 @@ private fun CalorieLegendRow(label: String, kcal: Double, total: Double, color: 
         modifier = Modifier.fillMaxWidth().padding(start = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(8.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(color),
-        )
+        Box(modifier = Modifier.size(8.dp).clip(RoundedCornerShape(2.dp)).background(color))
         Text(
             label,
             style = MaterialTheme.typography.bodySmall,
@@ -286,6 +370,7 @@ private fun FoodLogEntryListItem(item: FoodLogItemEntry, onDelete: () -> Unit) {
     val timeLabel = item.loggedAt.atZone(ZoneId.systemDefault()).format(timeFormatter)
     val supporting = buildString {
         if (item.description != null) append("${item.description} · ")
+        if (item.imagePath != null) append("📷 · ")
         append("${item.calories.fmt} kcal · ${item.netCarbs.fmt}g net carbs")
     }
     ListItem(
@@ -415,11 +500,7 @@ private fun FoodLogNutrientInputRow(label: String, value: String, unit: String, 
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f),
-        )
+        Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
