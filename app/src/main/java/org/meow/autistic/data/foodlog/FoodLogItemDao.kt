@@ -1,0 +1,22 @@
+package org.meow.autistic.data.foodlog
+
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface FoodLogItemDao {
+    @Query("SELECT * FROM food_log_items WHERE date = :date ORDER BY loggedAt ASC")
+    fun getByDate(date: String): Flow<List<FoodLogItemEntry>>
+
+    @Insert
+    suspend fun insert(entry: FoodLogItemEntry): Long
+
+    @Delete
+    suspend fun delete(entry: FoodLogItemEntry)
+
+    @Query("DELETE FROM food_log_items WHERE date < :cutoffDate")
+    suspend fun deleteOlderThan(cutoffDate: String)
+}

@@ -9,13 +9,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -46,6 +50,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -54,8 +59,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
-import org.meow.autistic.data.keto.KetoItemEntry
-import org.meow.autistic.data.keto.KetoLogEntry
+import org.meow.autistic.data.foodlog.FoodLogEntry
+import org.meow.autistic.data.foodlog.FoodLogItemEntry
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -72,7 +77,7 @@ private val Double.fmt: String
     }
 
 @Composable
-fun KetoScreen(modifier: Modifier = Modifier, viewModel: KetoViewModel = koinViewModel()) {
+fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = koinViewModel()) {
     val date by viewModel.date.collectAsState()
     val totals by viewModel.totals.collectAsState()
     val entryList by viewModel.items.collectAsState()
@@ -81,7 +86,7 @@ fun KetoScreen(modifier: Modifier = Modifier, viewModel: KetoViewModel = koinVie
     val fabRotation by animateFloatAsState(targetValue = if (fabExpanded) 45f else 0f, label = "fab_rotation")
 
     if (showAddDialog) {
-        AddEntryDialog(
+        AddFoodEntryDialog(
             onDismiss = { showAddDialog = false },
             onConfirm = { item ->
                 viewModel.addItem(item)
@@ -101,8 +106,8 @@ fun KetoScreen(modifier: Modifier = Modifier, viewModel: KetoViewModel = koinVie
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.padding(bottom = 16.dp),
                     ) {
-                        SpeedDialItem("Photo") { fabExpanded = false }
-                        SpeedDialItem("Manual") { fabExpanded = false; showAddDialog = true }
+                        FoodLogSpeedDialItem("Photo") { fabExpanded = false }
+                        FoodLogSpeedDialItem("Manual") { fabExpanded = false; showAddDialog = true }
                     }
                 }
                 FloatingActionButton(onClick = { fabExpanded = !fabExpanded }) {
@@ -115,7 +120,7 @@ fun KetoScreen(modifier: Modifier = Modifier, viewModel: KetoViewModel = koinVie
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(bottom = 88.dp),
         ) {
-            item { NutritionSummary(totals) }
+            item { FoodLogNutritionSummary(totals) }
             if (entryList.isNotEmpty()) {
                 item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
                 item {
@@ -127,7 +132,7 @@ fun KetoScreen(modifier: Modifier = Modifier, viewModel: KetoViewModel = koinVie
                     )
                 }
                 items(entryList, key = { it.id }) { item ->
-                    EntryListItem(item = item, onDelete = { viewModel.deleteItem(item) })
+                    FoodLogEntryListItem(item = item, onDelete = { viewModel.deleteItem(item) })
                 }
             }
         }
@@ -144,25 +149,113 @@ fun KetoScreen(modifier: Modifier = Modifier, viewModel: KetoViewModel = koinVie
 }
 
 @Composable
-private fun NutritionSummary(totals: KetoLogEntry) {
+private fun FoodLogNutritionSummary(totals: FoodLogEntry) {
     Column(
         modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 24.dp, top = 8.dp, bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        NutritionSection("Calories")
-        NutritionRow("Calories", totals.calories, "kcal", 0.dp)
-        NutritionSection("Carbohydrates")
-        NutritionRow("Total Carbs", totals.totalCarbs, "g", 0.dp)
-        NutritionRow("Dietary Fiber", totals.fiber, "g", 16.dp)
-        NutritionRow("Total Sugars", totals.totalSugars, "g", 16.dp)
-        NutritionRow("Added Sugars", totals.addedSugars, "g", 32.dp)
-        NutritionRow("Sugar Alcohols", totals.sugarAlcohols, "g", 16.dp)
-        NutritionRow("Net Carbs", totals.netCarbs, "g", 16.dp)
+        FoodLogNutritionSection("Calories")
+        CalorieBreakdown(totals)
+        FoodLogNutritionSection("Carbohydrates")
+        FoodLogNutritionRow("Total Carbs", totals.totalCarbs, "g", 0.dp)
+        FoodLogNutritionRow("Dietary Fiber", totals.fiber, "g", 16.dp)
+        FoodLogNutritionRow("Total Sugars", totals.totalSugars, "g", 16.dp)
+        FoodLogNutritionRow("Added Sugars", totals.addedSugars, "g", 32.dp)
+        FoodLogNutritionRow("Sugar Alcohols", totals.sugarAlcohols, "g", 16.dp)
+        FoodLogNutritionRow("Net Carbs", totals.netCarbs, "g", 16.dp)
     }
 }
 
 @Composable
-private fun NutritionSection(label: String) {
+private fun CalorieBreakdown(totals: FoodLogEntry) {
+    val proteinColor = MaterialTheme.colorScheme.primary
+    val fatColor = MaterialTheme.colorScheme.tertiary
+    val carbColor = MaterialTheme.colorScheme.error
+    val emptyColor = MaterialTheme.colorScheme.surfaceVariant
+
+    val total = totals.calories.coerceAtLeast(1.0)
+    val proteinFrac = (totals.proteinCalories / total).toFloat().coerceIn(0f, 1f)
+    val fatFrac = (totals.fatCalories / total).toFloat().coerceIn(0f, 1f)
+    val carbFrac = (totals.netCarbCalories / total).toFloat().coerceIn(0f, 1f)
+    val remaining = (1f - proteinFrac - fatFrac - carbFrac).coerceAtLeast(0f)
+
+    // Total
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text("Total", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+        Text(
+            "${totals.calories.fmt} kcal",
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.End,
+            modifier = Modifier.widthIn(min = 60.dp),
+        )
+    }
+
+    // Stacked bar
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            .height(10.dp)
+            .clip(RoundedCornerShape(5.dp)),
+    ) {
+        if (proteinFrac > 0f) {
+            Box(Modifier.weight(proteinFrac).fillMaxHeight().background(proteinColor))
+        }
+        if (fatFrac > 0f) {
+            Box(Modifier.weight(fatFrac).fillMaxHeight().background(fatColor))
+        }
+        if (carbFrac > 0f) {
+            Box(Modifier.weight(carbFrac).fillMaxHeight().background(carbColor))
+        }
+        if (remaining > 0f) {
+            Box(Modifier.weight(remaining).fillMaxHeight().background(emptyColor))
+        }
+    }
+
+    // Legend rows
+    CalorieLegendRow("Protein", totals.proteinCalories, total, proteinColor)
+    CalorieLegendRow("Fat", totals.fatCalories, total, fatColor)
+    CalorieLegendRow("Net Carbs", totals.netCarbCalories, total, carbColor)
+}
+
+@Composable
+private fun CalorieLegendRow(label: String, kcal: Double, total: Double, color: Color) {
+    val pct = if (total > 0.0) (kcal / total * 100).toInt() else 0
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(color),
+        )
+        Text(
+            label,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.weight(1f).padding(start = 6.dp),
+        )
+        Text(
+            "${kcal.fmt} kcal",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.widthIn(min = 60.dp),
+            textAlign = TextAlign.End,
+        )
+        Text(
+            "$pct%",
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.width(36.dp),
+            textAlign = TextAlign.End,
+        )
+    }
+}
+
+@Composable
+private fun FoodLogNutritionSection(label: String) {
     Text(
         text = label,
         style = MaterialTheme.typography.labelMedium,
@@ -172,7 +265,7 @@ private fun NutritionSection(label: String) {
 }
 
 @Composable
-private fun NutritionRow(label: String, value: Double, unit: String, indent: Dp) {
+private fun FoodLogNutritionRow(label: String, value: Double, unit: String, indent: Dp) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(start = indent),
         verticalAlignment = Alignment.CenterVertically,
@@ -189,7 +282,7 @@ private fun NutritionRow(label: String, value: Double, unit: String, indent: Dp)
 }
 
 @Composable
-private fun EntryListItem(item: KetoItemEntry, onDelete: () -> Unit) {
+private fun FoodLogEntryListItem(item: FoodLogItemEntry, onDelete: () -> Unit) {
     val timeLabel = item.loggedAt.atZone(ZoneId.systemDefault()).format(timeFormatter)
     val supporting = buildString {
         if (item.description != null) append("${item.description} · ")
@@ -207,7 +300,7 @@ private fun EntryListItem(item: KetoItemEntry, onDelete: () -> Unit) {
 }
 
 @Composable
-private fun SpeedDialItem(label: String, onClick: () -> Unit) {
+private fun FoodLogSpeedDialItem(label: String, onClick: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -222,9 +315,11 @@ private fun SpeedDialItem(label: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun AddEntryDialog(onDismiss: () -> Unit, onConfirm: (KetoItemEntry) -> Unit) {
+private fun AddFoodEntryDialog(onDismiss: () -> Unit, onConfirm: (FoodLogItemEntry) -> Unit) {
     var description by remember { mutableStateOf("") }
     var calories by remember { mutableStateOf("") }
+    var protein by remember { mutableStateOf("") }
+    var totalFat by remember { mutableStateOf("") }
     var totalCarbs by remember { mutableStateOf("") }
     var fiber by remember { mutableStateOf("") }
     var totalSugars by remember { mutableStateOf("") }
@@ -250,14 +345,16 @@ private fun AddEntryDialog(onDismiss: () -> Unit, onConfirm: (KetoItemEntry) -> 
                     label = { Text("Description (optional)") },
                     modifier = Modifier.fillMaxWidth(), singleLine = true,
                 )
-                DialogLabel("Calories")
-                NutrientInputRow("Calories", calories, "kcal") { calories = it }
-                DialogLabel("Carbohydrates")
-                NutrientInputRow("Total Carbs", totalCarbs, "g") { totalCarbs = it }
-                NutrientInputRow("Dietary Fiber", fiber, "g") { fiber = it }
-                NutrientInputRow("Total Sugars", totalSugars, "g") { totalSugars = it }
-                NutrientInputRow("Added Sugars", addedSugars, "g") { addedSugars = it }
-                NutrientInputRow("Sugar Alcohols", sugarAlcohols, "g") { sugarAlcohols = it }
+                FoodLogDialogLabel("Calories")
+                FoodLogNutrientInputRow("Calories", calories, "kcal") { calories = it }
+                FoodLogNutrientInputRow("Protein", protein, "g") { protein = it }
+                FoodLogNutrientInputRow("Total Fat", totalFat, "g") { totalFat = it }
+                FoodLogDialogLabel("Carbohydrates")
+                FoodLogNutrientInputRow("Total Carbs", totalCarbs, "g") { totalCarbs = it }
+                FoodLogNutrientInputRow("Dietary Fiber", fiber, "g") { fiber = it }
+                FoodLogNutrientInputRow("Total Sugars", totalSugars, "g") { totalSugars = it }
+                FoodLogNutrientInputRow("Added Sugars", addedSugars, "g") { addedSugars = it }
+                FoodLogNutrientInputRow("Sugar Alcohols", sugarAlcohols, "g") { sugarAlcohols = it }
                 Surface(
                     color = MaterialTheme.colorScheme.secondaryContainer,
                     shape = MaterialTheme.shapes.small,
@@ -284,10 +381,12 @@ private fun AddEntryDialog(onDismiss: () -> Unit, onConfirm: (KetoItemEntry) -> 
         },
         confirmButton = {
             TextButton(onClick = {
-                onConfirm(KetoItemEntry(
+                onConfirm(FoodLogItemEntry(
                     date = "", loggedAt = Instant.now(),
                     description = description.trim().takeIf { it.isNotEmpty() },
                     calories = calories.toDoubleOrNull() ?: 0.0,
+                    protein = protein.toDoubleOrNull() ?: 0.0,
+                    totalFat = totalFat.toDoubleOrNull() ?: 0.0,
                     totalCarbs = totalCarbs.toDoubleOrNull() ?: 0.0,
                     fiber = fiber.toDoubleOrNull() ?: 0.0,
                     totalSugars = totalSugars.toDoubleOrNull() ?: 0.0,
@@ -301,7 +400,7 @@ private fun AddEntryDialog(onDismiss: () -> Unit, onConfirm: (KetoItemEntry) -> 
 }
 
 @Composable
-private fun DialogLabel(label: String) {
+private fun FoodLogDialogLabel(label: String) {
     Text(
         text = label,
         style = MaterialTheme.typography.labelSmall,
@@ -311,7 +410,7 @@ private fun DialogLabel(label: String) {
 }
 
 @Composable
-private fun NutrientInputRow(label: String, value: String, unit: String, onValueChange: (String) -> Unit) {
+private fun FoodLogNutrientInputRow(label: String, value: String, unit: String, onValueChange: (String) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,

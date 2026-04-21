@@ -1,4 +1,4 @@
-package org.meow.autistic.data.keto
+package org.meow.autistic.data.foodlog
 
 import android.content.Context
 import androidx.room.Room
@@ -17,13 +17,13 @@ import org.meow.autistic.data.task.TaskDatabase
 import java.time.Instant
 
 @RunWith(AndroidJUnit4::class)
-class KetoItemDaoTest {
+class FoodLogItemDaoTest {
 
     private lateinit var db: TaskDatabase
-    private lateinit var dao: KetoItemDao
+    private lateinit var dao: FoodLogItemDao
 
     private fun entry(date: String, description: String? = null, totalCarbs: Double = 0.0, fiber: Double = 0.0, sugarAlcohols: Double = 0.0) =
-        KetoItemEntry(date = date, loggedAt = Instant.now(), description = description, totalCarbs = totalCarbs, fiber = fiber, sugarAlcohols = sugarAlcohols)
+        FoodLogItemEntry(date = date, loggedAt = Instant.now(), description = description, totalCarbs = totalCarbs, fiber = fiber, sugarAlcohols = sugarAlcohols)
 
     @Before
     fun setUp() {
@@ -31,7 +31,7 @@ class KetoItemDaoTest {
         db = Room.inMemoryDatabaseBuilder(context, TaskDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        dao = db.ketoItemDao()
+        dao = db.foodLogItemDao()
     }
 
     @After
@@ -64,8 +64,8 @@ class KetoItemDaoTest {
     fun insert_multipleItems_returnedInLoggedAtOrder() = runTest {
         val t1 = Instant.ofEpochSecond(1000)
         val t2 = Instant.ofEpochSecond(2000)
-        dao.insert(KetoItemEntry(date = "2026-04-18", loggedAt = t2, description = "Bacon"))
-        dao.insert(KetoItemEntry(date = "2026-04-18", loggedAt = t1, description = "Eggs"))
+        dao.insert(FoodLogItemEntry(date = "2026-04-18", loggedAt = t2, description = "Bacon"))
+        dao.insert(FoodLogItemEntry(date = "2026-04-18", loggedAt = t1, description = "Eggs"))
         val items = dao.getByDate("2026-04-18").first()
         assertEquals(2, items.size)
         assertEquals("Eggs", items[0].description)

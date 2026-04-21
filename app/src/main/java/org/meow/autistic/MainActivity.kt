@@ -71,7 +71,7 @@ import org.meow.autistic.ui.screens.filterNavItems
 import org.meow.autistic.ui.screens.navTitlesFrom
 import org.meow.autistic.ui.screens.AppDrawerSheet
 import org.meow.autistic.ui.screens.NavBottomSheet
-import org.meow.autistic.ui.screens.KetoScreen
+import org.meow.autistic.ui.screens.FoodLogScreen
 import org.meow.autistic.ui.screens.MoodScreen
 import org.meow.autistic.ui.screens.NotesScreen
 import org.meow.autistic.ui.screens.ScanScreen
@@ -247,7 +247,7 @@ class MainActivity : ComponentActivity() {
                                     "Scan" -> ScanScreen()
                                     "Notes" -> NotesScreen()
                                     "Mood" -> MoodScreen()
-                                    "Food Log" -> KetoScreen()
+                                    "Food Log" -> FoodLogScreen()
                                 }
                             }
                         }

@@ -2,7 +2,7 @@ package org.meow.autistic.di
 
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
-import org.meow.autistic.data.keto.KetoRepository
+import org.meow.autistic.data.foodlog.FoodLogRepository
 import org.meow.autistic.data.mood.MoodRepository
 import org.meow.autistic.data.note.NoteRepository
 import org.meow.autistic.data.product.ProductDatabase
@@ -15,11 +15,11 @@ val databaseModule = module {
     single { get<TaskDatabase>().dailyTaskDao() }
     single { get<TaskDatabase>().noteDao() }
     single { get<TaskDatabase>().moodDao() }
-    single { get<TaskDatabase>().ketoDao() }
-    single { get<TaskDatabase>().ketoItemDao() }
+    single { get<TaskDatabase>().foodLogDao() }
+    single { get<TaskDatabase>().foodLogItemDao() }
     single { NoteRepository(get()) }
     single { MoodRepository(get()) }
-    single { KetoRepository(get(), get()) }
+    single { FoodLogRepository(get(), get()) }
     single { ProductDatabase.getDatabase(androidContext()) }
     single { get<ProductDatabase>().productDao() }
 }

@@ -11,29 +11,31 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import org.meow.autistic.data.keto.KetoItemEntry
-import org.meow.autistic.data.keto.KetoLogEntry
-import org.meow.autistic.data.keto.KetoRepository
+import org.meow.autistic.data.foodlog.FoodLogEntry
+import org.meow.autistic.data.foodlog.FoodLogItemEntry
+import org.meow.autistic.data.foodlog.FoodLogRepository
 import java.time.LocalDate
 
 /**
- * ViewModel for the keto daily tracker.
- * Individual [KetoItemEntry] records are summed to produce daily nutrition totals.
+ * ViewModel for the food log daily tracker.
+ * Individual [FoodLogItemEntry] records are summed to produce daily nutrition totals.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class KetoViewModel(private val repository: KetoRepository) : ViewModel() {
+class FoodLogViewModel(private val repository: FoodLogRepository) : ViewModel() {
 
     private val _date = MutableStateFlow(LocalDate.now().toString())
     val date: StateFlow<String> = _date.asStateFlow()
 
-    val items: StateFlow<List<KetoItemEntry>> = _date
+    val items: StateFlow<List<FoodLogItemEntry>> = _date
         .flatMapLatest { repository.getItemsByDate(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val totals: StateFlow<KetoLogEntry> = combine(_date, items) { date, list ->
-        KetoLogEntry(
+    val totals: StateFlow<FoodLogEntry> = combine(_date, items) { date, list ->
+        FoodLogEntry(
             date = date,
             calories = list.sumOf { it.calories },
+            protein = list.sumOf { it.protein },
+            totalFat = list.sumOf { it.totalFat },
             totalCarbs = list.sumOf { it.totalCarbs },
             fiber = list.sumOf { it.fiber },
             totalSugars = list.sumOf { it.totalSugars },
@@ -43,19 +45,19 @@ class KetoViewModel(private val repository: KetoRepository) : ViewModel() {
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
-        KetoLogEntry(date = LocalDate.now().toString()),
+        FoodLogEntry(date = LocalDate.now().toString()),
     )
 
     fun previousDay() { _date.value = LocalDate.parse(_date.value).minusDays(1).toString() }
     fun nextDay() { _date.value = LocalDate.parse(_date.value).plusDays(1).toString() }
 
-    fun addItem(item: KetoItemEntry) {
+    fun addItem(item: FoodLogItemEntry) {
         viewModelScope.launch {
             repository.insertItem(item.copy(id = 0, date = _date.value, loggedAt = java.time.Instant.now()))
         }
     }
 
-    fun deleteItem(item: KetoItemEntry) {
+    fun deleteItem(item: FoodLogItemEntry) {
         viewModelScope.launch { repository.deleteItem(item) }
     }
 }
