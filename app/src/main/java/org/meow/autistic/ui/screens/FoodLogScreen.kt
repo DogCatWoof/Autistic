@@ -1,12 +1,10 @@
 package org.meow.autistic.ui.screens
 
-import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -61,12 +59,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -95,6 +92,8 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
     val date by viewModel.date.collectAsState()
     val totals by viewModel.totals.collectAsState()
     val entryList by viewModel.items.collectAsState()
+    val labelState by viewModel.labelAnalysisState.collectAsState()
+    val photoStatuses by viewModel.photoAnalysisStatuses.collectAsState()
     var fabExpanded by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
     var previewUri by remember { mutableStateOf<Uri?>(null) }
@@ -113,6 +112,15 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
         cameraLauncher.launch(uri)
     }
 
+    fun savePhoto(): String? {
+        val destDir = File(context.filesDir, "food_log_images").also { it.mkdirs() }
+        val destFile = File(destDir, "${System.currentTimeMillis()}.jpg")
+        return runCatching {
+            File(context.cacheDir, "camera_temp/temp_food_photo.jpg").copyTo(destFile, overwrite = true)
+            destFile.absolutePath
+        }.getOrNull()
+    }
+
     if (showAddDialog) {
         AddFoodEntryDialog(
             onDismiss = { showAddDialog = false },
@@ -121,6 +129,24 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
                 showAddDialog = false
             },
         )
+    }
+
+    when (val state = labelState) {
+        is LabelAnalysisState.Loading ->
+            NutritionLabelLoadingDialog(onDismiss = viewModel::dismissLabelAnalysis)
+        is LabelAnalysisState.Ready ->
+            NutritionLabelServingsDialog(
+                data = state.data,
+                imagePath = state.imagePath,
+                onDismiss = viewModel::dismissLabelAnalysis,
+                onConfirm = { servings -> viewModel.saveLabelEntry(state.data, servings, state.imagePath) },
+            )
+        is LabelAnalysisState.Error ->
+            NutritionLabelErrorDialog(
+                onDismiss = viewModel::dismissLabelAnalysis,
+                onManualEntry = { viewModel.dismissLabelAnalysis(); showAddDialog = true },
+            )
+        LabelAnalysisState.Idle -> {}
     }
 
     Scaffold(
@@ -160,7 +186,11 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
                     )
                 }
                 items(entryList, key = { it.id }) { item ->
-                    FoodLogEntryListItem(item = item, onDelete = { viewModel.deleteItem(item) })
+                    FoodLogEntryListItem(
+                        item = item,
+                        analysisStatus = photoStatuses[item.id],
+                        onDelete = { viewModel.deleteItem(item) },
+                    )
                 }
             }
         }
@@ -175,76 +205,23 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
         }
     }
 
-    // Photo preview overlay — shown after the camera returns a captured image
     val uri = previewUri
     if (uri != null) {
         PhotoPreviewOverlay(
             uri = uri,
             onRetake = { launchCamera() },
-            onAccept = {
-                val destDir = File(context.filesDir, "food_log_images").also { it.mkdirs() }
-                val destFile = File(destDir, "${System.currentTimeMillis()}.jpg")
-                File(context.cacheDir, "camera_temp/temp_food_photo.jpg").copyTo(destFile, overwrite = true)
-                viewModel.addItem(FoodLogItemEntry(date = "", loggedAt = Instant.now(), imagePath = destFile.absolutePath))
+            onAcceptAsLabel = {
+                val path = savePhoto()
                 previewUri = null
+                if (path != null) viewModel.startLabelAnalysis(path)
+            },
+            onAcceptAsFood = {
+                val path = savePhoto()
+                previewUri = null
+                if (path != null) viewModel.queueFoodPhotoItem(path)
             },
             onDismiss = { previewUri = null },
         )
-    }
-}
-
-@Composable
-private fun PhotoPreviewOverlay(
-    uri: Uri,
-    onRetake: () -> Unit,
-    onAccept: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val context = LocalContext.current
-    val bitmap = remember(uri) {
-        context.contentResolver.openInputStream(uri)?.use { stream ->
-            val opts = BitmapFactory.Options().apply { inSampleSize = 2 }
-            BitmapFactory.decodeStream(stream, null, opts)
-        }?.asImageBitmap()
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .clickable(enabled = false) {},
-    ) {
-        if (bitmap != null) {
-            Image(
-                bitmap = bitmap,
-                contentDescription = "Captured photo",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Fit,
-            )
-        }
-
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp, vertical = 32.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            OutlinedButton(
-                onClick = onRetake,
-                modifier = Modifier.weight(1f),
-            ) { Text("Retake") }
-            Spacer(modifier = Modifier.width(16.dp))
-            Button(
-                onClick = onAccept,
-                modifier = Modifier.weight(1f),
-            ) { Text("Accept") }
-        }
-
-        TextButton(
-            onClick = onDismiss,
-            modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
-        ) { Text("Cancel", color = Color.White) }
     }
 }
 
@@ -366,16 +343,39 @@ private fun FoodLogNutritionRow(label: String, value: Double, unit: String, inde
 }
 
 @Composable
-private fun FoodLogEntryListItem(item: FoodLogItemEntry, onDelete: () -> Unit) {
+private fun FoodLogEntryListItem(
+    item: FoodLogItemEntry,
+    analysisStatus: PhotoAnalysisStatus?,
+    onDelete: () -> Unit,
+) {
     val timeLabel = item.loggedAt.atZone(ZoneId.systemDefault()).format(timeFormatter)
-    val supporting = buildString {
+    val summaryLine = buildString {
         if (item.description != null) append("${item.description} · ")
-        if (item.imagePath != null) append("📷 · ")
+        when {
+            analysisStatus == PhotoAnalysisStatus.Analyzing -> append("Analyzing... · ")
+            analysisStatus == PhotoAnalysisStatus.Queued || item.isAiPending -> append("Queued for WiFi · ")
+            item.imagePath != null && item.aiAnalysisResult == null -> append("📷 · ")
+            else -> {}
+        }
         append("${item.calories.fmt} kcal · ${item.netCarbs.fmt}g net carbs")
     }
+
     ListItem(
         headlineContent = { Text(timeLabel) },
-        supportingContent = { Text(supporting) },
+        supportingContent = {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(summaryLine)
+                if (item.aiAnalysisResult != null) {
+                    Text(
+                        text = item.aiAnalysisResult,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 5,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        },
         trailingContent = {
             IconButton(onClick = onDelete) {
                 Icon(Icons.Default.Delete, contentDescription = "Delete entry")

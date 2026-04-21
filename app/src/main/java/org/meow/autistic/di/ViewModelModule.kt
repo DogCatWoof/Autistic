@@ -16,5 +16,5 @@ val viewModelModule = module {
     viewModel { DailyTasksViewModel(get()) }
     viewModel { NotesViewModel(get()) }
     viewModel { MoodViewModel(get()) }
-    viewModel { FoodLogViewModel(get()) }
+    viewModel { FoodLogViewModel(get(), get(), androidApplication()) }
 }

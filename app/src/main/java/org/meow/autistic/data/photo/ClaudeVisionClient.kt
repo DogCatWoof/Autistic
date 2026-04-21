@@ -1,0 +1,126 @@
+package org.meow.autistic.data.photo
+
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.util.Base64
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.ByteArrayOutputStream
+
+private const val ANTHROPIC_API_KEY = "YOUR_ANTHROPIC_API_KEY"
+private const val ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
+private const val MODEL = "claude-haiku-4-5-20251001"
+private const val MAX_IMAGE_DIM = 1024
+
+private const val NUTRITION_LABEL_PROMPT = "Parse this nutrition facts label. " +
+    "Return ONLY valid JSON, no other text: " +
+    "{\"serving_size\":\"...\",\"calories\":0,\"protein_g\":0,\"total_fat_g\":0," +
+    "\"total_carbs_g\":0,\"fiber_g\":0,\"total_sugars_g\":0,\"added_sugars_g\":0," +
+    "\"sugar_alcohols_g\":0}. All nutrient fields must be numbers. " +
+    "Use 0 for missing fields. serving_size may be null if not visible."
+
+private const val FOOD_PHOTO_PROMPT = "Analyze this food photo. Provide: " +
+    "1) What food or dish is shown, " +
+    "2) Approximate portion size (visual estimate), " +
+    "3) Estimated nutrition per serving: calories, protein (g), fat (g), carbs (g), fiber (g). " +
+    "Be concise and practical."
+
+/**
+ * Calls the Anthropic Messages API with a photo for nutrition label OCR or food analysis.
+ * Set [ANTHROPIC_API_KEY] before use.
+ */
+class ClaudeVisionClient(
+    private val httpClient: OkHttpClient = OkHttpClient(),
+    private val apiKey: String = ANTHROPIC_API_KEY,
+) {
+    suspend fun analyzeNutritionLabel(imagePath: String): ParsedNutritionData? = withContext(Dispatchers.IO) {
+        val text = callApi(imagePath, NUTRITION_LABEL_PROMPT) ?: return@withContext null
+        runCatching { parseNutritionJson(text) }.getOrNull()
+    }
+
+    suspend fun analyzeFoodPhoto(imagePath: String): String = withContext(Dispatchers.IO) {
+        callApi(imagePath, FOOD_PHOTO_PROMPT) ?: "Analysis unavailable"
+    }
+
+    private fun callApi(imagePath: String, prompt: String): String? {
+        val imageBase64 = encodeImage(imagePath).ifEmpty { return null }
+        val body = buildRequestBody(imageBase64, prompt)
+        val request = Request.Builder()
+            .url(ANTHROPIC_API_URL)
+            .addHeader("x-api-key", apiKey)
+            .addHeader("anthropic-version", "2023-06-01")
+            .post(body.toString().toRequestBody("application/json".toMediaType()))
+            .build()
+        val response = httpClient.newCall(request).execute()
+        if (!response.isSuccessful) return null
+        val responseBody = response.body?.string() ?: return null
+        return JsonParser.parseString(responseBody).asJsonObject
+            .getAsJsonArray("content")?.firstOrNull()?.asJsonObject?.get("text")?.asString
+    }
+
+    private fun encodeImage(path: String): String {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(path, bounds)
+        var sampleSize = 1
+        while (bounds.outWidth / sampleSize > MAX_IMAGE_DIM || bounds.outHeight / sampleSize > MAX_IMAGE_DIM) {
+            sampleSize *= 2
+        }
+        val bitmap = BitmapFactory.decodeFile(path, BitmapFactory.Options().apply { inSampleSize = sampleSize })
+            ?: return ""
+        val baos = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 85, baos)
+        return Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP)
+    }
+
+    private fun buildRequestBody(imageBase64: String, prompt: String): JsonObject =
+        JsonObject().apply {
+            addProperty("model", MODEL)
+            addProperty("max_tokens", 1024)
+            add("messages", JsonArray().apply {
+                add(JsonObject().apply {
+                    addProperty("role", "user")
+                    add("content", JsonArray().apply {
+                        add(JsonObject().apply {
+                            addProperty("type", "image")
+                            add("source", JsonObject().apply {
+                                addProperty("type", "base64")
+                                addProperty("media_type", "image/jpeg")
+                                addProperty("data", imageBase64)
+                            })
+                        })
+                        add(JsonObject().apply {
+                            addProperty("type", "text")
+                            addProperty("text", prompt)
+                        })
+                    })
+                })
+            })
+        }
+
+    private fun parseNutritionJson(text: String): ParsedNutritionData {
+        val jsonText = text.trim()
+            .removePrefix("```json").removePrefix("```").removeSuffix("```").trim()
+        val json = JsonParser.parseString(jsonText).asJsonObject
+        return ParsedNutritionData(
+            servingSize = json.get("serving_size")?.takeIf { !it.isJsonNull }?.asString,
+            calories = json.dbl("calories"),
+            protein = json.dbl("protein_g"),
+            totalFat = json.dbl("total_fat_g"),
+            totalCarbs = json.dbl("total_carbs_g"),
+            fiber = json.dbl("fiber_g"),
+            totalSugars = json.dbl("total_sugars_g"),
+            addedSugars = json.dbl("added_sugars_g"),
+            sugarAlcohols = json.dbl("sugar_alcohols_g"),
+        )
+    }
+}
+
+private fun JsonObject.dbl(key: String): Double =
+    get(key)?.takeIf { !it.isJsonNull }?.asDouble ?: 0.0
