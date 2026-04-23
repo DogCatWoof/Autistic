@@ -149,97 +149,99 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
         LabelAnalysisState.Idle -> {}
     }
 
-    Scaffold(
-        modifier = modifier,
-        topBar = { FoodLogDateBar(date = date, onPrev = viewModel::previousDay, onNext = viewModel::nextDay) },
-        floatingActionButton = {
-            Column(horizontalAlignment = Alignment.End) {
-                AnimatedVisibility(visible = fabExpanded) {
-                    Column(
-                        horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.padding(bottom = 16.dp),
-                    ) {
-                        FoodLogSpeedDialItem("Photo") { launchCamera() }
-                        FoodLogSpeedDialItem("Manual") { fabExpanded = false; showAddDialog = true }
+    Box(modifier = modifier.fillMaxSize()) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = { FoodLogDateBar(date = date, onPrev = viewModel::previousDay, onNext = viewModel::nextDay) },
+            floatingActionButton = {
+                Column(horizontalAlignment = Alignment.End) {
+                    AnimatedVisibility(visible = fabExpanded) {
+                        Column(
+                            horizontalAlignment = Alignment.End,
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.padding(bottom = 16.dp),
+                        ) {
+                            FoodLogSpeedDialItem("Photo") { launchCamera() }
+                            FoodLogSpeedDialItem("Manual") { fabExpanded = false; showAddDialog = true }
+                        }
+                    }
+                    FloatingActionButton(onClick = { fabExpanded = !fabExpanded }) {
+                        Icon(Icons.Default.Add, contentDescription = "New Entry", modifier = Modifier.rotate(fabRotation))
                     }
                 }
-                FloatingActionButton(onClick = { fabExpanded = !fabExpanded }) {
-                    Icon(Icons.Default.Add, contentDescription = "New Entry", modifier = Modifier.rotate(fabRotation))
-                }
-            }
-        },
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(bottom = 88.dp),
-        ) {
-            item { FoodLogNutritionSummary(totals) }
-            item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
-            item {
-                Text(
-                    "Entries",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp),
-                )
-            }
-            if (entryList.isEmpty()) {
+            },
+        ) { padding ->
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentPadding = PaddingValues(bottom = 88.dp),
+            ) {
+                item { FoodLogNutritionSummary(totals) }
+                item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
                 item {
                     Text(
-                        "No entries yet",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 8.dp),
+                        "Entries",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp),
                     )
                 }
-            } else {
-                items(entryList, key = { it.id }) { item ->
-                    FoodLogEntryListItem(
-                        item = item,
-                        analysisStatus = photoStatuses[item.id],
-                        onDelete = { viewModel.deleteItem(item) },
-                    )
+                if (entryList.isEmpty()) {
+                    item {
+                        Text(
+                            "No entries yet",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 8.dp),
+                        )
+                    }
+                } else {
+                    items(entryList, key = { it.id }) { item ->
+                        FoodLogEntryListItem(
+                            item = item,
+                            analysisStatus = photoStatuses[item.id],
+                            onDelete = { viewModel.deleteItem(item) },
+                        )
+                    }
                 }
+            }
+
+            if (fabExpanded) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.32f))
+                        .clickable { fabExpanded = false },
+                )
             }
         }
 
-        if (fabExpanded) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.32f))
-                    .clickable { fabExpanded = false },
+        if (showCamera) {
+            CameraScreen(
+                onPhotoTaken = {
+                    val tempFile = File(context.cacheDir, "camera_temp/temp_food_photo.jpg")
+                    previewUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", tempFile)
+                    showCamera = false
+                },
+                onDismiss = { showCamera = false },
             )
         }
-    }
 
-    if (showCamera) {
-        CameraScreen(
-            onPhotoTaken = {
-                val tempFile = File(context.cacheDir, "camera_temp/temp_food_photo.jpg")
-                previewUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", tempFile)
-                showCamera = false
-            },
-            onDismiss = { showCamera = false },
-        )
-    }
-
-    val uri = previewUri
-    if (uri != null) {
-        PhotoPreviewOverlay(
-            uri = uri,
-            onRetake = { launchCamera() },
-            onAcceptAsLabel = {
-                previewUri = null
-                viewModel.acceptLabelPhoto()
-            },
-            onAcceptAsFood = {
-                previewUri = null
-                viewModel.acceptFoodPhoto()
-            },
-            onDismiss = { previewUri = null },
-        )
+        val uri = previewUri
+        if (uri != null) {
+            PhotoPreviewOverlay(
+                uri = uri,
+                onRetake = { launchCamera() },
+                onAcceptAsLabel = {
+                    previewUri = null
+                    viewModel.acceptLabelPhoto()
+                },
+                onAcceptAsFood = {
+                    previewUri = null
+                    viewModel.acceptFoodPhoto()
+                },
+                onDismiss = { previewUri = null },
+            )
+        }
     }
 }
 
