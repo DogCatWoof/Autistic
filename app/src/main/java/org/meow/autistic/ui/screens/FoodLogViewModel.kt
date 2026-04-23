@@ -25,6 +25,7 @@ import org.meow.autistic.data.foodlog.FoodLogItemEntry
 import org.meow.autistic.data.foodlog.FoodLogRepository
 import org.meow.autistic.data.photo.ClaudeVisionClient
 import org.meow.autistic.data.photo.ParsedNutritionData
+import java.io.File
 import java.io.IOException
 import java.time.Instant
 import java.time.LocalDate
@@ -161,6 +162,26 @@ class FoodLogViewModel(
     }
 
     // ── Path 2: Food photo AI analysis ─────────────────────────────────────
+
+    fun acceptLabelPhoto() {
+        viewModelScope.launch(handler) {
+            startLabelAnalysis(savePhotoToStorage())
+        }
+    }
+
+    fun acceptFoodPhoto() {
+        viewModelScope.launch(handler) {
+            queueFoodPhotoItem(savePhotoToStorage())
+        }
+    }
+
+    private fun savePhotoToStorage(): String {
+        val app = getApplication<Application>()
+        val destDir = File(app.filesDir, "food_log_images").also { it.mkdirs() }
+        val destFile = File(destDir, "${System.currentTimeMillis()}.jpg")
+        File(app.cacheDir, "camera_temp/temp_food_photo.jpg").copyTo(destFile, overwrite = true)
+        return destFile.absolutePath
+    }
 
     fun queueFoodPhotoItem(imagePath: String) {
         viewModelScope.launch(handler) {

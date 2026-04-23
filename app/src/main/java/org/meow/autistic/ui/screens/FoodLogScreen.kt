@@ -150,15 +150,6 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
         cameraLauncher.launch(uri)
     }
 
-    fun savePhoto(): String? {
-        val destDir = File(context.filesDir, "food_log_images").also { it.mkdirs() }
-        val destFile = File(destDir, "${System.currentTimeMillis()}.jpg")
-        return runCatching {
-            File(context.cacheDir, "camera_temp/temp_food_photo.jpg").copyTo(destFile, overwrite = true)
-            destFile.absolutePath
-        }.getOrNull()
-    }
-
     if (showAddDialog) {
         AddFoodEntryDialog(
             onDismiss = { showAddDialog = false },
@@ -213,16 +204,25 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
             contentPadding = PaddingValues(bottom = 88.dp),
         ) {
             item { FoodLogNutritionSummary(totals) }
-            if (entryList.isNotEmpty()) {
-                item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
+            item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
+            item {
+                Text(
+                    "Entries",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp),
+                )
+            }
+            if (entryList.isEmpty()) {
                 item {
                     Text(
-                        "Entries",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp),
+                        "No entries yet",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 8.dp),
                     )
                 }
+            } else {
                 items(entryList, key = { it.id }) { item ->
                     FoodLogEntryListItem(
                         item = item,
@@ -249,14 +249,12 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
             uri = uri,
             onRetake = { launchCamera() },
             onAcceptAsLabel = {
-                val path = savePhoto()
                 previewUri = null
-                if (path != null) viewModel.startLabelAnalysis(path)
+                viewModel.acceptLabelPhoto()
             },
             onAcceptAsFood = {
-                val path = savePhoto()
                 previewUri = null
-                if (path != null) viewModel.queueFoodPhotoItem(path)
+                viewModel.acceptFoodPhoto()
             },
             onDismiss = { previewUri = null },
         )
