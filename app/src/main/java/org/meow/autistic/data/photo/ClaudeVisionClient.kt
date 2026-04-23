@@ -14,7 +14,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
 
-private const val ANTHROPIC_API_KEY = "ANTHROPIC_KEY_REDACTED_2"
+private const val ANTHROPIC_API_KEY = "ANTHROPIC_KEY_REDACTED"
 private const val ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 private const val MODEL = "claude-haiku-4-5-20251001"
 private const val MAX_IMAGE_DIM = 1024
