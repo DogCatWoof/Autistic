@@ -113,11 +113,12 @@ class FoodLogViewModel(
             ))
             _photoAnalysisStatuses.update { it + (itemId to PhotoAnalysisStatus.ScanningLabel) }
             _labelAnalysisState.value = LabelAnalysisState.Loading(itemId, imagePath)
-            val data = claudeClient.analyzeNutritionLabel(imagePath)
-            _labelAnalysisState.value = if (data != null) {
-                LabelAnalysisState.Ready(data, itemId, imagePath)
-            } else {
-                LabelAnalysisState.Error(itemId, imagePath)
+            try {
+                val data = claudeClient.analyzeNutritionLabel(imagePath)
+                _labelAnalysisState.value = LabelAnalysisState.Ready(data, itemId, imagePath)
+            } catch (e: Exception) {
+                _labelAnalysisState.value = LabelAnalysisState.Error(itemId, imagePath)
+                throw e
             }
         }
     }
@@ -222,7 +223,7 @@ class FoodLogViewModel(
                     repository.updateItem(item.copy(aiAnalysisResult = "Analysis failed.", isAiPending = false))
                 }
                 _photoAnalysisStatuses.update { it + (itemId to PhotoAnalysisStatus.Failed) }
-                return
+                throw e
             }
         }
     }

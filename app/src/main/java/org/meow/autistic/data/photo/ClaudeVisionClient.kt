@@ -40,17 +40,16 @@ class ClaudeVisionClient(
     private val httpClient: OkHttpClient = OkHttpClient(),
     private val apiKey: String = ANTHROPIC_API_KEY,
 ) {
-    suspend fun analyzeNutritionLabel(imagePath: String): ParsedNutritionData? = withContext(Dispatchers.IO) {
-        val text = callApi(imagePath, NUTRITION_LABEL_PROMPT) ?: return@withContext null
-        runCatching { parseNutritionJson(text) }.getOrNull()
+    suspend fun analyzeNutritionLabel(imagePath: String): ParsedNutritionData = withContext(Dispatchers.IO) {
+        parseNutritionJson(callApi(imagePath, NUTRITION_LABEL_PROMPT))
     }
 
     suspend fun analyzeFoodPhoto(imagePath: String): String = withContext(Dispatchers.IO) {
-        callApi(imagePath, FOOD_PHOTO_PROMPT) ?: "Analysis unavailable"
+        callApi(imagePath, FOOD_PHOTO_PROMPT)
     }
 
-    private fun callApi(imagePath: String, prompt: String): String? {
-        val imageBase64 = encodeImage(imagePath).ifEmpty { return null }
+    private fun callApi(imagePath: String, prompt: String): String {
+        val imageBase64 = encodeImage(imagePath).ifEmpty { throw RuntimeException("Failed to encode image at $imagePath") }
         val body = buildRequestBody(imageBase64, prompt)
         val request = Request.Builder()
             .url(ANTHROPIC_API_URL)
@@ -59,10 +58,14 @@ class ClaudeVisionClient(
             .post(body.toString().toRequestBody("application/json".toMediaType()))
             .build()
         val response = httpClient.newCall(request).execute()
-        if (!response.isSuccessful) return null
-        val responseBody = response.body?.string() ?: return null
+        if (!response.isSuccessful) {
+            val errorBody = response.body?.string() ?: "no response body"
+            throw RuntimeException("HTTP ${response.code}: $errorBody")
+        }
+        val responseBody = response.body?.string() ?: throw RuntimeException("Empty response body from API")
         return JsonParser.parseString(responseBody).asJsonObject
             .getAsJsonArray("content")?.firstOrNull()?.asJsonObject?.get("text")?.asString
+            ?: throw RuntimeException("No text content in API response")
     }
 
     private fun encodeImage(path: String): String {
