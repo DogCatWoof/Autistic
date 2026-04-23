@@ -180,6 +180,67 @@ Runs as a 4-step sequence (abort with retry if no valid token):
 - Unit tests must use mocks; no test may require a live network or external service connection
 - All instrumented tests run against a clean database (cleared in `@Before`)
 
+### Event List — Rules-Based Coloring, Icons, and Importance
+
+#### Coloring
+Each list item gets a pastel background determined by a priority-ordered rule set (first match wins):
+
+| Priority | Condition | Color |
+|---|---|---|
+| 1 | `isImportant = true` | Amber pastel `#FFF8E1` |
+| 2 | Past due | Red pastel `#FFEBEE` |
+| 3 | Due within 2 hours | Orange pastel `#FFF3E0` |
+| 4 | Due today | Blue pastel `#E3F2FD` |
+| 5 | `isRequired = true` | Purple pastel `#F3E5F5` |
+| 6 | Default | Surface (no tint) |
+
+Rules are evaluated at render time in `ItemColorResolver`; no color data is persisted.
+
+#### Icons
+Each item row shows a leading icon:
+- Regular task → `Icons.Default.CheckBoxOutlineBlank`
+- Calendar event → `Icons.Default.Event`
+- Daily task (generated from template) → `Icons.Default.Repeat`
+- Important (any) → `Icons.Default.Star` overlaid or substituted
+- Required (any) → `Icons.Default.Flag`
+
+#### New Fields
+- `TaskEntity`: add `isImportant: Boolean = false`, `isRequired: Boolean = false`
+- `DailyTaskEntity`: add `isRequired: Boolean = false` (propagated when daily tasks are generated)
+- `CalendarEventEntity`: no new fields (color by time rules only)
+
+#### UI Changes
+- `AddTaskDialog` / `EditTaskDialog`: add Important and Required toggles
+- `DailyTaskDialog`: add Required toggle
+- `TaskItem` / `CalendarEventItem`: accept computed `backgroundColor` and `leadingIcon` parameters
+- `TaskListItemRow`: compute color and icon, pass to item composables
+
+---
+
+### Health Connect Integration
+
+Reads health data from other apps (Samsung Health, Garmin, Google Fit, etc.) via Android's Health Connect platform.
+
+#### What to pull
+| Data Type | Usage in app |
+|---|---|
+| `StepsRecord` | Activity display; Energy Budgeting signal |
+| `SleepSessionRecord` | Mood screen context; Energy Budgeting baseline |
+| `HeartRateRecord` | Energy Budgeting signal; stress indicator |
+| `WeightRecord` | Body metrics display |
+| `TotalCaloriesBurnedRecord` | Food log context (calories in vs. out) |
+| `BloodGlucoseRecord` | Optional; relevant for keto/diet tracking |
+| `NutritionRecord` | Pull nutrition from other logging apps |
+
+#### Permissions declared in manifest
+`android.permission.health.READ_STEPS`, `READ_SLEEP`, `READ_HEART_RATE`, `READ_WEIGHT`, `READ_TOTAL_CALORIES_BURNED`, `READ_BLOOD_GLUCOSE`, `READ_NUTRITION`
+
+#### Requirements
+- Health Connect is built into Android 14+; users on Android 8–13 must install the Health Connect app from Play Store
+- A privacy policy must be linked in both the app and Play Store listing
+- Health data must never be used for advertising or sold to third parties
+- The user must explicitly consent before any read; permissions revocable at any time from the Health Connect settings
+
 ---
 
 ## Plan
@@ -211,6 +272,28 @@ Runs as a 4-step sequence (abort with retry if no valid token):
 6. **TTS** — `TextToSpeech` for earbud output; optional, toggleable
 7. **Nav tab** — add "Talk" tab to `BOTTOM_ITEMS`
 8. **Tests** — unit tests for `IntentClassifier` across all classes; chip selection ordering
+
+### Event List — Rules-Based Coloring, Icons, Importance, and Required
+
+1. **Schema** — add `isImportant: Boolean = false` and `isRequired: Boolean = false` to `TaskEntity`; add `isRequired: Boolean = false` to `DailyTaskEntity`; bump DB version to 11
+2. **`ItemColorResolver.kt`** — pure `@Composable`-free function: takes `(item: TaskListItem, nowMillis: Long) → Color`; encodes the 5-rule priority table using hardcoded pastel `Color` values; no external dependencies
+3. **`ItemIconResolver.kt`** — pure function: takes `(item: TaskListItem) → ImageVector`; maps item type and flags to Material icons
+4. **`TaskListItemRow`** — call both resolvers; pass `backgroundColor` and `leadingIcon` down to `TaskItem` / `CalendarEventItem`
+5. **`TaskItem` / `CalendarEventItem`** — accept `backgroundColor: Color` and `leadingIcon: ImageVector`; apply `background(backgroundColor)` to the row container; add `Icon(leadingIcon)` as the first element in the row
+6. **Dialogs** — add `isImportant` / `isRequired` toggle rows to `AddTaskDialog`, `EditTaskDialog`, and `DailyTaskDialog`
+7. **DailyResetWorker** — propagate `isRequired` from `DailyTaskEntity` when generating `TaskEntity` rows each midnight
+8. **Tests** — unit tests for `ItemColorResolver`: one test per rule, verify correct pastel returned; test tie-breaking order; test that `isImportant` beats past-due
+
+### Health Connect Integration
+
+1. **Dependency** — add `androidx.health.connect:connect-client:1.1.0` to `app/build.gradle.kts`; add `READ_HEALTH_DATA_IN_BACKGROUND` and the 7 type-specific `READ_*` permissions to `AndroidManifest.xml`; add a `<activity-alias>` for `ViewPermissionUsageActivity` (required by Play Store)
+2. **`HealthConnectRepository.kt`** — wraps `HealthConnectClient`; one suspend function per data type: `readTodaySteps()`, `readLastNightSleep()`, `readRecentHeartRate()`, `readLatestWeight()`, `readTodayCaloriesBurned()`, `readRecentBloodGlucose()`, `readTodayNutrition()`; all return nullable domain objects; `HealthConnectClient.getSdkStatus()` checked before every call
+3. **`HealthConnectPermissionRequest`** — composable helper that calls `rememberLauncherForActivityResult(HealthDataRequestPermissions())`; invoked from a Settings entry; shows which permissions are granted vs. missing
+4. **Settings screen entry** — "Health Connect" row in Settings; opens permission request flow; shows last-synced timestamp per data type
+5. **Surface in existing screens** — Food Log: show today's steps + calories burned as a summary card; Mood: show last night's sleep duration + avg heart rate; Energy Budgeting: feed all signals into the model
+6. **`HealthConnectSyncWorker`** — `CoroutineWorker`; reads each data type and writes to a `HealthSnapshotEntity` table (date, steps, sleepMinutes, avgHeartRate, weightKg, caloriesBurned); runs on any network, once per hour
+7. **Privacy policy** — add a privacy policy URL to app metadata and Play Store listing before shipping; document that health data stays on-device only
+8. **Tests** — unit tests for `HealthConnectRepository` using a fake `HealthConnectClient`; verify null-safe handling when SDK unavailable
 
 ### Energy Budgeting (MVP)
 1. **Data layer** — `EnergyProfileEntity` (dailyCapacity, mode); `ActivityCostEntity` (activityType, baseCost, learnedCost, sampleCount); `EnergyLogEntity` (date, activityType, startAt, endAt, reportedDifficulty); `StartOfDayCheckEntity` (date, sleepQuality, stressLevel, physicalState, baselineMultiplier); DAOs; `EnergyRepository`
