@@ -1,14 +1,9 @@
 package org.meow.autistic.ui.screens
 
 import android.Manifest
-import android.app.Activity
-import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -92,18 +87,6 @@ import java.time.format.FormatStyle
 
 private val timeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 
-/** Explicit URI grant required from Android 18+; implicit grants via EXTRA_OUTPUT are deprecated. */
-private class TakePictureWithGrant : ActivityResultContract<Uri, Boolean>() {
-    override fun createIntent(context: Context, input: Uri): Intent =
-        Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
-            putExtra(MediaStore.EXTRA_OUTPUT, input)
-            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-
-    override fun parseResult(resultCode: Int, intent: Intent?): Boolean =
-        resultCode == Activity.RESULT_OK
-}
-
 /** At most 4 characters: whole number up to 9999, one decimal up to 999.9, no decimals above that. */
 private val Double.fmt: String
     get() = when {
@@ -121,21 +104,12 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
     val photoStatuses by viewModel.photoAnalysisStatuses.collectAsState()
     var fabExpanded by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
-    var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
+    var showCamera by remember { mutableStateOf(false) }
     var previewUri by remember { mutableStateOf<Uri?>(null) }
     val fabRotation by animateFloatAsState(targetValue = if (fabExpanded) 45f else 0f, label = "fab_rotation")
 
-    val cameraLauncher = rememberLauncherForActivityResult(TakePictureWithGrant()) { captured ->
-        if (captured) {
-            previewUri = pendingCameraUri
-            fabExpanded = false
-        }
-        pendingCameraUri = null
-    }
-
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        // No-op here, user can tap again or we could call launchCamera()
-        // but it's cleaner to let the user tap again to avoid unexpected behavior
+        if (granted) { showCamera = true; fabExpanded = false }
     }
 
     fun launchCamera() {
@@ -143,11 +117,8 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
             permissionLauncher.launch(Manifest.permission.CAMERA)
             return
         }
-        val tempDir = File(context.cacheDir, "camera_temp").also { it.mkdirs() }
-        val tempFile = File(tempDir, "temp_food_photo.jpg")
-        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", tempFile)
-        pendingCameraUri = uri
-        cameraLauncher.launch(uri)
+        showCamera = true
+        fabExpanded = false
     }
 
     if (showAddDialog) {
@@ -241,6 +212,17 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
                     .clickable { fabExpanded = false },
             )
         }
+    }
+
+    if (showCamera) {
+        CameraScreen(
+            onPhotoTaken = {
+                val tempFile = File(context.cacheDir, "camera_temp/temp_food_photo.jpg")
+                previewUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", tempFile)
+                showCamera = false
+            },
+            onDismiss = { showCamera = false },
+        )
     }
 
     val uri = previewUri
