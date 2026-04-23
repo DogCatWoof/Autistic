@@ -230,7 +230,7 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
         if (uri != null) {
             PhotoPreviewOverlay(
                 uri = uri,
-                onRetake = { launchCamera() },
+                onRetake = { previewUri = null; launchCamera() },
                 onAcceptAsLabel = {
                     previewUri = null
                     viewModel.acceptLabelPhoto()
