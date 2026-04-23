@@ -1,0 +1,57 @@
+package org.meow.autistic.ui.screens
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import org.meow.autistic.data.health.HealthConnectRepository
+import org.meow.autistic.data.health.HealthSnapshotEntity
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
+/** Exposes Health Connect status and today's snapshot for the settings screen. */
+class HealthConnectViewModel(
+    private val repository: HealthConnectRepository,
+) : ViewModel() {
+
+    private val _sdkStatus = MutableStateFlow(repository.getSdkStatus())
+    val sdkStatus: StateFlow<Int> = _sdkStatus.asStateFlow()
+
+    private val _grantedPermissions = MutableStateFlow<Set<String>>(emptySet())
+    val grantedPermissions: StateFlow<Set<String>> = _grantedPermissions.asStateFlow()
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    val todaySnapshot: StateFlow<HealthSnapshotEntity?> = repository
+        .getTodaySnapshot()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    val requiredPermissions: Set<String> = repository.requiredPermissions
+
+    init {
+        checkPermissions()
+    }
+
+    fun checkPermissions() {
+        viewModelScope.launch {
+            _sdkStatus.value = repository.getSdkStatus()
+            _grantedPermissions.value = repository.getGrantedPermissions()
+        }
+    }
+
+    fun refreshSnapshot() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            runCatching { repository.refreshTodaySnapshot() }
+            _isRefreshing.value = false
+        }
+    }
+
+    private fun todayKey(): String =
+        LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+}

@@ -60,12 +60,14 @@ fun SettingsScreen(
     var showQueryLog by remember { mutableStateOf(false) }
     var showNavPrefs by remember { mutableStateOf(false) }
     var showDailyTasks by remember { mutableStateOf(false) }
+    var showHealthConnect by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = showQueryLog || showNavPrefs || showDailyTasks) {
+    BackHandler(enabled = showQueryLog || showNavPrefs || showDailyTasks || showHealthConnect) {
         when {
             showQueryLog -> showQueryLog = false
             showNavPrefs -> showNavPrefs = false
             showDailyTasks -> showDailyTasks = false
+            showHealthConnect -> showHealthConnect = false
         }
     }
 
@@ -73,10 +75,12 @@ fun SettingsScreen(
         showQueryLog -> QueryLogScreen(modifier = modifier)
         showNavPrefs -> NavPreferencesScreen(allItems = allNavItems, modifier = modifier)
         showDailyTasks -> DailyTasksSettingsScreen(modifier = modifier)
+        showHealthConnect -> HealthConnectSettingsScreen(modifier = modifier)
         else -> SettingsMainList(
             onQueryLogClick = { showQueryLog = true },
             onNavPrefsClick = { showNavPrefs = true },
             onDailyTasksClick = { showDailyTasks = true },
+            onHealthConnectClick = { showHealthConnect = true },
             modifier = modifier,
         )
     }
@@ -87,6 +91,7 @@ private fun SettingsMainList(
     onQueryLogClick: () -> Unit,
     onNavPrefsClick: () -> Unit,
     onDailyTasksClick: () -> Unit,
+    onHealthConnectClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showLogcat by remember { mutableStateOf(false) }
@@ -273,6 +278,17 @@ private fun SettingsMainList(
                 DriveBackupSyncItem(isAuthenticated = isAuthenticated)
             }
         }
+        ListItem(
+            headlineContent = { Text("Health Connect") },
+            supportingContent = { Text("Steps, sleep, heart rate, weight, calories, and glucose") },
+            trailingContent = {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowForwardIos,
+                    contentDescription = "Open Health Connect settings",
+                )
+            },
+            modifier = Modifier.clickable { onHealthConnectClick() },
+        )
         HorizontalDivider()
         SettingsSectionLabel("Diagnostics")
         ListItem(

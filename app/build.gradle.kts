@@ -100,6 +100,9 @@ dependencies {
     // JSON serialisation for product data
     implementation(libs.gson)
 
+    // Health Connect
+    implementation(libs.health.connect.client)
+
     // DataStore for sync timestamps
     implementation(libs.androidx.datastore.preferences)
 

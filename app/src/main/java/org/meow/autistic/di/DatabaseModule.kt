@@ -17,6 +17,7 @@ val databaseModule = module {
     single { get<TaskDatabase>().moodDao() }
     single { get<TaskDatabase>().foodLogDao() }
     single { get<TaskDatabase>().foodLogItemDao() }
+    single { get<TaskDatabase>().healthSnapshotDao() }
     single { NoteRepository(get()) }
     single { MoodRepository(get()) }
     single { FoodLogRepository(get(), get()) }

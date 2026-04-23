@@ -12,6 +12,8 @@ import org.meow.autistic.data.foodlog.FoodLogDao
 import org.meow.autistic.data.foodlog.FoodLogEntry
 import org.meow.autistic.data.foodlog.FoodLogItemDao
 import org.meow.autistic.data.foodlog.FoodLogItemEntry
+import org.meow.autistic.data.health.HealthSnapshotDao
+import org.meow.autistic.data.health.HealthSnapshotEntity
 import org.meow.autistic.data.mood.MoodDao
 import org.meow.autistic.data.mood.MoodEntity
 import org.meow.autistic.data.note.NoteDao
@@ -28,8 +30,8 @@ class InstantConverter {
 }
 
 @Database(
-    entities = [TaskEntity::class, CalendarEventEntity::class, DailyTaskEntity::class, NoteEntity::class, MoodEntity::class, FoodLogEntry::class, FoodLogItemEntry::class],
-    version = 10,
+    entities = [TaskEntity::class, CalendarEventEntity::class, DailyTaskEntity::class, NoteEntity::class, MoodEntity::class, FoodLogEntry::class, FoodLogItemEntry::class, HealthSnapshotEntity::class],
+    version = 11,
     exportSchema = false,
 )
 @TypeConverters(InstantConverter::class)
@@ -41,6 +43,7 @@ abstract class TaskDatabase : RoomDatabase() {
     abstract fun moodDao(): MoodDao
     abstract fun foodLogDao(): FoodLogDao
     abstract fun foodLogItemDao(): FoodLogItemDao
+    abstract fun healthSnapshotDao(): HealthSnapshotDao
 
     /** Flushes WAL to the main database file. Call before reading the raw file for backup. */
     fun checkpoint() {
