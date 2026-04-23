@@ -27,7 +27,7 @@ mlkitBarcode = "17.3.0"
 gson = "2.12.1"
 datastore = "1.1.3"
 koin = "4.0.4"
-healthConnect = "1.0.0"
+healthConnect = "1.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

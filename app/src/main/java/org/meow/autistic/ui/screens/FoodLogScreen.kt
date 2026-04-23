@@ -1,5 +1,7 @@
 package org.meow.autistic.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -66,6 +68,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import org.koin.androidx.compose.koinViewModel
 import org.meow.autistic.data.foodlog.FoodLogEntry
@@ -96,19 +99,32 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
     val photoStatuses by viewModel.photoAnalysisStatuses.collectAsState()
     var fabExpanded by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
+    var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
     var previewUri by remember { mutableStateOf<Uri?>(null) }
     val fabRotation by animateFloatAsState(targetValue = if (fabExpanded) 45f else 0f, label = "fab_rotation")
 
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { captured ->
-        if (captured) fabExpanded = false
-        else previewUri = null
+        if (captured) {
+            previewUri = pendingCameraUri
+            fabExpanded = false
+        }
+        pendingCameraUri = null
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        // No-op here, user can tap again or we could call launchCamera()
+        // but it's cleaner to let the user tap again to avoid unexpected behavior
     }
 
     fun launchCamera() {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            permissionLauncher.launch(Manifest.permission.CAMERA)
+            return
+        }
         val tempDir = File(context.cacheDir, "camera_temp").also { it.mkdirs() }
         val tempFile = File(tempDir, "temp_food_photo.jpg")
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", tempFile)
-        previewUri = uri
+        pendingCameraUri = uri
         cameraLauncher.launch(uri)
     }
 

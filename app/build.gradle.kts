@@ -13,7 +13,7 @@ configurations.all {
 
 android {
     namespace = "org.meow.autistic"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "org.meow.autistic"
