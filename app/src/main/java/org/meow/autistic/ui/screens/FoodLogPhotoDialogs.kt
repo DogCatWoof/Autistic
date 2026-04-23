@@ -1,6 +1,9 @@
 package org.meow.autistic.ui.screens
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -62,10 +65,24 @@ internal fun PhotoPreviewOverlay(
 ) {
     val context = LocalContext.current
     val bitmap = remember(uri) {
-        context.contentResolver.openInputStream(uri)?.use { stream ->
-            val opts = BitmapFactory.Options().apply { inSampleSize = 2 }
-            BitmapFactory.decodeStream(stream, null, opts)
-        }?.asImageBitmap()
+        val degrees = context.contentResolver.openInputStream(uri)?.use { stream ->
+            when (ExifInterface(stream).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+                ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+                ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+                else -> 0f
+            }
+        } ?: 0f
+        val raw = context.contentResolver.openInputStream(uri)?.use { stream ->
+            BitmapFactory.decodeStream(stream, null, BitmapFactory.Options().apply { inSampleSize = 2 })
+        } ?: return@remember null
+        if (degrees == 0f) {
+            raw.asImageBitmap()
+        } else {
+            Bitmap.createBitmap(raw, 0, 0, raw.width, raw.height, Matrix().apply { postRotate(degrees) }, true)
+                .also { raw.recycle() }
+                .asImageBitmap()
+        }
     }
 
     Box(
