@@ -106,6 +106,7 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
     var showAddDialog by remember { mutableStateOf(false) }
     var showCamera by remember { mutableStateOf(false) }
     var previewUri by remember { mutableStateOf<Uri?>(null) }
+    var selectedItem by remember { mutableStateOf<FoodLogItemEntry?>(null) }
     val fabRotation by animateFloatAsState(targetValue = if (fabExpanded) 45f else 0f, label = "fab_rotation")
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -119,6 +120,10 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
         }
         showCamera = true
         fabExpanded = false
+    }
+
+    selectedItem?.let { item ->
+        FoodLogItemDetailDialog(item = item, onDismiss = { selectedItem = null })
     }
 
     if (showAddDialog) {
@@ -200,6 +205,7 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
                             item = item,
                             analysisStatus = photoStatuses[item.id],
                             onDelete = { viewModel.deleteItem(item) },
+                            onClick = { selectedItem = item },
                         )
                     }
                 }
@@ -367,6 +373,7 @@ private fun FoodLogEntryListItem(
     item: FoodLogItemEntry,
     analysisStatus: PhotoAnalysisStatus?,
     onDelete: () -> Unit,
+    onClick: () -> Unit,
 ) {
     val timeLabel = item.loggedAt.atZone(ZoneId.systemDefault()).format(timeFormatter)
     val isPending = analysisStatus == PhotoAnalysisStatus.ScanningLabel ||
@@ -374,6 +381,7 @@ private fun FoodLogEntryListItem(
         analysisStatus == PhotoAnalysisStatus.Analyzing
 
     ListItem(
+        modifier = Modifier.clickable(onClick = onClick),
         headlineContent = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(timeLabel)

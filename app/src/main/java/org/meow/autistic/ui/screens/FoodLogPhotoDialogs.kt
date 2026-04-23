@@ -47,7 +47,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import org.meow.autistic.data.foodlog.FoodLogItemEntry
 import org.meow.autistic.data.photo.ParsedNutritionData
+import java.io.File
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 private val Double.fmt: String
     get() = when {
@@ -215,5 +219,70 @@ private fun NutritionPreviewRow(label: String, value: Double, unit: String, high
             style = MaterialTheme.typography.bodySmall,
             fontWeight = if (highlight) FontWeight.Bold else FontWeight.Medium,
         )
+    }
+}
+
+private val detailTimeFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy · h:mm a")
+
+@Composable
+internal fun FoodLogItemDetailDialog(item: FoodLogItemEntry, onDismiss: () -> Unit) {
+    val bitmap = remember(item.imagePath) {
+        val path = item.imagePath ?: return@remember null
+        val file = File(path)
+        if (!file.exists()) return@remember null
+        val degrees = ExifInterface(path).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL).let {
+            when (it) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+                ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+                ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+                else -> 0f
+            }
+        }
+        val raw = BitmapFactory.decodeFile(path, BitmapFactory.Options().apply { inSampleSize = 2 }) ?: return@remember null
+        if (degrees == 0f) raw.asImageBitmap()
+        else Bitmap.createBitmap(raw, 0, 0, raw.width, raw.height, Matrix().apply { postRotate(degrees) }, true)
+            .also { raw.recycle() }.asImageBitmap()
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+        title = { Text(item.loggedAt.atZone(ZoneId.systemDefault()).format(detailTimeFormatter)) },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap,
+                        contentDescription = "Food photo",
+                        modifier = Modifier.fillMaxWidth().height(200.dp),
+                        contentScale = ContentScale.Crop,
+                    )
+                }
+                if (item.description != null) {
+                    Text(item.description, style = MaterialTheme.typography.bodyMedium)
+                }
+                if (item.aiAnalysisResult != null) {
+                    Text(item.aiAnalysisResult, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                HorizontalDivider()
+                NutrientDetailRow("Calories", item.calories, " kcal", highlight = true)
+                NutrientDetailRow("Protein", item.protein, "g")
+                NutrientDetailRow("Total Fat", item.totalFat, "g")
+                NutrientDetailRow("Total Carbs", item.totalCarbs, "g")
+                NutrientDetailRow("  Fiber", item.fiber, "g")
+                NutrientDetailRow("  Total Sugars", item.totalSugars, "g")
+                NutrientDetailRow("  Added Sugars", item.addedSugars, "g")
+                NutrientDetailRow("  Sugar Alcohols", item.sugarAlcohols, "g")
+                NutrientDetailRow("Net Carbs", item.netCarbs, "g", highlight = true)
+            }
+        },
+    )
+}
+
+@Composable
+private fun NutrientDetailRow(label: String, value: Double, unit: String, highlight: Boolean = false) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, style = MaterialTheme.typography.bodySmall, fontWeight = if (highlight) FontWeight.SemiBold else FontWeight.Normal)
+        Text("${value.fmt}$unit", style = MaterialTheme.typography.bodySmall, fontWeight = if (highlight) FontWeight.Bold else FontWeight.Medium)
     }
 }
