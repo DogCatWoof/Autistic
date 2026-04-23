@@ -37,7 +37,6 @@
 - If the barcode is not in the local database, a "Product not found" message is shown
 - A "Scan again" button resets the camera
 - Camera permission is requested at runtime; if denied, an explanation and settings link are shown
-- Scan is unavailable until the product database has been populated at least once
 
 ### Notes
 - Users can create, edit, and delete free-form notes
@@ -56,11 +55,6 @@
 - Diagnostics: Query Log (database operation timings); Logcat viewer
 
 #### Sync Section (Settings)
-- Open Food Facts: "Sync Products" button downloads the full product database, decompresses on-device, parses each CSV row, and upserts `barcode → JSON` into the local product table
-- Products sync at most once per day and only on Wi-Fi
-- Progress is shown during sync ("Downloading…", "Importing X of Y rows…"); button is disabled while running
-- Last-synced timestamp is displayed on completion; errors show a retry option
-- Sync runs as a WorkManager task so it survives backgrounding
 - Google Tasks + Calendar sync: manual trigger and background schedule (see Sync Scheduling)
 - Daily Reset: shows last-run date and a manual "Run Now" button
 
@@ -154,14 +148,6 @@ Runs as a 4-step sequence (abort with retry if no valid token):
 ### Product Database
 - Separate `ProductDatabase` with a `ProductEntity` table: `barcode` (PK, text), `productJson` (text)
 - Lookups by exact barcode string; no full-text search required
-- Populated exclusively by the Open Food Facts sync worker
-
-### Open Food Facts Sync Worker
-- `CoroutineWorker` managed by WorkManager (one-time, on-demand)
-- Streams `.csv.gz` via HTTP GET through `GZIPInputStream` (no intermediate disk write)
-- Parses CSV line-by-line; first line = header; each data row upserted as `barcode → JSON` map
-- Rows with blank `code` are skipped; upserts batched (~500 rows per transaction)
-- Progress reported via `setProgress`; completion timestamp stored in DataStore
 
 ### Backup & Restore
 - Backup: WAL checkpoint → AES-256-GCM encrypt (Android Keystore key) → upload SQLite file to Google Drive as `autistic_db_backup.enc`; timestamp stored in DataStore
