@@ -179,8 +179,8 @@ internal fun NutritionLabelServingsDialog(
                 NutritionPreviewRow("Net Carbs", netCarbs, "g", highlight = true)
             }
         },
-        confirmButton = { TextButton(onClick = { onConfirm(servings) }) { Text("Add") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { TextButton(onClick = { onConfirm(servings) }) { Text("Accept") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Retry") } },
     )
 }
 

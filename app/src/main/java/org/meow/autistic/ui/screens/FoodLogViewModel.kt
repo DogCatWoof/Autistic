@@ -7,6 +7,7 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import org.meow.autistic.data.debug.ExceptionReporter
 import org.meow.autistic.data.foodlog.FoodLogEntry
 import org.meow.autistic.data.foodlog.FoodLogItemEntry
 import org.meow.autistic.data.foodlog.FoodLogRepository
@@ -46,9 +48,11 @@ enum class PhotoAnalysisStatus { ScanningLabel, Queued, Analyzing, Done, Failed 
 class FoodLogViewModel(
     private val repository: FoodLogRepository,
     private val claudeClient: ClaudeVisionClient,
+    private val exceptionReporter: ExceptionReporter,
     application: Application,
 ) : AndroidViewModel(application) {
 
+    private val handler = CoroutineExceptionHandler { _, e -> exceptionReporter.report(e) }
     private val connectivityManager = application.getSystemService(ConnectivityManager::class.java)
 
     private val _date = MutableStateFlow(LocalDate.now().toString())
@@ -79,26 +83,26 @@ class FoodLogViewModel(
     val photoAnalysisStatuses: StateFlow<Map<Long, PhotoAnalysisStatus>> = _photoAnalysisStatuses.asStateFlow()
 
     init {
-        viewModelScope.launch { requeuePendingItems() }
+        viewModelScope.launch(handler) { requeuePendingItems() }
     }
 
     fun previousDay() { _date.value = LocalDate.parse(_date.value).minusDays(1).toString() }
     fun nextDay() { _date.value = LocalDate.parse(_date.value).plusDays(1).toString() }
 
     fun addItem(item: FoodLogItemEntry) {
-        viewModelScope.launch {
+        viewModelScope.launch(handler) {
             repository.insertItem(item.copy(id = 0, date = _date.value, loggedAt = Instant.now()))
         }
     }
 
     fun deleteItem(item: FoodLogItemEntry) {
-        viewModelScope.launch { repository.deleteItem(item) }
+        viewModelScope.launch(handler) { repository.deleteItem(item) }
     }
 
     // ── Path 1: Nutrition label ─────────────────────────────────────────────
 
     fun startLabelAnalysis(imagePath: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(handler) {
             val itemId = repository.insertItem(FoodLogItemEntry(
                 date = _date.value,
                 loggedAt = Instant.now(),
@@ -127,54 +131,39 @@ class FoodLogViewModel(
             else -> return
         }
         _photoAnalysisStatuses.update { it - itemId }
-        viewModelScope.launch {
-            val item = repository.getItemById(itemId) ?: return@launch
+        viewModelScope.launch(handler) {
+            val item = repository.getItemById(itemId) ?: return@launch  // already deleted, nothing to do
             if (item.calories == 0.0) repository.deleteItem(item)
         }
     }
 
     fun saveLabelEntry(data: ParsedNutritionData, servings: Double, itemId: Long, imagePath: String) {
         val s = servings.coerceAtLeast(0.0)
-        viewModelScope.launch {
-            val existing = repository.getItemById(itemId)
-            if (existing != null) {
-                repository.updateItem(existing.copy(
-                    description = null,
-                    imagePath = imagePath,
-                    isAiPending = false,
-                    calories = data.calories * s,
-                    protein = data.protein * s,
-                    totalFat = data.totalFat * s,
-                    totalCarbs = data.totalCarbs * s,
-                    fiber = data.fiber * s,
-                    totalSugars = data.totalSugars * s,
-                    addedSugars = data.addedSugars * s,
-                    sugarAlcohols = data.sugarAlcohols * s,
-                ))
-            } else {
-                repository.insertItem(FoodLogItemEntry(
-                    date = _date.value,
-                    loggedAt = Instant.now(),
-                    imagePath = imagePath,
-                    calories = data.calories * s,
-                    protein = data.protein * s,
-                    totalFat = data.totalFat * s,
-                    totalCarbs = data.totalCarbs * s,
-                    fiber = data.fiber * s,
-                    totalSugars = data.totalSugars * s,
-                    addedSugars = data.addedSugars * s,
-                    sugarAlcohols = data.sugarAlcohols * s,
-                ))
-            }
-        }
         _photoAnalysisStatuses.update { it - itemId }
         _labelAnalysisState.value = LabelAnalysisState.Idle
+        viewModelScope.launch(handler) {
+            val existing = repository.getItemById(itemId)
+                ?: throw IllegalStateException("Food log item $itemId not found after label scan")
+            repository.updateItem(existing.copy(
+                description = null,
+                imagePath = imagePath,
+                isAiPending = false,
+                calories = data.calories * s,
+                protein = data.protein * s,
+                totalFat = data.totalFat * s,
+                totalCarbs = data.totalCarbs * s,
+                fiber = data.fiber * s,
+                totalSugars = data.totalSugars * s,
+                addedSugars = data.addedSugars * s,
+                sugarAlcohols = data.sugarAlcohols * s,
+            ))
+        }
     }
 
     // ── Path 2: Food photo AI analysis ─────────────────────────────────────
 
     fun queueFoodPhotoItem(imagePath: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(handler) {
             val id = repository.insertItem(FoodLogItemEntry(
                 date = _date.value,
                 loggedAt = Instant.now(),
@@ -187,7 +176,7 @@ class FoodLogViewModel(
 
     private fun launchPhotoAnalysis(itemId: Long, imagePath: String) {
         _photoAnalysisStatuses.update { it + (itemId to PhotoAnalysisStatus.Queued) }
-        viewModelScope.launch { processPhotoAnalysis(itemId, imagePath) }
+        viewModelScope.launch(handler) { processPhotoAnalysis(itemId, imagePath) }
     }
 
     private suspend fun processPhotoAnalysis(itemId: Long, imagePath: String) {

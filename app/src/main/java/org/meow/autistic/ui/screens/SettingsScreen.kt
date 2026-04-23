@@ -24,6 +24,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -46,6 +47,7 @@ import org.meow.autistic.data.auth.GoogleAuthManager
 import org.meow.autistic.data.auth.TokenStore
 import org.meow.autistic.data.backup.DriveBackupService
 import org.meow.autistic.data.backup.RestoreResult
+import org.meow.autistic.data.debug.DebugSettings
 import org.meow.autistic.showNotification
 
 /**
@@ -291,6 +293,7 @@ private fun SettingsMainList(
         )
         HorizontalDivider()
         SettingsSectionLabel("Diagnostics")
+        DebugModeItem()
         ListItem(
             headlineContent = { Text("Query Log") },
             supportingContent = { Text("Recent database query timings") },
@@ -344,6 +347,25 @@ private fun LogcatDialog(onDismiss: () -> Unit) {
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+    )
+}
+
+@Composable
+private fun DebugModeItem() {
+    val debugSettings: DebugSettings = koinInject()
+    var checked by remember { mutableStateOf(debugSettings.isDebugEnabled) }
+    ListItem(
+        headlineContent = { Text("Debug Mode") },
+        supportingContent = { Text("Show exception toasts when errors occur") },
+        trailingContent = {
+            Switch(
+                checked = checked,
+                onCheckedChange = { enabled ->
+                    checked = enabled
+                    debugSettings.isDebugEnabled = enabled
+                },
+            )
+        },
     )
 }
 

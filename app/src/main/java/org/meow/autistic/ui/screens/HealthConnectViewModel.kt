@@ -2,12 +2,14 @@ package org.meow.autistic.ui.screens
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.meow.autistic.data.debug.ExceptionReporter
 import org.meow.autistic.data.health.HealthConnectRepository
 import org.meow.autistic.data.health.HealthSnapshotEntity
 import java.time.LocalDate
@@ -16,7 +18,10 @@ import java.time.format.DateTimeFormatter
 /** Exposes Health Connect status and today's snapshot for the settings screen. */
 class HealthConnectViewModel(
     private val repository: HealthConnectRepository,
+    private val exceptionReporter: ExceptionReporter,
 ) : ViewModel() {
+
+    private val handler = CoroutineExceptionHandler { _, e -> exceptionReporter.report(e) }
 
     private val _sdkStatus = MutableStateFlow(repository.getSdkStatus())
     val sdkStatus: StateFlow<Int> = _sdkStatus.asStateFlow()
@@ -38,20 +43,17 @@ class HealthConnectViewModel(
     }
 
     fun checkPermissions() {
-        viewModelScope.launch {
+        viewModelScope.launch(handler) {
             _sdkStatus.value = repository.getSdkStatus()
             _grantedPermissions.value = repository.getGrantedPermissions()
         }
     }
 
     fun refreshSnapshot() {
-        viewModelScope.launch {
+        viewModelScope.launch(handler) {
             _isRefreshing.value = true
-            runCatching { repository.refreshTodaySnapshot() }
+            repository.refreshTodaySnapshot()
             _isRefreshing.value = false
         }
     }
-
-    private fun todayKey(): String =
-        LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
 }
