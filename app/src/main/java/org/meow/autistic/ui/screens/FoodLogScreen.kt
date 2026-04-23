@@ -1,9 +1,14 @@
 package org.meow.autistic.ui.screens
 
 import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -82,6 +87,18 @@ import java.time.format.FormatStyle
 
 private val timeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 
+/** Explicit URI grant required from Android 18+; implicit grants via EXTRA_OUTPUT are deprecated. */
+private class TakePictureWithGrant : ActivityResultContract<Uri, Boolean>() {
+    override fun createIntent(context: Context, input: Uri): Intent =
+        Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+            putExtra(MediaStore.EXTRA_OUTPUT, input)
+            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+    override fun parseResult(resultCode: Int, intent: Intent?): Boolean =
+        resultCode == Activity.RESULT_OK
+}
+
 /** At most 4 characters: whole number up to 9999, one decimal up to 999.9, no decimals above that. */
 private val Double.fmt: String
     get() = when {
@@ -103,7 +120,7 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
     var previewUri by remember { mutableStateOf<Uri?>(null) }
     val fabRotation by animateFloatAsState(targetValue = if (fabExpanded) 45f else 0f, label = "fab_rotation")
 
-    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { captured ->
+    val cameraLauncher = rememberLauncherForActivityResult(TakePictureWithGrant()) { captured ->
         if (captured) {
             previewUri = pendingCameraUri
             fabExpanded = false
