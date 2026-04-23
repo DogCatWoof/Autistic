@@ -8,7 +8,7 @@ class DebugSettings(context: Context) {
     private val prefs = context.getSharedPreferences("debug_settings", Context.MODE_PRIVATE)
 
     var isDebugEnabled: Boolean
-        get() = prefs.getBoolean(KEY_DEBUG, false)
+        get() = prefs.getBoolean(KEY_DEBUG, true)
         set(value) { prefs.edit { putBoolean(KEY_DEBUG, value) } }
 
     private companion object {
