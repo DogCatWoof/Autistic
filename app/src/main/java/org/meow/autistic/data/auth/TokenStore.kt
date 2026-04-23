@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.core.content.edit
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import java.io.File
 
 /**
  * Encrypted storage for OAuth tokens and account identity.
@@ -27,36 +28,43 @@ class TokenStore(private val prefs: SharedPreferences) {
 
         /** Creates the production [TokenStore] backed by [EncryptedSharedPreferences]. */
         fun create(context: Context): TokenStore {
-            val masterKey = MasterKey.Builder(context)
-                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                .build()
-
             return try {
-                createEncryptedPrefs(context, masterKey)
+                createEncryptedPrefs(context)
             } catch (e: Exception) {
-                // Handle potential KeyStore corruption (AEADBadTagException etc.)
-                // by clearing the file and retrying once.
-                Log.e(TAG, "Failed to create EncryptedSharedPreferences, retrying...", e)
-                context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE).edit(commit = true) {
-                    clear()
-                }
-                
+                // AEADBadTagException / VERIFICATION_FAILED means the Tink keyset in the prefs
+                // was encrypted with a different or now-invalid KeyStore key (e.g. app reinstall
+                // with data retained, signing key change, or biometric enrollment change).
+                // Delete the prefs file from disk and rebuild everything from scratch.
+                Log.e(TAG, "EncryptedSharedPreferences corrupted — wiping and retrying", e)
+                deletePrefsFile(context)
                 try {
-                    createEncryptedPrefs(context, masterKey)
+                    createEncryptedPrefs(context)
                 } catch (e2: Exception) {
-                    Log.e(TAG, "Failed to create EncryptedSharedPreferences after clear, falling back to plaintext", e2)
+                    Log.e(TAG, "EncryptedSharedPreferences still failing after wipe — falling back to plaintext", e2)
                     TokenStore(context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE))
                 }
             }
         }
 
-        private fun createEncryptedPrefs(context: Context, masterKey: MasterKey): TokenStore {
+        private fun deletePrefsFile(context: Context) {
+            runCatching {
+                // Delete the XML on disk so Android has no cached bad state.
+                File(context.applicationInfo.dataDir, "shared_prefs/$FILE_NAME.xml").delete()
+                // Also clear the in-memory SharedPreferences cache.
+                context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE).edit(commit = true) { clear() }
+            }
+        }
+
+        private fun createEncryptedPrefs(context: Context): TokenStore {
+            val masterKey = MasterKey.Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
             val encryptedPrefs = EncryptedSharedPreferences.create(
                 context,
                 FILE_NAME,
                 masterKey,
                 EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
             )
             return TokenStore(encryptedPrefs)
         }

@@ -34,11 +34,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -172,7 +177,7 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
                 data = state.data,
                 imagePath = state.imagePath,
                 onDismiss = viewModel::dismissLabelAnalysis,
-                onConfirm = { servings -> viewModel.saveLabelEntry(state.data, servings, state.imagePath) },
+                onConfirm = { servings -> viewModel.saveLabelEntry(state.data, servings, state.itemId, state.imagePath) },
             )
         is LabelAnalysisState.Error ->
             NutritionLabelErrorDialog(
@@ -382,22 +387,64 @@ private fun FoodLogEntryListItem(
     onDelete: () -> Unit,
 ) {
     val timeLabel = item.loggedAt.atZone(ZoneId.systemDefault()).format(timeFormatter)
-    val summaryLine = buildString {
-        if (item.description != null) append("${item.description} · ")
-        when {
-            analysisStatus == PhotoAnalysisStatus.Analyzing -> append("Analyzing... · ")
-            analysisStatus == PhotoAnalysisStatus.Queued || item.isAiPending -> append("Queued for WiFi · ")
-            item.imagePath != null && item.aiAnalysisResult == null -> append("📷 · ")
-            else -> {}
-        }
-        append("${item.calories.fmt} kcal · ${item.netCarbs.fmt}g net carbs")
-    }
+    val isPending = analysisStatus == PhotoAnalysisStatus.ScanningLabel ||
+        analysisStatus == PhotoAnalysisStatus.Queued ||
+        analysisStatus == PhotoAnalysisStatus.Analyzing
 
     ListItem(
-        headlineContent = { Text(timeLabel) },
+        headlineContent = {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(timeLabel)
+                if (item.imagePath != null) {
+                    Icon(
+                        Icons.Default.CameraAlt,
+                        contentDescription = "Photo entry",
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        },
         supportingContent = {
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(summaryLine)
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                when (analysisStatus) {
+                    PhotoAnalysisStatus.ScanningLabel -> PhotoStatusRow(
+                        icon = { CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp) },
+                        text = "Reading nutrition label…",
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    PhotoAnalysisStatus.Queued -> PhotoStatusRow(
+                        icon = { Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        text = "Waiting for WiFi to analyze",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    PhotoAnalysisStatus.Analyzing -> PhotoStatusRow(
+                        icon = { CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp) },
+                        text = "Analyzing photo…",
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    PhotoAnalysisStatus.Done -> PhotoStatusRow(
+                        icon = { Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary) },
+                        text = "Analysis complete",
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    PhotoAnalysisStatus.Failed -> PhotoStatusRow(
+                        icon = { Icon(Icons.Default.ErrorOutline, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.error) },
+                        text = "Analysis failed",
+                        tint = MaterialTheme.colorScheme.error,
+                    )
+                    null -> {}
+                }
+                if (item.description != null && !isPending) {
+                    Text(item.description, style = MaterialTheme.typography.bodySmall)
+                }
+                if (!isPending) {
+                    Text(
+                        "${item.calories.fmt} kcal · ${item.netCarbs.fmt}g net carbs",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 if (item.aiAnalysisResult != null) {
                     Text(
                         text = item.aiAnalysisResult,
@@ -415,6 +462,18 @@ private fun FoodLogEntryListItem(
             }
         },
     )
+}
+
+@Composable
+private fun PhotoStatusRow(
+    icon: @Composable () -> Unit,
+    text: String,
+    tint: androidx.compose.ui.graphics.Color,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        icon()
+        Text(text, style = MaterialTheme.typography.bodySmall, color = tint)
+    }
 }
 
 @Composable

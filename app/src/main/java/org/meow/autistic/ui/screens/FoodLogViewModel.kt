@@ -30,12 +30,12 @@ import kotlin.coroutines.resume
 
 sealed class LabelAnalysisState {
     object Idle : LabelAnalysisState()
-    object Loading : LabelAnalysisState()
-    data class Ready(val data: ParsedNutritionData, val imagePath: String) : LabelAnalysisState()
-    data class Error(val imagePath: String) : LabelAnalysisState()
+    data class Loading(val itemId: Long, val imagePath: String) : LabelAnalysisState()
+    data class Ready(val data: ParsedNutritionData, val itemId: Long, val imagePath: String) : LabelAnalysisState()
+    data class Error(val itemId: Long, val imagePath: String) : LabelAnalysisState()
 }
 
-enum class PhotoAnalysisStatus { Queued, Analyzing, Done, Failed }
+enum class PhotoAnalysisStatus { ScanningLabel, Queued, Analyzing, Done, Failed }
 
 /**
  * ViewModel for the food log daily tracker.
@@ -98,36 +98,76 @@ class FoodLogViewModel(
     // ── Path 1: Nutrition label ─────────────────────────────────────────────
 
     fun startLabelAnalysis(imagePath: String) {
-        _labelAnalysisState.value = LabelAnalysisState.Loading
         viewModelScope.launch {
+            val itemId = repository.insertItem(FoodLogItemEntry(
+                date = _date.value,
+                loggedAt = Instant.now(),
+                imagePath = imagePath,
+                description = "Scanning nutrition label…",
+                isAiPending = true,
+            ))
+            _photoAnalysisStatuses.update { it + (itemId to PhotoAnalysisStatus.ScanningLabel) }
+            _labelAnalysisState.value = LabelAnalysisState.Loading(itemId, imagePath)
             val data = claudeClient.analyzeNutritionLabel(imagePath)
             _labelAnalysisState.value = if (data != null) {
-                LabelAnalysisState.Ready(data, imagePath)
+                LabelAnalysisState.Ready(data, itemId, imagePath)
             } else {
-                LabelAnalysisState.Error(imagePath)
+                LabelAnalysisState.Error(itemId, imagePath)
             }
         }
     }
 
-    fun dismissLabelAnalysis() { _labelAnalysisState.value = LabelAnalysisState.Idle }
+    fun dismissLabelAnalysis() {
+        val state = _labelAnalysisState.value
+        _labelAnalysisState.value = LabelAnalysisState.Idle
+        val itemId = when (state) {
+            is LabelAnalysisState.Loading -> state.itemId
+            is LabelAnalysisState.Ready -> state.itemId
+            is LabelAnalysisState.Error -> state.itemId
+            else -> return
+        }
+        _photoAnalysisStatuses.update { it - itemId }
+        viewModelScope.launch {
+            val item = repository.getItemById(itemId) ?: return@launch
+            if (item.calories == 0.0) repository.deleteItem(item)
+        }
+    }
 
-    fun saveLabelEntry(data: ParsedNutritionData, servings: Double, imagePath: String) {
+    fun saveLabelEntry(data: ParsedNutritionData, servings: Double, itemId: Long, imagePath: String) {
         val s = servings.coerceAtLeast(0.0)
         viewModelScope.launch {
-            repository.insertItem(FoodLogItemEntry(
-                date = _date.value,
-                loggedAt = Instant.now(),
-                imagePath = imagePath,
-                calories = data.calories * s,
-                protein = data.protein * s,
-                totalFat = data.totalFat * s,
-                totalCarbs = data.totalCarbs * s,
-                fiber = data.fiber * s,
-                totalSugars = data.totalSugars * s,
-                addedSugars = data.addedSugars * s,
-                sugarAlcohols = data.sugarAlcohols * s,
-            ))
+            val existing = repository.getItemById(itemId)
+            if (existing != null) {
+                repository.updateItem(existing.copy(
+                    description = null,
+                    imagePath = imagePath,
+                    isAiPending = false,
+                    calories = data.calories * s,
+                    protein = data.protein * s,
+                    totalFat = data.totalFat * s,
+                    totalCarbs = data.totalCarbs * s,
+                    fiber = data.fiber * s,
+                    totalSugars = data.totalSugars * s,
+                    addedSugars = data.addedSugars * s,
+                    sugarAlcohols = data.sugarAlcohols * s,
+                ))
+            } else {
+                repository.insertItem(FoodLogItemEntry(
+                    date = _date.value,
+                    loggedAt = Instant.now(),
+                    imagePath = imagePath,
+                    calories = data.calories * s,
+                    protein = data.protein * s,
+                    totalFat = data.totalFat * s,
+                    totalCarbs = data.totalCarbs * s,
+                    fiber = data.fiber * s,
+                    totalSugars = data.totalSugars * s,
+                    addedSugars = data.addedSugars * s,
+                    sugarAlcohols = data.sugarAlcohols * s,
+                ))
+            }
         }
+        _photoAnalysisStatuses.update { it - itemId }
         _labelAnalysisState.value = LabelAnalysisState.Idle
     }
 
