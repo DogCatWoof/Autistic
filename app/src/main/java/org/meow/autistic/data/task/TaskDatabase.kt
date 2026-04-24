@@ -31,7 +31,7 @@ class InstantConverter {
 
 @Database(
     entities = [TaskEntity::class, CalendarEventEntity::class, DailyTaskEntity::class, NoteEntity::class, MoodEntity::class, FoodLogEntry::class, FoodLogItemEntry::class, HealthSnapshotEntity::class],
-    version = 11,
+    version = 12,
     exportSchema = false,
 )
 @TypeConverters(InstantConverter::class)

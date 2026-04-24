@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -155,7 +156,7 @@ fun TaskListScreen(
         when (addType) {
             AddType.Task -> AddTaskDialog(
                 onDismiss = { addType = null },
-                onConfirm = { task, dueAt, reminderMinutesBefore, notes, expectedTime ->
+                onConfirm = { task, dueAt, reminderMinutesBefore, notes, expectedTime, isImportant, isRequired ->
                     viewModel.insert(
                         TaskEntity(
                             task = task,
@@ -167,6 +168,8 @@ fun TaskListScreen(
                             createdAt = Instant.now(),
                             syncStatus = "local",
                             expectedTimeMinutes = expectedTime,
+                            isImportant = isImportant,
+                            isRequired = isRequired,
                         )
                     )
                     addType = null
@@ -220,13 +223,15 @@ fun TaskListScreen(
             EditTaskDialog(
                 task = task,
                 onDismiss = { selectedTask = null },
-                onSave = { taskText, reminderMinutesBefore, notes, expectedTime ->
+                onSave = { taskText, reminderMinutesBefore, notes, expectedTime, isImportant, isRequired ->
                     viewModel.update(task.copy(
                         task = taskText,
                         reminderSet = reminderMinutesBefore != null,
                         reminderMinutesBefore = reminderMinutesBefore,
                         notes = notes,
                         expectedTimeMinutes = expectedTime,
+                        isImportant = isImportant,
+                        isRequired = isRequired,
                     ))
                     selectedTask = null
                 },
@@ -326,15 +331,22 @@ fun TaskListItemRow(
     onTaskClick: (TaskEntity) -> Unit,
     onEventClick: (CalendarEventEntity) -> Unit,
 ) {
+    val now = Instant.now()
+    val bgColor = resolveItemColor(item, now)
+    val icon = resolveItemIcon(item)
     when (item) {
         is TaskListItem.Task -> TaskItem(
             task = item.entity,
+            backgroundColor = bgColor,
+            leadingIcon = icon,
             onToggle = { viewModel.update(item.entity.copy(isCompleted = it)) },
             onDelete = { viewModel.delete(item.entity) },
             onClick = { onTaskClick(item.entity) },
         )
         is TaskListItem.Event -> CalendarEventItem(
             event = item.entity,
+            backgroundColor = bgColor,
+            leadingIcon = icon,
             viewModel = viewModel,
             onClick = { onEventClick(item.entity) },
         )
@@ -343,7 +355,13 @@ fun TaskListItemRow(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalendarEventItem(event: CalendarEventEntity, viewModel: TaskViewModel, onClick: () -> Unit = {}) {
+fun CalendarEventItem(
+    event: CalendarEventEntity,
+    viewModel: TaskViewModel,
+    backgroundColor: Color = Color.Unspecified,
+    leadingIcon: ImageVector,
+    onClick: () -> Unit = {},
+) {
     val dateFormatter = remember { SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()) }
     val dimColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
 
@@ -383,13 +401,21 @@ fun CalendarEventItem(event: CalendarEventEntity, viewModel: TaskViewModel, onCl
         }
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)
+            modifier = Modifier.fillMaxWidth()
+                .background(if (backgroundColor == Color.Unspecified) MaterialTheme.colorScheme.surface else backgroundColor)
                 .clickable { onClick() }
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp).fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                Icon(
+                    leadingIcon,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp).padding(end = 0.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.width(12.dp))
                 Column {
                     Text(event.title, style = MaterialTheme.typography.bodyLarge)
                     if (event.isAllDay) {
@@ -413,7 +439,14 @@ fun CalendarEventItem(event: CalendarEventEntity, viewModel: TaskViewModel, onCl
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TaskItem(task: TaskEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit, onClick: () -> Unit) {
+fun TaskItem(
+    task: TaskEntity,
+    backgroundColor: Color = Color.Unspecified,
+    leadingIcon: ImageVector,
+    onToggle: (Boolean) -> Unit,
+    onDelete: () -> Unit,
+    onClick: () -> Unit,
+) {
     val dateFormatter = remember { SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()) }
     val dimColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
 
@@ -455,7 +488,7 @@ fun TaskItem(task: TaskEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)
+                .background(if (backgroundColor == Color.Unspecified) MaterialTheme.colorScheme.surface else backgroundColor)
                 .clickable { onClick() }
         ) {
             Row(
@@ -465,6 +498,13 @@ fun TaskItem(task: TaskEntity, onToggle: (Boolean) -> Unit, onDelete: () -> Unit
                 verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
+                Icon(
+                    leadingIcon,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp).padding(top = 2.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                     Text(
                         text = task.task,
@@ -624,13 +664,15 @@ private fun AddCalendarEventDialog(
 @Composable
 fun AddTaskDialog(
     onDismiss: () -> Unit,
-    onConfirm: (String, Instant?, Int?, String?, Int?) -> Unit,
+    onConfirm: (String, Instant?, Int?, String?, Int?, Boolean, Boolean) -> Unit,
 ) {
     var taskText by remember { mutableStateOf("") }
     var notesText by remember { mutableStateOf("") }
     var expectedTimeText by remember { mutableStateOf("") }
     var reminderEnabled by remember { mutableStateOf(false) }
     var reminderMinutesText by remember { mutableStateOf("15") }
+    var isImportant by remember { mutableStateOf(false) }
+    var isRequired by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -679,13 +721,21 @@ fun AddTaskDialog(
                         singleLine = true,
                     )
                 }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Switch(checked = isImportant, onCheckedChange = { isImportant = it })
+                    Text("Important")
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Switch(checked = isRequired, onCheckedChange = { isRequired = it })
+                    Text("Required")
+                }
             }
         },
         confirmButton = {
             TextButton(
                 onClick = {
                     val reminder = if (reminderEnabled) reminderMinutesText.toIntOrNull() ?: 15 else null
-                    onConfirm(taskText, null, reminder, notesText.takeIf { it.isNotBlank() }, expectedTimeText.toIntOrNull())
+                    onConfirm(taskText, null, reminder, notesText.takeIf { it.isNotBlank() }, expectedTimeText.toIntOrNull(), isImportant, isRequired)
                 },
                 enabled = taskText.isNotBlank(),
             ) { Text("Save") }
@@ -740,7 +790,7 @@ fun CalendarEventDialog(
 fun EditTaskDialog(
     task: TaskEntity,
     onDismiss: () -> Unit,
-    onSave: (String, Int?, String?, Int?) -> Unit,
+    onSave: (String, Int?, String?, Int?, Boolean, Boolean) -> Unit,
     onComplete: () -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -750,6 +800,8 @@ fun EditTaskDialog(
     val initialReminderEnabled = task.reminderMinutesBefore != null || task.reminderSet
     var reminderEnabled by remember { mutableStateOf(initialReminderEnabled) }
     var reminderMinutesText by remember { mutableStateOf(task.reminderMinutesBefore?.toString() ?: "15") }
+    var isImportant by remember { mutableStateOf(task.isImportant) }
+    var isRequired by remember { mutableStateOf(task.isRequired) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -798,13 +850,21 @@ fun EditTaskDialog(
                         singleLine = true,
                     )
                 }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Switch(checked = isImportant, onCheckedChange = { isImportant = it })
+                    Text("Important")
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Switch(checked = isRequired, onCheckedChange = { isRequired = it })
+                    Text("Required")
+                }
             }
         },
         confirmButton = {
             TextButton(
                 onClick = {
                     val reminder = if (reminderEnabled) reminderMinutesText.toIntOrNull() ?: 15 else null
-                    onSave(taskText, reminder, notesText.takeIf { it.isNotBlank() }, expectedTimeText.toIntOrNull())
+                    onSave(taskText, reminder, notesText.takeIf { it.isNotBlank() }, expectedTimeText.toIntOrNull(), isImportant, isRequired)
                 },
                 enabled = taskText.isNotBlank(),
             ) { Text("Save") }

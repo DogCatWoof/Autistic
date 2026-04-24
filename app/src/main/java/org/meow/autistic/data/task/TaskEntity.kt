@@ -30,4 +30,8 @@ data class TaskEntity(
     val expectedTimeMinutes: Int? = null,
     /** Minutes before [dueAt] to fire a reminder. Null means no reminder scheduled. */
     val reminderMinutesBefore: Int? = null,
+    /** Marks the task as high-priority; drives amber coloring and star icon. */
+    val isImportant: Boolean = false,
+    /** Marks the task as required; drives purple coloring and flag icon. */
+    val isRequired: Boolean = false,
 )

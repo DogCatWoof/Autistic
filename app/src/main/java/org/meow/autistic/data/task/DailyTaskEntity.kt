@@ -20,4 +20,6 @@ data class DailyTaskEntity(
     val timeMinutes: Int? = null,
     /** Expected duration in minutes. Null means no estimate. */
     val expectedTimeMinutes: Int? = null,
+    /** Propagated to each generated [TaskEntity] instance. */
+    val isRequired: Boolean = false,
 )

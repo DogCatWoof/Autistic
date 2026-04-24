@@ -38,6 +38,7 @@ fun DailyTaskDialog(
     var hour by remember { mutableIntStateOf(initial?.timeMinutes?.div(60) ?: 8) }
     var minute by remember { mutableIntStateOf(initial?.timeMinutes?.rem(60) ?: 0) }
     var expectedTimeText by remember { mutableStateOf(initial?.expectedTimeMinutes?.toString() ?: "") }
+    var isRequired by remember { mutableStateOf(initial?.isRequired ?: false) }
 
     val timeMinutes = if (hasTime) hour * 60 + minute else null
     val canSave = title.isNotBlank()
@@ -95,6 +96,13 @@ fun DailyTaskDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Switch(checked = isRequired, onCheckedChange = { isRequired = it })
+                    Text("Required")
+                }
             }
         },
         confirmButton = {
@@ -106,6 +114,7 @@ fun DailyTaskDialog(
                             title = title,
                             timeMinutes = timeMinutes,
                             expectedTimeMinutes = expectedTimeText.toIntOrNull(),
+                            isRequired = isRequired,
                         )
                     )
                 },
