@@ -145,7 +145,7 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
                 data = state.data,
                 imagePath = state.imagePath,
                 onDismiss = viewModel::dismissLabelAnalysis,
-                onConfirm = { servings -> viewModel.saveLabelEntry(state.data, servings, state.itemId, state.imagePath) },
+                onConfirm = { data, servings -> viewModel.saveLabelEntry(data, servings, state.itemId, state.imagePath) },
             )
         is LabelAnalysisState.Error ->
             NutritionLabelErrorDialog(
@@ -164,7 +164,7 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
                 imagePath = state.imagePath,
                 title = state.data.description ?: "Food Photo",
                 onDismiss = viewModel::dismissFoodPhotoAnalysis,
-                onConfirm = { servings -> viewModel.saveFoodPhotoEntry(state.data, servings, state.itemId) },
+                onConfirm = { data, servings -> viewModel.saveFoodPhotoEntry(data, servings, state.itemId) },
             )
         is FoodPhotoAnalysisState.Error ->
             NutritionLabelErrorDialog(

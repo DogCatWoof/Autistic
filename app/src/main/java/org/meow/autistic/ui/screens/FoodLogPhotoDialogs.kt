@@ -157,10 +157,18 @@ internal fun NutritionLabelServingsDialog(
     imagePath: String,
     title: String = "Nutrition Label",
     onDismiss: () -> Unit,
-    onConfirm: (servings: Double) -> Unit,
+    onConfirm: (data: ParsedNutritionData, servings: Double) -> Unit,
 ) {
     var servingsText by remember { mutableStateOf("1") }
     val servings by remember { derivedStateOf { servingsText.toDoubleOrNull()?.coerceAtLeast(0.0) ?: 1.0 } }
+    var caloriesText by remember { mutableStateOf(data.calories.fmt) }
+    var proteinText by remember { mutableStateOf(data.protein.fmt) }
+    var totalFatText by remember { mutableStateOf(data.totalFat.fmt) }
+    var totalCarbsText by remember { mutableStateOf(data.totalCarbs.fmt) }
+    var fiberText by remember { mutableStateOf(data.fiber.fmt) }
+    var totalSugarsText by remember { mutableStateOf(data.totalSugars.fmt) }
+    var addedSugarsText by remember { mutableStateOf(data.addedSugars.fmt) }
+    var sugarAlcoholsText by remember { mutableStateOf(data.sugarAlcohols.fmt) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -189,19 +197,40 @@ internal fun NutritionLabelServingsDialog(
                     )
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                NutritionPreviewRow("Calories", data.calories * servings, "kcal")
-                NutritionPreviewRow("Protein", data.protein * servings, "g")
-                NutritionPreviewRow("Total Fat", data.totalFat * servings, "g")
-                NutritionPreviewRow("Total Carbs", data.totalCarbs * servings, "g")
-                NutritionPreviewRow("Fiber", data.fiber * servings, "g")
-                NutritionPreviewRow("Total Sugars", data.totalSugars * servings, "g")
-                NutritionPreviewRow("Added Sugars", data.addedSugars * servings, "g")
-                NutritionPreviewRow("Sugar Alcohols", data.sugarAlcohols * servings, "g")
-                val netCarbs = ((data.totalCarbs - data.fiber - data.sugarAlcohols) * servings).coerceAtLeast(0.0)
+                NutritionEditRow("Calories", caloriesText, "kcal") { caloriesText = it }
+                NutritionEditRow("Protein", proteinText, "g") { proteinText = it }
+                NutritionEditRow("Total Fat", totalFatText, "g") { totalFatText = it }
+                NutritionEditRow("Total Carbs", totalCarbsText, "g") { totalCarbsText = it }
+                NutritionEditRow("Fiber", fiberText, "g") { fiberText = it }
+                NutritionEditRow("Total Sugars", totalSugarsText, "g") { totalSugarsText = it }
+                NutritionEditRow("Added Sugars", addedSugarsText, "g") { addedSugarsText = it }
+                NutritionEditRow("Sugar Alcohols", sugarAlcoholsText, "g") { sugarAlcoholsText = it }
+                val netCarbs = run {
+                    val tc = totalCarbsText.toDoubleOrNull() ?: 0.0
+                    val f = fiberText.toDoubleOrNull() ?: 0.0
+                    val sa = sugarAlcoholsText.toDoubleOrNull() ?: 0.0
+                    ((tc - f - sa) * servings).coerceAtLeast(0.0)
+                }
                 NutritionPreviewRow("Net Carbs", netCarbs, "g", highlight = true)
             }
         },
-        confirmButton = { TextButton(onClick = { onConfirm(servings) }) { Text("Accept") } },
+        confirmButton = {
+            TextButton(onClick = {
+                onConfirm(
+                    data.copy(
+                        calories = caloriesText.toDoubleOrNull() ?: data.calories,
+                        protein = proteinText.toDoubleOrNull() ?: data.protein,
+                        totalFat = totalFatText.toDoubleOrNull() ?: data.totalFat,
+                        totalCarbs = totalCarbsText.toDoubleOrNull() ?: data.totalCarbs,
+                        fiber = fiberText.toDoubleOrNull() ?: data.fiber,
+                        totalSugars = totalSugarsText.toDoubleOrNull() ?: data.totalSugars,
+                        addedSugars = addedSugarsText.toDoubleOrNull() ?: data.addedSugars,
+                        sugarAlcohols = sugarAlcoholsText.toDoubleOrNull() ?: data.sugarAlcohols,
+                    ),
+                    servings,
+                )
+            }) { Text("Accept") }
+        },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Retry") } },
     )
 }
@@ -219,6 +248,26 @@ private fun NutritionPreviewRow(label: String, value: Double, unit: String, high
             "${value.fmt}$unit",
             style = MaterialTheme.typography.bodySmall,
             fontWeight = if (highlight) FontWeight.Bold else FontWeight.Medium,
+        )
+    }
+}
+
+@Composable
+private fun NutritionEditRow(label: String, value: String, unit: String, onValueChange: (String) -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.weight(1f),
+        )
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            suffix = { Text(unit, style = MaterialTheme.typography.bodySmall) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            singleLine = true,
+            modifier = Modifier.width(96.dp),
+            textStyle = MaterialTheme.typography.bodySmall.copy(textAlign = TextAlign.End),
         )
     }
 }
