@@ -101,6 +101,7 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
     val totals by viewModel.totals.collectAsState()
     val entryList by viewModel.items.collectAsState()
     val labelState by viewModel.labelAnalysisState.collectAsState()
+    val foodPhotoState by viewModel.foodPhotoAnalysisState.collectAsState()
     val photoStatuses by viewModel.photoAnalysisStatuses.collectAsState()
     var fabExpanded by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
@@ -152,6 +153,25 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
                 onManualEntry = { viewModel.dismissLabelAnalysis(); showAddDialog = true },
             )
         LabelAnalysisState.Idle -> {}
+    }
+
+    when (val state = foodPhotoState) {
+        is FoodPhotoAnalysisState.Loading ->
+            NutritionLabelLoadingDialog(onDismiss = viewModel::dismissFoodPhotoAnalysis)
+        is FoodPhotoAnalysisState.Ready ->
+            NutritionLabelServingsDialog(
+                data = state.data,
+                imagePath = state.imagePath,
+                title = state.data.description ?: "Food Photo",
+                onDismiss = viewModel::dismissFoodPhotoAnalysis,
+                onConfirm = { servings -> viewModel.saveFoodPhotoEntry(state.data, servings, state.itemId) },
+            )
+        is FoodPhotoAnalysisState.Error ->
+            NutritionLabelErrorDialog(
+                onDismiss = viewModel::dismissFoodPhotoAnalysis,
+                onManualEntry = { viewModel.dismissFoodPhotoAnalysis(); showAddDialog = true },
+            )
+        FoodPhotoAnalysisState.Idle -> {}
     }
 
     Box(modifier = modifier.fillMaxSize()) {

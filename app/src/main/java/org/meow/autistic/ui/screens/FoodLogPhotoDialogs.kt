@@ -155,6 +155,7 @@ internal fun NutritionLabelErrorDialog(onDismiss: () -> Unit, onManualEntry: () 
 internal fun NutritionLabelServingsDialog(
     data: ParsedNutritionData,
     imagePath: String,
+    title: String = "Nutrition Label",
     onDismiss: () -> Unit,
     onConfirm: (servings: Double) -> Unit,
 ) {
@@ -163,7 +164,7 @@ internal fun NutritionLabelServingsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nutrition Label") },
+        title = { Text(title) },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),

@@ -26,11 +26,12 @@ private const val NUTRITION_LABEL_PROMPT = "Parse this nutrition facts label. " 
     "\"sugar_alcohols_g\":0}. All nutrient fields must be numbers. " +
     "Use 0 for missing fields. serving_size may be null if not visible."
 
-private const val FOOD_PHOTO_PROMPT = "Analyze this food photo. Provide: " +
-    "1) What food or dish is shown, " +
-    "2) Approximate portion size (visual estimate), " +
-    "3) Estimated nutrition per serving: calories, protein (g), fat (g), carbs (g), fiber (g). " +
-    "Be concise and practical."
+private const val FOOD_PHOTO_PROMPT = "Analyze this food photo. " +
+    "Return ONLY valid JSON, no other text: " +
+    "{\"description\":\"...\",\"serving_size\":\"...\",\"calories\":0,\"protein_g\":0,\"total_fat_g\":0," +
+    "\"total_carbs_g\":0,\"fiber_g\":0,\"total_sugars_g\":0,\"added_sugars_g\":0,\"sugar_alcohols_g\":0}. " +
+    "description: brief name of the food shown. serving_size: estimated portion (e.g. '1 plate', '200g'). " +
+    "All nutrient fields are numbers per serving. Use 0 for unknown values."
 
 /**
  * Calls the Anthropic Messages API with a photo for nutrition label OCR or food analysis.
@@ -44,8 +45,8 @@ class ClaudeVisionClient(
         parseNutritionJson(callApi(imagePath, NUTRITION_LABEL_PROMPT))
     }
 
-    suspend fun analyzeFoodPhoto(imagePath: String): String = withContext(Dispatchers.IO) {
-        callApi(imagePath, FOOD_PHOTO_PROMPT)
+    suspend fun analyzeFoodPhoto(imagePath: String): ParsedNutritionData = withContext(Dispatchers.IO) {
+        parseNutritionJson(callApi(imagePath, FOOD_PHOTO_PROMPT))
     }
 
     private fun callApi(imagePath: String, prompt: String): String {
@@ -112,6 +113,7 @@ class ClaudeVisionClient(
             .removePrefix("```json").removePrefix("```").removeSuffix("```").trim()
         val json = JsonParser.parseString(jsonText).asJsonObject
         return ParsedNutritionData(
+            description = json.get("description")?.takeIf { !it.isJsonNull }?.asString,
             servingSize = json.get("serving_size")?.takeIf { !it.isJsonNull }?.asString,
             calories = json.dbl("calories"),
             protein = json.dbl("protein_g"),

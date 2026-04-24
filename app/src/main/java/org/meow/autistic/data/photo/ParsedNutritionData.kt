@@ -4,6 +4,7 @@ package org.meow.autistic.data.photo
  * Nutrition values parsed from a nutrition facts label, all expressed per one serving.
  */
 data class ParsedNutritionData(
+    val description: String? = null,
     val servingSize: String? = null,
     val calories: Double = 0.0,
     val protein: Double = 0.0,

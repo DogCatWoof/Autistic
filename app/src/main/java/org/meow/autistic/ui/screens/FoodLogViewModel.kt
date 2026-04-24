@@ -40,6 +40,13 @@ sealed class LabelAnalysisState {
 
 enum class PhotoAnalysisStatus { ScanningLabel, Queued, Analyzing, Done, Failed }
 
+sealed class FoodPhotoAnalysisState {
+    object Idle : FoodPhotoAnalysisState()
+    data class Loading(val itemId: Long) : FoodPhotoAnalysisState()
+    data class Ready(val data: ParsedNutritionData, val itemId: Long, val imagePath: String) : FoodPhotoAnalysisState()
+    data class Error(val itemId: Long) : FoodPhotoAnalysisState()
+}
+
 /**
  * ViewModel for the food log daily tracker.
  * Individual [FoodLogItemEntry] records are summed to produce daily nutrition totals.
@@ -79,6 +86,9 @@ class FoodLogViewModel(
 
     private val _labelAnalysisState = MutableStateFlow<LabelAnalysisState>(LabelAnalysisState.Idle)
     val labelAnalysisState: StateFlow<LabelAnalysisState> = _labelAnalysisState.asStateFlow()
+
+    private val _foodPhotoAnalysisState = MutableStateFlow<FoodPhotoAnalysisState>(FoodPhotoAnalysisState.Idle)
+    val foodPhotoAnalysisState: StateFlow<FoodPhotoAnalysisState> = _foodPhotoAnalysisState.asStateFlow()
 
     private val _photoAnalysisStatuses = MutableStateFlow<Map<Long, PhotoAnalysisStatus>>(emptyMap())
     val photoAnalysisStatuses: StateFlow<Map<Long, PhotoAnalysisStatus>> = _photoAnalysisStatuses.asStateFlow()
@@ -202,6 +212,7 @@ class FoodLogViewModel(
     }
 
     private suspend fun processPhotoAnalysis(itemId: Long, imagePath: String) {
+        _foodPhotoAnalysisState.value = FoodPhotoAnalysisState.Loading(itemId)
         while (true) {
             if (!isWifiAvailable()) {
                 _photoAnalysisStatuses.update { it + (itemId to PhotoAnalysisStatus.Queued) }
@@ -210,9 +221,8 @@ class FoodLogViewModel(
             _photoAnalysisStatuses.update { it + (itemId to PhotoAnalysisStatus.Analyzing) }
             try {
                 val result = claudeClient.analyzeFoodPhoto(imagePath)
-                val item = repository.getItemById(itemId) ?: break
-                repository.updateItem(item.copy(aiAnalysisResult = result, isAiPending = false))
                 _photoAnalysisStatuses.update { it + (itemId to PhotoAnalysisStatus.Done) }
+                _foodPhotoAnalysisState.value = FoodPhotoAnalysisState.Ready(result, itemId, imagePath)
                 return
             } catch (e: IOException) {
                 _photoAnalysisStatuses.update { it + (itemId to PhotoAnalysisStatus.Queued) }
@@ -220,12 +230,46 @@ class FoodLogViewModel(
             } catch (e: Exception) {
                 val item = repository.getItemById(itemId)
                 if (item != null) {
-                    repository.updateItem(item.copy(aiAnalysisResult = "Analysis failed.", isAiPending = false))
+                    repository.updateItem(item.copy(isAiPending = false))
                 }
                 _photoAnalysisStatuses.update { it + (itemId to PhotoAnalysisStatus.Failed) }
+                _foodPhotoAnalysisState.value = FoodPhotoAnalysisState.Error(itemId)
                 throw e
             }
         }
+    }
+
+    fun saveFoodPhotoEntry(data: ParsedNutritionData, servings: Double, itemId: Long) {
+        viewModelScope.launch(handler) {
+            val s = servings.coerceAtLeast(0.0)
+            val item = repository.getItemById(itemId) ?: return@launch
+            _foodPhotoAnalysisState.value = FoodPhotoAnalysisState.Idle
+            _photoAnalysisStatuses.update { it - itemId }
+            repository.updateItem(item.copy(
+                description = data.description,
+                isAiPending = false,
+                calories = data.calories * s,
+                protein = data.protein * s,
+                totalFat = data.totalFat * s,
+                totalCarbs = data.totalCarbs * s,
+                fiber = data.fiber * s,
+                totalSugars = data.totalSugars * s,
+                addedSugars = data.addedSugars * s,
+                sugarAlcohols = data.sugarAlcohols * s,
+            ))
+        }
+    }
+
+    fun dismissFoodPhotoAnalysis() {
+        val state = _foodPhotoAnalysisState.value
+        _foodPhotoAnalysisState.value = FoodPhotoAnalysisState.Idle
+        val itemId = when (state) {
+            is FoodPhotoAnalysisState.Loading -> state.itemId
+            is FoodPhotoAnalysisState.Ready -> state.itemId
+            is FoodPhotoAnalysisState.Error -> state.itemId
+            else -> return
+        }
+        _photoAnalysisStatuses.update { it - itemId }
     }
 
     private suspend fun requeuePendingItems() {
