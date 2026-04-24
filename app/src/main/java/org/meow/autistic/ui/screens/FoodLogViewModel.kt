@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.meow.autistic.data.debug.ExceptionReporter
+import org.meow.autistic.data.foodlog.FoodCacheRepository
 import org.meow.autistic.data.foodlog.FoodLogEntry
 import org.meow.autistic.data.foodlog.FoodLogItemEntry
 import org.meow.autistic.data.foodlog.FoodLogRepository
@@ -57,6 +58,7 @@ class FoodLogViewModel(
     private val repository: FoodLogRepository,
     private val claudeClient: ClaudeVisionClient,
     private val exceptionReporter: ExceptionReporter,
+    private val foodCacheRepository: FoodCacheRepository,
     application: Application,
 ) : AndroidViewModel(application) {
 
@@ -221,8 +223,9 @@ class FoodLogViewModel(
             _photoAnalysisStatuses.update { it + (itemId to PhotoAnalysisStatus.Analyzing) }
             try {
                 val result = claudeClient.analyzeFoodPhoto(imagePath)
+                val data = result.description?.let { foodCacheRepository.findByDescription(it) } ?: result
                 _photoAnalysisStatuses.update { it + (itemId to PhotoAnalysisStatus.Done) }
-                _foodPhotoAnalysisState.value = FoodPhotoAnalysisState.Ready(result, itemId, imagePath)
+                _foodPhotoAnalysisState.value = FoodPhotoAnalysisState.Ready(data, itemId, imagePath)
                 return
             } catch (e: IOException) {
                 _photoAnalysisStatuses.update { it + (itemId to PhotoAnalysisStatus.Queued) }
@@ -245,6 +248,7 @@ class FoodLogViewModel(
             val item = repository.getItemById(itemId) ?: return@launch
             _foodPhotoAnalysisState.value = FoodPhotoAnalysisState.Idle
             _photoAnalysisStatuses.update { it - itemId }
+            foodCacheRepository.save(data)
             repository.updateItem(item.copy(
                 description = data.description,
                 isAiPending = false,
