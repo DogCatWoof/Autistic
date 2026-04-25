@@ -8,6 +8,11 @@ import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import org.meow.autistic.data.calendar.CalendarDao
 import org.meow.autistic.data.calendar.CalendarEventEntity
+import org.meow.autistic.data.energy.ActivityCostEntry
+import org.meow.autistic.data.energy.EnergyDao
+import org.meow.autistic.data.energy.EnergyLogEntry
+import org.meow.autistic.data.energy.EnergyProfileEntity
+import org.meow.autistic.data.energy.StartOfDayEntry
 import org.meow.autistic.data.foodlog.FoodCacheDao
 import org.meow.autistic.data.foodlog.FoodCacheEntity
 import org.meow.autistic.data.foodlog.FoodLogDao
@@ -32,8 +37,8 @@ class InstantConverter {
 }
 
 @Database(
-    entities = [TaskEntity::class, CalendarEventEntity::class, DailyTaskEntity::class, NoteEntity::class, MoodEntity::class, FoodLogEntry::class, FoodLogItemEntry::class, HealthSnapshotEntity::class, FoodCacheEntity::class],
-    version = 13,
+    entities = [TaskEntity::class, CalendarEventEntity::class, DailyTaskEntity::class, NoteEntity::class, MoodEntity::class, FoodLogEntry::class, FoodLogItemEntry::class, HealthSnapshotEntity::class, FoodCacheEntity::class, EnergyProfileEntity::class, EnergyLogEntry::class, ActivityCostEntry::class, StartOfDayEntry::class],
+    version = 14,
     exportSchema = false,
 )
 @TypeConverters(InstantConverter::class)
@@ -47,6 +52,7 @@ abstract class TaskDatabase : RoomDatabase() {
     abstract fun foodLogItemDao(): FoodLogItemDao
     abstract fun healthSnapshotDao(): HealthSnapshotDao
     abstract fun foodCacheDao(): FoodCacheDao
+    abstract fun energyDao(): EnergyDao
 
     /** Flushes WAL to the main database file. Call before reading the raw file for backup. */
     fun checkpoint() {

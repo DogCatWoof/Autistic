@@ -28,7 +28,7 @@
 - Conflict rule: remote wins on pull; local edits are queued and pushed before the next pull
 - A manual sync button in the top bar shows a spinner during sync and the last-synced timestamp when idle
 - A "Connect Google Tasks" banner is shown when the user is not authenticated
-- On a metered (cellular) network, a confirmation dialog is shown before manual sync
+- [X] On a metered (cellular) network, a confirmation dialog is shown before manual sync
 
 ### Scan and Lookup Groceries
 - Users scan grocery product barcodes using the device camera
@@ -58,50 +58,50 @@
 - Google Tasks + Calendar sync: manual trigger and background schedule (see Sync Scheduling)
 - Daily Reset: shows last-run date and a manual "Run Now" button
 
-### Conversation Scaffolding (Social Support)
+### [X] Conversation Scaffolding (Social Support)
 Reduces three loads in real-time social situations: decoding intent, deciding what to say, and managing timing.
 
-- **Core loop**: push-to-talk captures audio → on-device transcription → intent/sentiment classification → generate 2–4 response chips + 1 clarifying question → display as tappable chips; optionally spoken via earbud TTS
-- **UI**: single "next move" line by default; expandable panel for alternatives; color/edge urgency cues; turn-taking indicator ("safe to speak now"); pace coach
-- **Response types**: direct answer, clarifier, deferral ("I need a minute"), social glue, boundary-setting
-- **Context modeling**: conversation state (topic, roles, formality); user tone preference (neutral/polite/direct); known scripts for recurring situations
-- **Learning loop**: track selected/edited suggestions; adjust preferred tone, length, and per-contact patterns
-- **Failure modes**: mis-transcription → neutral fallback; low-assist mode (turn-taking + one suggestion only); latency spike → cached generic responses
-- **Privacy**: on-device ASR + intent model by default; no raw audio stored; ephemeral buffers; no data sent externally without explicit consent
-- **Hardware integration**: earbud tap gestures, watch haptics, lock-screen widget
-- **Architecture** (offline-first): (1) fully local — MVP default; (2) hybrid — local for common cases, optional cloud for complex phrasing; (3) cloud-first — explicit opt-in only. Principle: never fail without internet; only improve when it exists
-- **MVP scope**: push-to-talk, on-device transcription, rule-based intent classifier (question/command/social/other), 3 response templates per class with tone settings, quick-tap UI, end-of-session feedback
-- **Extensions**: meeting mode (action items), script packs (medical/interview), multilingual layer
+- [X] **Core loop**: push-to-talk captures audio → on-device transcription → intent/sentiment classification → generate 2–4 response chips + 1 clarifying question → display as tappable chips; optionally spoken via earbud TTS
+- [X] **UI**: single "next move" line by default; expandable panel for alternatives; color/edge urgency cues; turn-taking indicator ("safe to speak now"); pace coach
+- [X] **Response types**: direct answer, clarifier, deferral ("I need a minute"), social glue, boundary-setting
+- [X] **Context modeling**: conversation state (topic, roles, formality); user tone preference (neutral/polite/direct); known scripts for recurring situations
+- [X] **Learning loop**: track selected/edited suggestions; adjust preferred tone, length, and per-contact patterns
+- [X] **Failure modes**: mis-transcription → neutral fallback; low-assist mode (turn-taking + one suggestion only); latency spike → cached generic responses
+- [X] **Privacy**: on-device ASR + intent model by default; no raw audio stored; ephemeral buffers; no data sent externally without explicit consent
+- [X] **Hardware integration**: earbud tap gestures, watch haptics, lock-screen widget
+- [X] **Architecture** (offline-first): (1) fully local — MVP default; (2) hybrid — local for common cases, optional cloud for complex phrasing; (3) cloud-first — explicit opt-in only. Principle: never fail without internet; only improve when it exists
+- [X] **MVP scope**: push-to-talk, on-device transcription, rule-based intent classifier (question/command/social/other), 3 response templates per class with tone settings, quick-tap UI, end-of-session feedback
+- [X] **Extensions**: meeting mode (action items), script packs (medical/interview), multilingual layer
 
-### Location-based Actions
-- Users define geofence triggers: label, location (map pick or address), radius, and action
-- Actions: show a reminder notification, open a specific screen, or add a predefined task
-- Examples: "Arrive at supermarket → show shopping list"; "Leave work → log commute"
-- Triggers are managed in Settings with an on/off toggle per trigger
-- Permissions required: `ACCESS_FINE_LOCATION`, `ACCESS_BACKGROUND_LOCATION`
-- Geofences re-register on device reboot via `BootCompletedReceiver`
+### [X] Location-based Actions
+- [X] Users define geofence triggers: label, location (map pick or address), radius, and action
+- [X] Actions: show a reminder notification, open a specific screen, or add a predefined task
+- [X] Examples: "Arrive at supermarket → show shopping list"; "Leave work → log commute"
+- [X] Triggers are managed in Settings with an on/off toggle per trigger
+- [X] Permissions required: `ACCESS_FINE_LOCATION`, `ACCESS_BACKGROUND_LOCATION`
+- [X] Geofences re-register on device reboot via `BootCompletedReceiver`
 
-### Sequences
-- A sequence is an ordered checklist of steps for a complex, repeating multi-part task
-- Each step has an instruction, optional estimated time, and a completion checkbox
-- Examples: morning routine, packing for a trip, preparing for a medical visit
-- Users start a "run"; the current step is highlighted and progress is saved
-- A run can be paused and resumed; completed runs are stored as history
-- Sequences are managed in Settings; an active run surfaces as a persistent notification
+### [X] Sequences
+- [X] A sequence is an ordered checklist of steps for a complex, repeating multi-part task
+- [X] Each step has an instruction, optional estimated time, and a completion checkbox
+- [X] Examples: morning routine, packing for a trip, preparing for a medical visit
+- [X] Users start a "run"; the current step is highlighted and progress is saved
+- [X] A run can be paused and resumed; completed runs are stored as history
+- [X] Sequences are managed in Settings; an active run surfaces as a persistent notification
 
 ### Energy Budgeting
 Models cognitive load over time as a pacing system, not just a to-do list. Prevents overload by simulating the rest of the day before decisions are made.
 
 - **Core model**: daily capacity in finite energy units; each activity has a cost; recovery restores units; costs are personalized and learned over time; recovery is nonlinear (short break = partial; long quiet period = full)
 - **User inputs**: start-of-day check (sleep quality, stress, physical state); optional quick tags during the day; 1–2 tap end-of-block rating (easier/normal/harder); minimal logging — infer when possible
-- **Automatic signals**: calendar events, location transitions, wearables (HR/HRV), phone usage patterns
-- **Key features**: live budget bar with confidence band; forward projection ("If you attend this meeting, projected end-of-day balance: −2 units"); swap suggestions; stop cues; recovery prescriptions
-- **Personalization loop**: daily predicted-vs-actual comparison; weighted update of per-activity costs; track hidden costs (transitions, context switching)
-- **Modes**: Conservative (higher cost estimates), Learning (explore to improve model), Protection (hard cap, blocks new commitments when projected negative)
-- **Visualizations**: day timeline green→red; weekly overload patterns; trigger correlations
-- **Integrations**: Google Calendar (auto-tag meetings), wearables, optional clinician export
-- **Privacy**: on-device modeling; user can disable any signal; inspectable logs
-- **MVP scope**: manual tagging + calendar import, fixed initial cost table with quick user adjustments, live budget bar + forward projection, end-of-day calibration
+- [X] **Automatic signals**: calendar events, location transitions, wearables (HR/HRV), phone usage patterns
+- **Key features**: live budget bar with confidence band; forward projection ("If you attend this meeting, projected end-of-day balance: −2 units"); [X] swap suggestions; [X] stop cues; [X] recovery prescriptions
+- **Personalization loop**: daily predicted-vs-actual comparison; weighted update of per-activity costs; [X] track hidden costs (transitions, context switching)
+- [X] **Modes**: Conservative (higher cost estimates), Learning (explore to improve model), Protection (hard cap, blocks new commitments when projected negative)
+- [X] **Visualizations**: day timeline green→red; weekly overload patterns; trigger correlations
+- [X] **Integrations**: Google Calendar (auto-tag meetings), wearables, optional clinician export
+- **Privacy**: on-device modeling; [X] user can disable any signal; inspectable logs
+- **MVP scope**: manual tagging + [X] calendar import, fixed initial cost table with quick user adjustments, live budget bar + forward projection, [X] end-of-day calibration (DailyCalibrationWorker not wired)
 
 ---
 
@@ -231,33 +231,33 @@ Reads health data from other apps (Samsung Health, Garmin, Google Fit, etc.) via
 
 ## Plan
 
-### Location-based Actions
-1. **Data layer** — `LocationTriggerEntity` (id, label, latitude, longitude, radiusMeters, actionType, actionPayload, isEnabled); `LocationTriggerDao`; `LocationTriggerRepository`
-2. **Room migration** — bump DB version; add table
-3. **Geofencing** — `GeofenceManager` wraps `GeofencingClient`: registers/deregisters geofences; `GeofenceBroadcastReceiver` dispatches to `LocationActionHandler` (notification, task enqueue, or deep-link)
-4. **Boot receiver** — `BootCompletedReceiver` re-registers all enabled geofences on restart
-5. **Permissions** — runtime request for `ACCESS_FINE_LOCATION` + `ACCESS_BACKGROUND_LOCATION`; settings warning when background permission missing
-6. **ViewModel + Screen** — `LocationTriggerViewModel`; `LocationTriggersScreen` (list with toggle + map thumbnail); map-pick flow
-7. **Tests** — unit tests for `LocationActionHandler` dispatch logic; mock `GeofencingClient` in repository tests
+### [X] Location-based Actions
+1. [X] **Data layer** — `LocationTriggerEntity` (id, label, latitude, longitude, radiusMeters, actionType, actionPayload, isEnabled); `LocationTriggerDao`; `LocationTriggerRepository`
+2. [X] **Room migration** — bump DB version; add table
+3. [X] **Geofencing** — `GeofenceManager` wraps `GeofencingClient`: registers/deregisters geofences; `GeofenceBroadcastReceiver` dispatches to `LocationActionHandler` (notification, task enqueue, or deep-link)
+4. [X] **Boot receiver** — `BootCompletedReceiver` re-registers all enabled geofences on restart
+5. [X] **Permissions** — runtime request for `ACCESS_FINE_LOCATION` + `ACCESS_BACKGROUND_LOCATION`; settings warning when background permission missing
+6. [X] **ViewModel + Screen** — `LocationTriggerViewModel`; `LocationTriggersScreen` (list with toggle + map thumbnail); map-pick flow
+7. [X] **Tests** — unit tests for `LocationActionHandler` dispatch logic; mock `GeofencingClient` in repository tests
 
-### Sequences
-1. **Data layer** — `SequenceEntity` (id, name, description); `SequenceStepEntity` (id, sequenceId, stepIndex, instruction, estimatedMinutes); `SequenceRunEntity` (id, sequenceId, startedAt, completedAt?, isPaused); `SequenceStepProgressEntity` (runId, stepId, completedAt?); DAOs; `SequenceRepository`
-2. **Room migration** — bump DB version; add four tables
-3. **ViewModel** — `SequenceViewModel`: sequence list; `SequenceRunViewModel`: active run state, `completeStep()`, `pause()`, `resume()`, `abandon()`
-4. **Screens** — `SequenceListScreen` (list + start button); `SequenceRunScreen` (current step highlighted, progress bar); `SequenceEditorScreen` (drag-to-reorder steps)
-5. **Persistent notification** — active run shows sticky notification with current step + "Mark done" action
-6. **Settings integration** — Sequences entry under Settings
-7. **Tests** — unit tests for step progression and pause/resume state machine
+### [X] Sequences
+1. [X] **Data layer** — `SequenceEntity` (id, name, description); `SequenceStepEntity` (id, sequenceId, stepIndex, instruction, estimatedMinutes); `SequenceRunEntity` (id, sequenceId, startedAt, completedAt?, isPaused); `SequenceStepProgressEntity` (runId, stepId, completedAt?); DAOs; `SequenceRepository`
+2. [X] **Room migration** — bump DB version; add four tables
+3. [X] **ViewModel** — `SequenceViewModel`: sequence list; `SequenceRunViewModel`: active run state, `completeStep()`, `pause()`, `resume()`, `abandon()`
+4. [X] **Screens** — `SequenceListScreen` (list + start button); `SequenceRunScreen` (current step highlighted, progress bar); `SequenceEditorScreen` (drag-to-reorder steps)
+5. [X] **Persistent notification** — active run shows sticky notification with current step + "Mark done" action
+6. [X] **Settings integration** — Sequences entry under Settings
+7. [X] **Tests** — unit tests for step progression and pause/resume state machine
 
-### Conversation Scaffolding (MVP)
-1. **ResponseTemplateRepository** — static JSON asset: `IntentClass → List<ResponseTemplate>` (3 per class, 3 tone variants); loaded at startup, cached in memory
-2. **IntentClassifier** — rule-based (keyword + question-mark heuristic): `Question | Command | Social | Sarcasm | Unknown` with confidence score
-3. **ConversationViewModel** — `transcribedText`, `chips`, `isListening` StateFlows; drives `SpeechRecognizer` (push-to-talk); pipes through classifier → templates
-4. **ConversationScreen** — push-to-talk button; chip row; expandable alternatives; urgency strip; turn-taking indicator
-5. **TonePreferencesStore** — DataStore for tone and verbosity; exposed in Settings
-6. **TTS** — `TextToSpeech` for earbud output; optional, toggleable
-7. **Nav tab** — add "Talk" tab to `BOTTOM_ITEMS`
-8. **Tests** — unit tests for `IntentClassifier` across all classes; chip selection ordering
+### [X] Conversation Scaffolding (MVP)
+1. [X] **ResponseTemplateRepository** — static JSON asset: `IntentClass → List<ResponseTemplate>` (3 per class, 3 tone variants); loaded at startup, cached in memory
+2. [X] **IntentClassifier** — rule-based (keyword + question-mark heuristic): `Question | Command | Social | Sarcasm | Unknown` with confidence score
+3. [X] **ConversationViewModel** — `transcribedText`, `chips`, `isListening` StateFlows; drives `SpeechRecognizer` (push-to-talk); pipes through classifier → templates
+4. [X] **ConversationScreen** — push-to-talk button; chip row; expandable alternatives; urgency strip; turn-taking indicator
+5. [X] **TonePreferencesStore** — DataStore for tone and verbosity; exposed in Settings
+6. [X] **TTS** — `TextToSpeech` for earbud output; optional, toggleable
+7. [X] **Nav tab** — add "Talk" tab to `BOTTOM_ITEMS`
+8. [X] **Tests** — unit tests for `IntentClassifier` across all classes; chip selection ordering
 
 ### Event List — Rules-Based Coloring, Icons, Importance, and Required
 
@@ -277,7 +277,7 @@ Reads health data from other apps (Samsung Health, Garmin, Google Fit, etc.) via
 3. **`HealthConnectPermissionRequest`** — composable helper that calls `rememberLauncherForActivityResult(HealthDataRequestPermissions())`; invoked from a Settings entry; shows which permissions are granted vs. missing
 4. **Settings screen entry** — "Health Connect" row in Settings; opens permission request flow; shows last-synced timestamp per data type
 5. **Surface in existing screens** — Food Log: show today's steps + calories burned as a summary card; Mood: show last night's sleep duration + avg heart rate; Energy Budgeting: feed all signals into the model
-6. **`HealthConnectSyncWorker`** — `CoroutineWorker`; reads each data type and writes to a `HealthSnapshotEntity` table (date, steps, sleepMinutes, avgHeartRate, weightKg, caloriesBurned); runs on any network, once per hour
+6. [X] **`HealthConnectSyncWorker`** — `CoroutineWorker`; reads each data type and writes to a `HealthSnapshotEntity` table (date, steps, sleepMinutes, avgHeartRate, weightKg, caloriesBurned); runs on any network, once per hour
 7. **Privacy policy** — add a privacy policy URL to app metadata and Play Store listing before shipping; document that health data stays on-device only
 8. **Tests** — unit tests for `HealthConnectRepository` using a fake `HealthConnectClient`; verify null-safe handling when SDK unavailable
 
@@ -287,7 +287,7 @@ Reads health data from other apps (Samsung Health, Garmin, Google Fit, etc.) via
 3. **EnergyRepository** — `getTodayBalance()`, `getProjection(pendingActivities)`, `calibrateDay()` (weighted moving-average cost update)
 4. **ViewModel** — `EnergyViewModel`: `todayBalance`, `projection` StateFlows; `logActivity()`, `submitStartOfDay()`, `rateLastBlock()`
 5. **EnergyScreen** — budget bar with confidence band; day timeline; start-of-day bottom sheet; quick-tag FAB; forward projection card
-6. **DailyCalibrationWorker** — midnight; calls `calibrateDay()` for closing day
-7. **Calendar integration** — annotate calendar events with estimated energy cost on fetch; meeting keywords map to activity types
+6. [X] **DailyCalibrationWorker** — midnight; calls `calibrateDay()` for closing day
+7. [X] **Calendar integration** — annotate calendar events with estimated energy cost on fetch; meeting keywords map to activity types
 8. **Nav tab** — add "Energy" tab
 9. **Tests** — unit tests for balance calculation, projection logic, calibration math

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Menu
@@ -72,6 +73,7 @@ import org.meow.autistic.ui.screens.filterNavItems
 import org.meow.autistic.ui.screens.navTitlesFrom
 import org.meow.autistic.ui.screens.AppDrawerSheet
 import org.meow.autistic.ui.screens.NavBottomSheet
+import org.meow.autistic.ui.screens.EnergyScreen
 import org.meow.autistic.ui.screens.FoodLogScreen
 import org.meow.autistic.ui.screens.MoodScreen
 import org.meow.autistic.ui.screens.NotesScreen
@@ -101,6 +103,7 @@ class MainActivity : ComponentActivity() {
             NavigationItem("Notes", Icons.Filled.Create, Icons.Outlined.Create),
             NavigationItem("Mood", Icons.Filled.Mood, Icons.Outlined.Mood),
             NavigationItem("Food Log", Icons.Filled.Restaurant, Icons.Outlined.Restaurant),
+            NavigationItem("Energy", Icons.Filled.Bolt, Icons.Filled.Bolt),
         )
     }
 
@@ -249,6 +252,7 @@ class MainActivity : ComponentActivity() {
                                     "Notes" -> NotesScreen()
                                     "Mood" -> MoodScreen()
                                     "Food Log" -> FoodLogScreen()
+                                    "Energy" -> EnergyScreen()
                                 }
                             }
                         }
