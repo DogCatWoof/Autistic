@@ -30,6 +30,9 @@ class HealthConnectViewModel(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
+    private val _selectedSnapshot = MutableStateFlow<HealthSnapshotEntity?>(null)
+    val selectedSnapshot: StateFlow<HealthSnapshotEntity?> = _selectedSnapshot.asStateFlow()
+
     val recentSnapshots: StateFlow<List<HealthSnapshotEntity>> = repository
         .getRecentSnapshots(7)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -50,8 +53,12 @@ class HealthConnectViewModel(
     fun refreshSnapshot() {
         viewModelScope.launch(handler) {
             _isRefreshing.value = true
-            repository.refreshTodaySnapshot()
+            repository.backfillRecentDays(7)
             _isRefreshing.value = false
         }
+    }
+
+    fun selectSnapshot(snapshot: HealthSnapshotEntity?) {
+        _selectedSnapshot.value = snapshot
     }
 }

@@ -1,5 +1,11 @@
 # Autistic — Project Rules
 
+## Response Style
+
+- Make code edits silently — do not narrate individual changes inline.
+- At the end of each response, list only the files modified on a single line (e.g. `Updated: Foo.kt, Bar.kt`).
+- Never show code blocks, diffs, or add/delete counts unless explicitly asked.
+
 ## Testing
 
 - At the end of each prompt run tests in this order:

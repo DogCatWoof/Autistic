@@ -98,4 +98,31 @@ class HealthSnapshotDaoTest {
         assertNull(result?.sleepMinutes)
         assertNull(result?.avgHeartRateBpm)
     }
+
+    @Test
+    fun getRecent_returnsItemsInDescendingDateOrder() = runTest {
+        dao.upsert(HealthSnapshotEntity(date = "2025-01-01", steps = 1000))
+        dao.upsert(HealthSnapshotEntity(date = "2025-01-03", steps = 3000))
+        dao.upsert(HealthSnapshotEntity(date = "2025-01-02", steps = 2000))
+
+        val results = dao.getRecent(3).first()
+        assertEquals(listOf("2025-01-03", "2025-01-02", "2025-01-01"), results.map { it.date })
+    }
+
+    @Test
+    fun getRecent_respectsLimit() = runTest {
+        dao.upsert(HealthSnapshotEntity(date = "2025-01-01", steps = 1000))
+        dao.upsert(HealthSnapshotEntity(date = "2025-01-02", steps = 2000))
+        dao.upsert(HealthSnapshotEntity(date = "2025-01-03", steps = 3000))
+
+        val results = dao.getRecent(2).first()
+        assertEquals(2, results.size)
+        assertEquals("2025-01-03", results.first().date)
+    }
+
+    @Test
+    fun getRecent_returnsEmptyWhenNoneExist() = runTest {
+        val results = dao.getRecent(7).first()
+        assertEquals(emptyList<HealthSnapshotEntity>(), results)
+    }
 }

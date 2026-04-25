@@ -1,6 +1,7 @@
 package org.meow.autistic.ui.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,6 +59,7 @@ fun HealthConnectScreen(modifier: Modifier = Modifier) {
     val grantedPermissions by viewModel.grantedPermissions.collectAsState()
     val recentSnapshots by viewModel.recentSnapshots.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val selectedSnapshot by viewModel.selectedSnapshot.collectAsState()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = PermissionController.createRequestPermissionResultContract()
@@ -66,6 +68,13 @@ fun HealthConnectScreen(modifier: Modifier = Modifier) {
     LaunchedEffect(Unit) { viewModel.checkPermissions() }
 
     val allGranted = viewModel.requiredPermissions.all { it in grantedPermissions }
+
+    selectedSnapshot?.let { snap ->
+        HealthSnapshotDetailDialog(
+            snapshot = snap,
+            onDismiss = { viewModel.selectSnapshot(null) },
+        )
+    }
 
     Column(
         modifier = modifier
@@ -101,7 +110,10 @@ fun HealthConnectScreen(modifier: Modifier = Modifier) {
                         }
                     }
                     Spacer(Modifier.height(8.dp))
-                    SnapshotTable(snapshots = recentSnapshots)
+                    SnapshotTable(
+                        snapshots = recentSnapshots,
+                        onRowClick = { viewModel.selectSnapshot(it) },
+                    )
                 }
             }
         }
@@ -109,7 +121,10 @@ fun HealthConnectScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun SnapshotTable(snapshots: List<HealthSnapshotEntity>) {
+private fun SnapshotTable(
+    snapshots: List<HealthSnapshotEntity>,
+    onRowClick: (HealthSnapshotEntity) -> Unit,
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier
             .horizontalScroll(rememberScrollState())
@@ -126,7 +141,7 @@ private fun SnapshotTable(snapshots: List<HealthSnapshotEntity>) {
                 )
             } else {
                 snapshots.forEachIndexed { index, snapshot ->
-                    TableDataRow(snapshot)
+                    TableDataRow(snapshot, onClick = { onRowClick(snapshot) })
                     if (index < snapshots.lastIndex) {
                         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                     }
@@ -150,10 +165,13 @@ private fun TableHeaderRow() {
 }
 
 @Composable
-private fun TableDataRow(snapshot: HealthSnapshotEntity) {
+private fun TableDataRow(snapshot: HealthSnapshotEntity, onClick: () -> Unit) {
     val date = runCatching { LocalDate.parse(snapshot.date).format(headerFormatter) }
         .getOrDefault(snapshot.date)
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.clickable { onClick() },
+    ) {
         TableCell(date, DATE_COL)
         TableCell(snapshot.steps?.toString() ?: "—", DATA_COL)
         TableCell(snapshot.sleepMinutes?.let { formatSleep(it) } ?: "—", DATA_COL)

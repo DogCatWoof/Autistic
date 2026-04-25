@@ -33,11 +33,9 @@ class HealthConnectRepository(
 
     fun getSdkStatus(): Int = HealthConnectClient.getSdkStatus(context)
 
-    fun getTodaySnapshot(): Flow<HealthSnapshotEntity?> =
-        dao.getByDate(todayKey())
+    fun getTodaySnapshot(): Flow<HealthSnapshotEntity?> = dao.getByDate(todayKey())
 
-    fun getRecentSnapshots(days: Int = 7): Flow<List<HealthSnapshotEntity>> =
-        dao.getRecent(days)
+    fun getRecentSnapshots(days: Int = 7): Flow<List<HealthSnapshotEntity>> = dao.getRecent(days)
 
     suspend fun getGrantedPermissions(): Set<String> {
         val client = clientOrNull() ?: return emptySet()
@@ -46,32 +44,42 @@ class HealthConnectRepository(
 
     suspend fun refreshTodaySnapshot(): HealthSnapshotEntity? {
         val client = clientOrNull() ?: return null
-        val date = todayKey()
-        val start = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()
-        val end = Instant.now()
-
-        val steps = readTodaySteps(client, start, end)
-        val sleep = readLastNightSleep(client)
-        val heartRate = readRecentAvgHeartRate(client, start, end)
-        val weight = readLatestWeight(client)
-        val calories = readTodayCaloriesBurned(client, start, end)
-        val glucose = readLatestBloodGlucose(client, start, end)
-
-        val snapshot = HealthSnapshotEntity(
-            date = date,
-            steps = steps,
-            sleepMinutes = sleep,
-            avgHeartRateBpm = heartRate,
-            weightKg = weight,
-            caloriesBurned = calories,
-            bloodGlucoseMmol = glucose,
-            lastUpdatedAt = Instant.now(),
-        )
+        val snapshot = readDaySnapshot(client, LocalDate.now())
         dao.upsert(snapshot)
         return snapshot
     }
 
-    private suspend fun readTodaySteps(
+    /** Reads and caches snapshots for the last [days] days, including today. */
+    suspend fun backfillRecentDays(days: Int = 7) {
+        val client = clientOrNull() ?: return
+        val today = LocalDate.now()
+        repeat(days) { i ->
+            val snapshot = readDaySnapshot(client, today.minusDays(i.toLong()))
+            dao.upsert(snapshot)
+        }
+    }
+
+    private suspend fun readDaySnapshot(
+        client: HealthConnectClient,
+        date: LocalDate,
+    ): HealthSnapshotEntity {
+        val isToday = date == LocalDate.now()
+        val dayStart = date.atStartOfDay(ZoneId.systemDefault()).toInstant()
+        val dayEnd = if (isToday) Instant.now()
+                     else date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant()
+        return HealthSnapshotEntity(
+            date = date.format(DateTimeFormatter.ISO_LOCAL_DATE),
+            steps = readSteps(client, dayStart, dayEnd),
+            sleepMinutes = readSleepForDay(client, date),
+            avgHeartRateBpm = readAvgHeartRate(client, dayStart, dayEnd),
+            weightKg = readWeightBefore(client, dayEnd),
+            caloriesBurned = readCaloriesBurned(client, dayStart, dayEnd),
+            bloodGlucoseMmol = readBloodGlucose(client, dayStart, dayEnd),
+            lastUpdatedAt = Instant.now(),
+        )
+    }
+
+    private suspend fun readSteps(
         client: HealthConnectClient,
         start: Instant,
         end: Instant,
@@ -82,8 +90,11 @@ class HealthConnectRepository(
         response.records.sumOf { it.count }.takeIf { it > 0 }
     }.getOrNull()
 
-    private suspend fun readLastNightSleep(client: HealthConnectClient): Long? = runCatching {
-        val end = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()
+    private suspend fun readSleepForDay(
+        client: HealthConnectClient,
+        date: LocalDate,
+    ): Long? = runCatching {
+        val end = date.atStartOfDay(ZoneId.systemDefault()).toInstant()
         val start = end.minusSeconds(12 * 3600)
         val response = client.readRecords(
             ReadRecordsRequest(SleepSessionRecord::class, TimeRangeFilter.between(start, end))
@@ -94,7 +105,7 @@ class HealthConnectRepository(
         (totalMs / 60_000).takeIf { it > 0 }
     }.getOrNull()
 
-    private suspend fun readRecentAvgHeartRate(
+    private suspend fun readAvgHeartRate(
         client: HealthConnectClient,
         start: Instant,
         end: Instant,
@@ -106,8 +117,10 @@ class HealthConnectRepository(
         if (samples.isEmpty()) null else samples.average()
     }.getOrNull()
 
-    private suspend fun readLatestWeight(client: HealthConnectClient): Double? = runCatching {
-        val end = Instant.now()
+    private suspend fun readWeightBefore(
+        client: HealthConnectClient,
+        end: Instant,
+    ): Double? = runCatching {
         val start = end.minusSeconds(30L * 24 * 3600)
         val response = client.readRecords(
             ReadRecordsRequest(
@@ -120,7 +133,7 @@ class HealthConnectRepository(
         response.records.firstOrNull()?.weight?.inKilograms
     }.getOrNull()
 
-    private suspend fun readTodayCaloriesBurned(
+    private suspend fun readCaloriesBurned(
         client: HealthConnectClient,
         start: Instant,
         end: Instant,
@@ -132,7 +145,7 @@ class HealthConnectRepository(
         total.takeIf { it > 0.0 }
     }.getOrNull()
 
-    private suspend fun readLatestBloodGlucose(
+    private suspend fun readBloodGlucose(
         client: HealthConnectClient,
         start: Instant,
         end: Instant,

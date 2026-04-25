@@ -1,0 +1,56 @@
+ ▐▛███▜▌   Claude Code v2.1.118
+▝▜█████▛▘  Sonnet 4.6 · Claude Pro
+  ▘▘ ▝▝    ~/AndroidStudioProjects/Autistic
+
+  Opus 4.7 xhigh is now available! · /model to switch
+
+✻ Conversation compacted (ctrl+o for history)
+
+  ⎿  Read app/src/androidTest/java/org/meow/autistic/data/energy/EnergyDaoTest.kt (186 lines)
+  ⎿  Read app/src/test/java/org/meow/autistic/ui/screens/EnergyViewModelTest.kt (188 lines)
+  ⎿  Read app/src/test/java/org/meow/autistic/data/energy/EnergyRepositoryTest.kt (240 lines)
+  ⎿  Read app/src/main/java/org/meow/autistic/ui/screens/HealthConnectViewModel.kt (58 lines)
+  ⎿  Read app/src/main/java/org/meow/autistic/ui/screens/HealthConnectSettingsScreen.kt (241 lines)
+  ⎿  Plan file referenced (~/.claude/plans/tell-me-all-the-smooth-hippo.md)
+  ⎿  Skills restored (android, kotlin)
+  ⎿  You've hit your limit · resets 1:50am (America/New_York)
+     /upgrade to increase your usage limit.
+
+✻ Brewed for 8m 4s
+
+❯ /context                                                                      
+  ⎿  Context Usage
+     ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛀ ⛀ ⛁   Sonnet 4.6
+     ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁   claude-sonnet-4-6
+     ⛁ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   40.2k/200k tokens (20%)
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ 
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   Estimated usage by category
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ System prompt: 6.5k tokens (3.2%)
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ System tools: 7.9k tokens (3.9%)
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ Memory files: 1.3k tokens (0.7%)
+     ⛶ ⛶ ⛶ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝   ⛁ Skills: 920 tokens (0.5%)
+     ⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝   ⛁ Messages: 23.6k tokens (11.8%)
+                           ⛶ Free space: 126.8k (63.4%)
+                           ⛝ Autocompact buffer: 33k tokens (16.5%)
+
+     MCP tools · /mcp (loaded on-demand)
+
+     Available
+     ├ mcp__claude_ai_Gmail__authenticate
+     ├ mcp__claude_ai_Gmail__complete_authentication
+     ├ mcp__claude_ai_Google_Calendar__authenticate
+     ├ mcp__claude_ai_Google_Calendar__complete_authentication
+     ├ mcp__claude_ai_Google_Drive__authenticate
+     └ mcp__claude_ai_Google_Drive__complete_authentication
+
+     Memory files · /memory
+     ├ ~/.claude/CLAUDE.md: 984 tokens
+     ├ CLAUDE.md: 239 tokens
+     └ ~/.claude/projects/-home-paul-AndroidStudioProjects-Autistic/memory/MEMORY
+     .md: 109 tokens
+
+     Skills · /skills
+
+     User
+     ├ kotlin: 18 tokens
+     └ android: 17 tokens
