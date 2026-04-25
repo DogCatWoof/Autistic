@@ -20,6 +20,22 @@ class FoodCacheRepository(private val dao: FoodCacheDao) {
         )
     }
 
+    suspend fun search(query: String): List<ParsedNutritionData> {
+        return dao.search(query).map { entity ->
+            ParsedNutritionData(
+                description = entity.description,
+                calories = entity.calories,
+                protein = entity.protein,
+                totalFat = entity.totalFat,
+                totalCarbs = entity.totalCarbs,
+                fiber = entity.fiber,
+                totalSugars = entity.totalSugars,
+                addedSugars = entity.addedSugars,
+                sugarAlcohols = entity.sugarAlcohols,
+            )
+        }
+    }
+
     suspend fun save(data: ParsedNutritionData) {
         val description = data.description ?: return
         dao.upsert(FoodCacheEntity(

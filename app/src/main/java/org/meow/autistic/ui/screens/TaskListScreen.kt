@@ -368,8 +368,8 @@ fun CalendarEventItem(
     val dismissState = rememberSwipeToDismissBoxState()
     LaunchedEffect(dismissState.currentValue) {
         when (dismissState.currentValue) {
-            SwipeToDismissBoxValue.StartToEnd -> viewModel.completeEvent(event)
-            SwipeToDismissBoxValue.EndToStart -> viewModel.deleteEvent(event)
+            SwipeToDismissBoxValue.StartToEnd -> viewModel.deleteEvent(event)
+            SwipeToDismissBoxValue.EndToStart -> viewModel.completeEvent(event)
             else -> {}
         }
     }
@@ -377,24 +377,24 @@ fun CalendarEventItem(
     SwipeToDismissBox(
         state = dismissState,
         backgroundContent = {
-            val isComplete by remember {
+            val isDelete by remember {
                 derivedStateOf {
                     try { dismissState.requireOffset() > 0f } catch (_: IllegalStateException) { false }
                 }
             }
-            val bgColor = if (isComplete) MaterialTheme.colorScheme.primaryContainer
-                          else MaterialTheme.colorScheme.errorContainer
-            val alignment = if (isComplete) Alignment.CenterStart else Alignment.CenterEnd
-            val padding = if (isComplete) Modifier.padding(start = 24.dp) else Modifier.padding(end = 24.dp)
+            val bgColor = if (isDelete) MaterialTheme.colorScheme.errorContainer
+                          else MaterialTheme.colorScheme.primaryContainer
+            val alignment = if (isDelete) Alignment.CenterStart else Alignment.CenterEnd
+            val padding = if (isDelete) Modifier.padding(start = 24.dp) else Modifier.padding(end = 24.dp)
             Box(
                 modifier = Modifier.fillMaxSize().background(bgColor),
                 contentAlignment = alignment
             ) {
                 Icon(
-                    imageVector = if (isComplete) Icons.Default.CheckCircle else Icons.Default.Delete,
-                    contentDescription = if (isComplete) "Complete" else "Delete",
-                    tint = if (isComplete) MaterialTheme.colorScheme.onPrimaryContainer
-                           else MaterialTheme.colorScheme.onErrorContainer,
+                    imageVector = if (isDelete) Icons.Default.Delete else Icons.Default.CheckCircle,
+                    contentDescription = if (isDelete) "Delete" else "Complete",
+                    tint = if (isDelete) MaterialTheme.colorScheme.onErrorContainer
+                           else MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = padding
                 )
             }
@@ -453,8 +453,8 @@ fun TaskItem(
     val dismissState = rememberSwipeToDismissBoxState()
     LaunchedEffect(dismissState.currentValue) {
         when (dismissState.currentValue) {
-            SwipeToDismissBoxValue.StartToEnd -> onToggle(!task.isCompleted)
-            SwipeToDismissBoxValue.EndToStart -> onDelete()
+            SwipeToDismissBoxValue.StartToEnd -> onDelete()
+            SwipeToDismissBoxValue.EndToStart -> onToggle(!task.isCompleted)
             else -> {}
         }
     }
@@ -462,24 +462,24 @@ fun TaskItem(
     SwipeToDismissBox(
         state = dismissState,
         backgroundContent = {
-            val isComplete by remember {
+            val isDelete by remember {
                 derivedStateOf {
                     try { dismissState.requireOffset() > 0f } catch (_: IllegalStateException) { false }
                 }
             }
-            val bgColor = if (isComplete) MaterialTheme.colorScheme.primaryContainer
-                          else MaterialTheme.colorScheme.errorContainer
-            val alignment = if (isComplete) Alignment.CenterStart else Alignment.CenterEnd
-            val padding = if (isComplete) Modifier.padding(start = 24.dp) else Modifier.padding(end = 24.dp)
+            val bgColor = if (isDelete) MaterialTheme.colorScheme.errorContainer
+                          else MaterialTheme.colorScheme.primaryContainer
+            val alignment = if (isDelete) Alignment.CenterStart else Alignment.CenterEnd
+            val padding = if (isDelete) Modifier.padding(start = 24.dp) else Modifier.padding(end = 24.dp)
             Box(
                 modifier = Modifier.fillMaxSize().background(bgColor),
                 contentAlignment = alignment
             ) {
                 Icon(
-                    imageVector = if (isComplete) Icons.Default.CheckCircle else Icons.Default.Delete,
-                    contentDescription = if (isComplete) "Complete" else "Delete",
-                    tint = if (isComplete) MaterialTheme.colorScheme.onPrimaryContainer
-                           else MaterialTheme.colorScheme.onErrorContainer,
+                    imageVector = if (isDelete) Icons.Default.Delete else Icons.Default.CheckCircle,
+                    contentDescription = if (isDelete) "Delete" else "Complete",
+                    tint = if (isDelete) MaterialTheme.colorScheme.onErrorContainer
+                           else MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = padding
                 )
             }

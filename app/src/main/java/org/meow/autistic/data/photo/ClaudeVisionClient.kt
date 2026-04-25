@@ -26,6 +26,9 @@ private const val NUTRITION_LABEL_PROMPT = "Parse this nutrition facts label. " 
     "\"sugar_alcohols_g\":0}. All nutrient fields must be numbers. " +
     "Use 0 for missing fields. serving_size may be null if not visible."
 
+private const val FOOD_NAME_PROMPT = "What is the product name printed on this label? " +
+    "Return ONLY the product name as a plain string with no extra text or punctuation."
+
 private const val FOOD_PHOTO_PROMPT = "Analyze this food photo. " +
     "Return ONLY valid JSON, no other text: " +
     "{\"description\":\"...\",\"serving_size\":\"...\",\"calories\":0,\"protein_g\":0,\"total_fat_g\":0," +
@@ -47,6 +50,11 @@ class ClaudeVisionClient(
 
     suspend fun analyzeFoodPhoto(imagePath: String): ParsedNutritionData = withContext(Dispatchers.IO) {
         parseNutritionJson(callApi(imagePath, FOOD_PHOTO_PROMPT))
+    }
+
+    suspend fun extractFoodName(imagePath: String): String? = withContext(Dispatchers.IO) {
+        val name = callApi(imagePath, FOOD_NAME_PROMPT).trim()
+        name.takeIf { it.isNotBlank() }
     }
 
     private fun callApi(imagePath: String, prompt: String): String {

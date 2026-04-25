@@ -11,4 +11,7 @@ interface FoodCacheDao {
 
     @Query("SELECT * FROM food_cache WHERE LOWER(description) = LOWER(:description) LIMIT 1")
     suspend fun findByDescription(description: String): FoodCacheEntity?
+
+    @Query("SELECT * FROM food_cache WHERE LOWER(description) LIKE '%' || LOWER(:query) || '%' ORDER BY description LIMIT 10")
+    suspend fun search(query: String): List<FoodCacheEntity>
 }

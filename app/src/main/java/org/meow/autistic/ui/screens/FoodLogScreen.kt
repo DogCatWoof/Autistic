@@ -39,7 +39,10 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -65,10 +68,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -78,6 +84,7 @@ import androidx.core.content.FileProvider
 import org.koin.androidx.compose.koinViewModel
 import org.meow.autistic.data.foodlog.FoodLogEntry
 import org.meow.autistic.data.foodlog.FoodLogItemEntry
+import org.meow.autistic.data.photo.ParsedNutritionData
 import java.io.File
 import java.time.Instant
 import java.time.LocalDate
@@ -101,11 +108,14 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
     val totals by viewModel.totals.collectAsState()
     val entryList by viewModel.items.collectAsState()
     val labelState by viewModel.labelAnalysisState.collectAsState()
+    val labelFlowState by viewModel.labelFlowState.collectAsState()
     val foodPhotoState by viewModel.foodPhotoAnalysisState.collectAsState()
     val photoStatuses by viewModel.photoAnalysisStatuses.collectAsState()
+    val foodSuggestions by viewModel.foodSuggestions.collectAsState()
     var fabExpanded by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
     var showCamera by remember { mutableStateOf(false) }
+    var nutritionPhotoMode by remember { mutableStateOf(false) }
     var previewUri by remember { mutableStateOf<Uri?>(null) }
     var selectedItem by remember { mutableStateOf<FoodLogItemEntry?>(null) }
     val fabRotation by animateFloatAsState(targetValue = if (fabExpanded) 45f else 0f, label = "fab_rotation")
@@ -129,12 +139,31 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
 
     if (showAddDialog) {
         AddFoodEntryDialog(
-            onDismiss = { showAddDialog = false },
+            onDismiss = { showAddDialog = false; viewModel.searchFoodNames("") },
             onConfirm = { item ->
                 viewModel.addItem(item)
                 showAddDialog = false
+                viewModel.searchFoodNames("")
             },
+            suggestions = foodSuggestions,
+            onSearchFoodNames = { viewModel.searchFoodNames(it) },
         )
+    }
+
+    when (labelFlowState) {
+        is LabelFlowState.ExtractingName ->
+            LabelNameExtractingDialog(onDismiss = { viewModel.dismissLabelFlow() })
+        is LabelFlowState.NeedNutritionPhoto -> {
+            val flowState = labelFlowState as LabelFlowState.NeedNutritionPhoto
+            if (!nutritionPhotoMode && !showCamera) {
+                LabelNeedNutritionPhotoDialog(
+                    foodName = flowState.name,
+                    onTakePhoto = { nutritionPhotoMode = true; launchCamera() },
+                    onDismiss = { viewModel.dismissLabelFlow() },
+                )
+            }
+        }
+        LabelFlowState.Idle -> {}
     }
 
     when (val state = labelState) {
@@ -246,9 +275,8 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
                 onPhotoTaken = {
                     val tempFile = File(context.cacheDir, "camera_temp/temp_food_photo.jpg")
                     previewUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", tempFile)
-                    showCamera = false
                 },
-                onDismiss = { showCamera = false },
+                onDismiss = { showCamera = false; previewUri = null },
             )
         }
 
@@ -256,16 +284,35 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
         if (uri != null) {
             PhotoPreviewOverlay(
                 uri = uri,
-                onRetake = { previewUri = null; launchCamera() },
+                mode = if (nutritionPhotoMode) PhotoPreviewMode.NutritionOnly else PhotoPreviewMode.Default,
+                onRetake = { previewUri = null },
                 onAcceptAsLabel = {
+                    showCamera = false
                     previewUri = null
                     viewModel.acceptLabelPhoto()
                 },
                 onAcceptAsFood = {
+                    showCamera = false
                     previewUri = null
                     viewModel.acceptFoodPhoto()
                 },
-                onDismiss = { previewUri = null },
+                onAcceptAsNutrition = {
+                    val flowState = labelFlowState
+                    showCamera = false
+                    previewUri = null
+                    nutritionPhotoMode = false
+                    if (flowState is LabelFlowState.NeedNutritionPhoto) {
+                        viewModel.continueLabelWithNutritionPhoto(flowState.itemId, flowState.name)
+                    }
+                },
+                onDismiss = {
+                    showCamera = false
+                    previewUri = null
+                    if (nutritionPhotoMode) {
+                        nutritionPhotoMode = false
+                        viewModel.dismissLabelFlow()
+                    }
+                },
             )
         }
     }
@@ -502,7 +549,13 @@ private fun FoodLogSpeedDialItem(label: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun AddFoodEntryDialog(onDismiss: () -> Unit, onConfirm: (FoodLogItemEntry) -> Unit) {
+@OptIn(ExperimentalMaterial3Api::class)
+private fun AddFoodEntryDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (FoodLogItemEntry) -> Unit,
+    suggestions: List<ParsedNutritionData> = emptyList(),
+    onSearchFoodNames: (String) -> Unit = {},
+) {
     var description by remember { mutableStateOf("") }
     var calories by remember { mutableStateOf("") }
     var protein by remember { mutableStateOf("") }
@@ -512,6 +565,7 @@ private fun AddFoodEntryDialog(onDismiss: () -> Unit, onConfirm: (FoodLogItemEnt
     var totalSugars by remember { mutableStateOf("") }
     var addedSugars by remember { mutableStateOf("") }
     var sugarAlcohols by remember { mutableStateOf("") }
+    var dropdownExpanded by remember { mutableStateOf(false) }
 
     val netCarbs by remember {
         derivedStateOf {
@@ -527,11 +581,40 @@ private fun AddFoodEntryDialog(onDismiss: () -> Unit, onConfirm: (FoodLogItemEnt
         title = { Text("Log Entry") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                OutlinedTextField(
-                    value = description, onValueChange = { description = it },
-                    label = { Text("Description (optional)") },
-                    modifier = Modifier.fillMaxWidth(), singleLine = true,
-                )
+                ExposedDropdownMenuBox(
+                    expanded = dropdownExpanded && suggestions.isNotEmpty(),
+                    onExpandedChange = { dropdownExpanded = it },
+                ) {
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it; onSearchFoodNames(it); dropdownExpanded = true },
+                        label = { Text("Description (optional)") },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(), singleLine = true,
+                    )
+                    ExposedDropdownMenu(
+                        expanded = dropdownExpanded && suggestions.isNotEmpty(),
+                        onDismissRequest = { dropdownExpanded = false },
+                    ) {
+                        suggestions.forEach { suggestion ->
+                            DropdownMenuItem(
+                                text = { Text(suggestion.description ?: "") },
+                                onClick = {
+                                    description = suggestion.description ?: ""
+                                    calories = suggestion.calories.fmt
+                                    protein = suggestion.protein.fmt
+                                    totalFat = suggestion.totalFat.fmt
+                                    totalCarbs = suggestion.totalCarbs.fmt
+                                    fiber = suggestion.fiber.fmt
+                                    totalSugars = suggestion.totalSugars.fmt
+                                    addedSugars = suggestion.addedSugars.fmt
+                                    sugarAlcohols = suggestion.sugarAlcohols.fmt
+                                    dropdownExpanded = false
+                                    onSearchFoodNames("")
+                                },
+                            )
+                        }
+                    }
+                }
                 FoodLogDialogLabel("Calories")
                 FoodLogNutrientInputRow("Calories", calories, "kcal") { calories = it }
                 FoodLogNutrientInputRow("Protein", protein, "g") { protein = it }
@@ -598,19 +681,26 @@ private fun FoodLogDialogLabel(label: String) {
 
 @Composable
 private fun FoodLogNutrientInputRow(label: String, value: String, unit: String, onValueChange: (String) -> Unit) {
+    var fieldValue by remember { mutableStateOf(TextFieldValue(text = value, selection = TextRange(value.length))) }
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
         OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
+            value = fieldValue,
+            onValueChange = { fieldValue = it; onValueChange(it.text) },
             suffix = { Text(unit) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyMedium.copy(textAlign = TextAlign.End),
-            modifier = Modifier.width(96.dp),
+            modifier = Modifier
+                .width(96.dp)
+                .onFocusChanged { fs ->
+                    if (fs.isFocused) {
+                        fieldValue = fieldValue.copy(selection = TextRange(0, fieldValue.text.length))
+                    }
+                },
         )
     }
 }

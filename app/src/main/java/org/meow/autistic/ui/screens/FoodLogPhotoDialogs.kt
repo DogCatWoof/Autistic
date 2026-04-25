@@ -39,12 +39,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.meow.autistic.data.foodlog.FoodLogItemEntry
@@ -59,12 +62,16 @@ private val Double.fmt: String
         else -> "%.1f".format(this)
     }
 
+internal enum class PhotoPreviewMode { Default, NutritionOnly }
+
 @Composable
 internal fun PhotoPreviewOverlay(
     uri: Uri,
+    mode: PhotoPreviewMode = PhotoPreviewMode.Default,
     onRetake: () -> Unit,
-    onAcceptAsLabel: () -> Unit,
-    onAcceptAsFood: () -> Unit,
+    onAcceptAsLabel: () -> Unit = {},
+    onAcceptAsFood: () -> Unit = {},
+    onAcceptAsNutrition: () -> Unit = {},
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -112,8 +119,12 @@ internal fun PhotoPreviewOverlay(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             OutlinedButton(onClick = onRetake, modifier = Modifier.weight(1f)) { Text("Retake") }
-            Button(onClick = onAcceptAsLabel, modifier = Modifier.weight(1f)) { Text("Label") }
-            Button(onClick = onAcceptAsFood, modifier = Modifier.weight(1f)) { Text("Food") }
+            if (mode == PhotoPreviewMode.NutritionOnly) {
+                Button(onClick = onAcceptAsNutrition, modifier = Modifier.weight(2f)) { Text("Use as Nutrition Label") }
+            } else {
+                Button(onClick = onAcceptAsLabel, modifier = Modifier.weight(1f)) { Text("Label") }
+                Button(onClick = onAcceptAsFood, modifier = Modifier.weight(1f)) { Text("Food") }
+            }
         }
 
         TextButton(
@@ -121,6 +132,46 @@ internal fun PhotoPreviewOverlay(
             modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
         ) { Text("Cancel", color = Color.White) }
     }
+}
+
+@Composable
+internal fun LabelNameExtractingDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Reading Label") },
+        text = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                Spacer(Modifier.width(12.dp))
+                Text("Identifying food name…")
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+@Composable
+internal fun LabelNeedNutritionPhotoDialog(
+    foodName: String,
+    onTakePhoto: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (foodName.isNotBlank()) foodName else "Scan Nutrition Facts") },
+        text = {
+            Text(
+                if (foodName.isNotBlank()) {
+                    "\"$foodName\" isn't in the cache yet. Photograph the nutrition facts label to record its values."
+                } else {
+                    "Photograph the nutrition facts label to record this food's values."
+                }
+            )
+        },
+        confirmButton = { TextButton(onClick = onTakePhoto) { Text("Take Photo") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
 }
 
 @Composable
@@ -159,8 +210,8 @@ internal fun NutritionLabelServingsDialog(
     onDismiss: () -> Unit,
     onConfirm: (data: ParsedNutritionData, servings: Double) -> Unit,
 ) {
-    var servingsText by remember { mutableStateOf("1") }
-    val servings by remember { derivedStateOf { servingsText.toDoubleOrNull()?.coerceAtLeast(0.0) ?: 1.0 } }
+    var servingsField by remember { mutableStateOf(TextFieldValue("1", selection = TextRange(1))) }
+    val servings by remember { derivedStateOf { servingsField.text.toDoubleOrNull()?.coerceAtLeast(0.0) ?: 1.0 } }
     var caloriesText by remember { mutableStateOf(data.calories.fmt) }
     var proteinText by remember { mutableStateOf(data.protein.fmt) }
     var totalFatText by remember { mutableStateOf(data.totalFat.fmt) }
@@ -188,11 +239,17 @@ internal fun NutritionLabelServingsDialog(
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text("Servings", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                     OutlinedTextField(
-                        value = servingsText,
-                        onValueChange = { servingsText = it },
+                        value = servingsField,
+                        onValueChange = { servingsField = it },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,
-                        modifier = Modifier.width(80.dp),
+                        modifier = Modifier
+                            .width(80.dp)
+                            .onFocusChanged { fs ->
+                                if (fs.isFocused) {
+                                    servingsField = servingsField.copy(selection = TextRange(0, servingsField.text.length))
+                                }
+                            },
                         textStyle = MaterialTheme.typography.bodyMedium.copy(textAlign = TextAlign.End),
                     )
                 }
@@ -254,6 +311,7 @@ private fun NutritionPreviewRow(label: String, value: Double, unit: String, high
 
 @Composable
 private fun NutritionEditRow(label: String, value: String, unit: String, onValueChange: (String) -> Unit) {
+    var fieldValue by remember { mutableStateOf(TextFieldValue(text = value, selection = TextRange(value.length))) }
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
             label,
@@ -261,12 +319,18 @@ private fun NutritionEditRow(label: String, value: String, unit: String, onValue
             modifier = Modifier.weight(1f),
         )
         OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
+            value = fieldValue,
+            onValueChange = { fieldValue = it; onValueChange(it.text) },
             suffix = { Text(unit, style = MaterialTheme.typography.bodySmall) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             singleLine = true,
-            modifier = Modifier.width(96.dp),
+            modifier = Modifier
+                .width(96.dp)
+                .onFocusChanged { fs ->
+                    if (fs.isFocused) {
+                        fieldValue = fieldValue.copy(selection = TextRange(0, fieldValue.text.length))
+                    }
+                },
             textStyle = MaterialTheme.typography.bodySmall.copy(textAlign = TextAlign.End),
         )
     }

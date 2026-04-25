@@ -32,6 +32,12 @@ import java.time.Instant
 import java.time.LocalDate
 import kotlin.coroutines.resume
 
+sealed class LabelFlowState {
+    object Idle : LabelFlowState()
+    object ExtractingName : LabelFlowState()
+    data class NeedNutritionPhoto(val name: String, val itemId: Long, val labelImagePath: String) : LabelFlowState()
+}
+
 sealed class LabelAnalysisState {
     object Idle : LabelAnalysisState()
     data class Loading(val itemId: Long, val imagePath: String) : LabelAnalysisState()
@@ -85,6 +91,12 @@ class FoodLogViewModel(
             sugarAlcohols = list.sumOf { it.sugarAlcohols },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), FoodLogEntry(date = LocalDate.now().toString()))
+
+    private val _labelFlowState = MutableStateFlow<LabelFlowState>(LabelFlowState.Idle)
+    val labelFlowState: StateFlow<LabelFlowState> = _labelFlowState.asStateFlow()
+
+    private val _foodSuggestions = MutableStateFlow<List<ParsedNutritionData>>(emptyList())
+    val foodSuggestions: StateFlow<List<ParsedNutritionData>> = _foodSuggestions.asStateFlow()
 
     private val _labelAnalysisState = MutableStateFlow<LabelAnalysisState>(LabelAnalysisState.Idle)
     val labelAnalysisState: StateFlow<LabelAnalysisState> = _labelAnalysisState.asStateFlow()
@@ -178,7 +190,71 @@ class FoodLogViewModel(
 
     fun acceptLabelPhoto() {
         viewModelScope.launch(handler) {
-            startLabelAnalysis(savePhotoToStorage())
+            startLabelFlow(savePhotoToStorage())
+        }
+    }
+
+    private suspend fun startLabelFlow(imagePath: String) {
+        val itemId = repository.insertItem(FoodLogItemEntry(
+            date = _date.value,
+            loggedAt = Instant.now(),
+            imagePath = imagePath,
+            description = "Extracting food name…",
+            isAiPending = true,
+        ))
+        _photoAnalysisStatuses.update { it + (itemId to PhotoAnalysisStatus.ScanningLabel) }
+        _labelFlowState.value = LabelFlowState.ExtractingName
+        try {
+            val name = claudeClient.extractFoodName(imagePath)
+            if (name != null) {
+                val cached = foodCacheRepository.findByDescription(name)
+                if (cached != null) {
+                    _labelFlowState.value = LabelFlowState.Idle
+                    _labelAnalysisState.value = LabelAnalysisState.Ready(cached, itemId, imagePath)
+                    return
+                }
+            }
+            _labelFlowState.value = LabelFlowState.NeedNutritionPhoto(name ?: "", itemId, imagePath)
+        } catch (e: Exception) {
+            _labelFlowState.value = LabelFlowState.Idle
+            _labelAnalysisState.value = LabelAnalysisState.Error(itemId, imagePath)
+            throw e
+        }
+    }
+
+    fun continueLabelWithNutritionPhoto(itemId: Long, foodName: String) {
+        viewModelScope.launch(handler) {
+            val nutritionImagePath = savePhotoToStorage()
+            _labelFlowState.value = LabelFlowState.Idle
+            _photoAnalysisStatuses.update { it + (itemId to PhotoAnalysisStatus.ScanningLabel) }
+            _labelAnalysisState.value = LabelAnalysisState.Loading(itemId, nutritionImagePath)
+            try {
+                val data = claudeClient.analyzeNutritionLabel(nutritionImagePath)
+                val namedData = if (foodName.isNotBlank()) data.copy(description = foodName) else data
+                _labelAnalysisState.value = LabelAnalysisState.Ready(namedData, itemId, nutritionImagePath)
+            } catch (e: Exception) {
+                _labelAnalysisState.value = LabelAnalysisState.Error(itemId, nutritionImagePath)
+                throw e
+            }
+        }
+    }
+
+    fun dismissLabelFlow() {
+        val state = _labelFlowState.value
+        _labelFlowState.value = LabelFlowState.Idle
+        if (state is LabelFlowState.NeedNutritionPhoto) {
+            _photoAnalysisStatuses.update { it - state.itemId }
+            viewModelScope.launch(handler) {
+                val item = repository.getItemById(state.itemId) ?: return@launch
+                if (item.calories == 0.0) { repository.deleteItem(item) }
+            }
+        }
+    }
+
+    fun searchFoodNames(query: String) {
+        if (query.isBlank()) { _foodSuggestions.value = emptyList(); return }
+        viewModelScope.launch(handler) {
+            _foodSuggestions.value = foodCacheRepository.search(query)
         }
     }
 
