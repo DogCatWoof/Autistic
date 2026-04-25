@@ -14,6 +14,9 @@ interface HealthSnapshotDao {
     @Query("SELECT * FROM health_snapshots ORDER BY date DESC LIMIT 1")
     suspend fun getLatest(): HealthSnapshotEntity?
 
+    @Query("SELECT * FROM health_snapshots ORDER BY date DESC LIMIT :limit")
+    fun getRecent(limit: Int): Flow<List<HealthSnapshotEntity>>
+
     @Upsert
     suspend fun upsert(entry: HealthSnapshotEntity)
 }

@@ -36,6 +36,9 @@ class HealthConnectRepository(
     fun getTodaySnapshot(): Flow<HealthSnapshotEntity?> =
         dao.getByDate(todayKey())
 
+    fun getRecentSnapshots(days: Int = 7): Flow<List<HealthSnapshotEntity>> =
+        dao.getRecent(days)
+
     suspend fun getGrantedPermissions(): Set<String> {
         val client = clientOrNull() ?: return emptySet()
         return client.permissionController.getGrantedPermissions()

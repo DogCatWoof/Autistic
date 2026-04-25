@@ -12,10 +12,8 @@ import kotlinx.coroutines.launch
 import org.meow.autistic.data.debug.ExceptionReporter
 import org.meow.autistic.data.health.HealthConnectRepository
 import org.meow.autistic.data.health.HealthSnapshotEntity
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
-/** Exposes Health Connect status and today's snapshot for the settings screen. */
+/** Exposes Health Connect status and 7-day snapshot history. */
 class HealthConnectViewModel(
     private val repository: HealthConnectRepository,
     private val exceptionReporter: ExceptionReporter,
@@ -32,9 +30,9 @@ class HealthConnectViewModel(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
-    val todaySnapshot: StateFlow<HealthSnapshotEntity?> = repository
-        .getTodaySnapshot()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    val recentSnapshots: StateFlow<List<HealthSnapshotEntity>> = repository
+        .getRecentSnapshots(7)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val requiredPermissions: Set<String> = repository.requiredPermissions
 

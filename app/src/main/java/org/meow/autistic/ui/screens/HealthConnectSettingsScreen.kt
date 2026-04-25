@@ -1,7 +1,9 @@
 package org.meow.autistic.ui.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -30,22 +33,30 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import org.koin.compose.koinInject
 import org.meow.autistic.data.health.HealthSnapshotEntity
-import java.time.ZoneId
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
-/** Full-page Health Connect screen: permission management and today's snapshot. */
+private val DATE_COL = 76.dp
+private val DATA_COL = 68.dp
+
+private val headerFormatter = DateTimeFormatter.ofPattern("EEE M/d")
+
+/** Full-page Health Connect screen: permission management and 7-day snapshot table. */
 @Composable
 fun HealthConnectScreen(modifier: Modifier = Modifier) {
     val viewModel: HealthConnectViewModel = koinInject()
     val sdkStatus by viewModel.sdkStatus.collectAsState()
     val grantedPermissions by viewModel.grantedPermissions.collectAsState()
-    val todaySnapshot by viewModel.todaySnapshot.collectAsState()
+    val recentSnapshots by viewModel.recentSnapshots.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -80,20 +91,90 @@ fun HealthConnectScreen(modifier: Modifier = Modifier) {
                         horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text("Today's Data", style = MaterialTheme.typography.titleMedium)
+                        Text("Last 7 Days", style = MaterialTheme.typography.titleMedium)
                         if (isRefreshing) {
                             CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
                         } else {
                             IconButton(onClick = { viewModel.refreshSnapshot() }) {
-                                Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                                Icon(Icons.Default.Refresh, contentDescription = "Refresh today")
                             }
                         }
                     }
                     Spacer(Modifier.height(8.dp))
-                    SnapshotCard(snapshot = todaySnapshot)
+                    SnapshotTable(snapshots = recentSnapshots)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SnapshotTable(snapshots: List<HealthSnapshotEntity>) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier
+            .horizontalScroll(rememberScrollState())
+            .padding(12.dp)
+        ) {
+            TableHeaderRow()
+            HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+            if (snapshots.isEmpty()) {
+                Text(
+                    "No data yet — tap Refresh to read from Health Connect.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 8.dp),
+                )
+            } else {
+                snapshots.forEachIndexed { index, snapshot ->
+                    TableDataRow(snapshot)
+                    if (index < snapshots.lastIndex) {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TableHeaderRow() {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        TableCell("Date", DATE_COL, isHeader = true)
+        TableCell("Steps", DATA_COL, isHeader = true)
+        TableCell("Sleep", DATA_COL, isHeader = true)
+        TableCell("HR", DATA_COL, isHeader = true)
+        TableCell("Weight", DATA_COL, isHeader = true)
+        TableCell("Cal", DATA_COL, isHeader = true)
+        TableCell("Glucose", DATA_COL, isHeader = true)
+    }
+}
+
+@Composable
+private fun TableDataRow(snapshot: HealthSnapshotEntity) {
+    val date = runCatching { LocalDate.parse(snapshot.date).format(headerFormatter) }
+        .getOrDefault(snapshot.date)
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        TableCell(date, DATE_COL)
+        TableCell(snapshot.steps?.toString() ?: "—", DATA_COL)
+        TableCell(snapshot.sleepMinutes?.let { formatSleep(it) } ?: "—", DATA_COL)
+        TableCell(snapshot.avgHeartRateBpm?.let { "${it.roundToInt()}" } ?: "—", DATA_COL)
+        TableCell(snapshot.weightKg?.let { "${"%.1f".format(it)}" } ?: "—", DATA_COL)
+        TableCell(snapshot.caloriesBurned?.let { "${it.roundToInt()}" } ?: "—", DATA_COL)
+        TableCell(snapshot.bloodGlucoseMmol?.let { "${"%.1f".format(it)}" } ?: "—", DATA_COL)
+    }
+}
+
+@Composable
+private fun TableCell(text: String, width: Dp, isHeader: Boolean = false) {
+    Box(modifier = Modifier.width(width), contentAlignment = Alignment.CenterStart) {
+        Text(
+            text = text,
+            style = if (isHeader) MaterialTheme.typography.labelSmall else MaterialTheme.typography.bodySmall,
+            fontWeight = if (isHeader) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (isHeader) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Start,
+            maxLines = 1,
+        )
     }
 }
 
@@ -149,54 +230,6 @@ private fun PermissionsCard(allGranted: Boolean, onGrant: () -> Unit) {
                 Button(onClick = onGrant) { Text("Grant Permissions") }
             }
         }
-    }
-}
-
-@Composable
-private fun SnapshotCard(snapshot: HealthSnapshotEntity?) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            if (snapshot == null) {
-                Text("No data yet — tap Refresh to read from Health Connect.")
-            } else {
-                val updated = snapshot.lastUpdatedAt
-                    .atZone(ZoneId.systemDefault())
-                    .format(DateTimeFormatter.ofPattern("h:mm a"))
-                Text(
-                    "Last updated $updated",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(12.dp))
-                SnapshotRow("Steps", snapshot.steps?.toString())
-                HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-                SnapshotRow("Sleep", snapshot.sleepMinutes?.let { formatSleep(it) })
-                HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-                SnapshotRow("Avg Heart Rate", snapshot.avgHeartRateBpm?.let { "${it.roundToInt()} bpm" })
-                HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-                SnapshotRow("Weight", snapshot.weightKg?.let { "${"%.1f".format(it)} kg" })
-                HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-                SnapshotRow("Calories Burned", snapshot.caloriesBurned?.let { "${it.roundToInt()} kcal" })
-                HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
-                SnapshotRow("Blood Glucose", snapshot.bloodGlucoseMmol?.let { "${"%.1f".format(it)} mmol/L" })
-            }
-        }
-    }
-}
-
-@Composable
-private fun SnapshotRow(label: String, value: String?) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(label, style = MaterialTheme.typography.bodyMedium)
-        Text(
-            value ?: "—",
-            style = MaterialTheme.typography.bodyMedium,
-            color = if (value == null) MaterialTheme.colorScheme.onSurfaceVariant
-                    else MaterialTheme.colorScheme.onSurface,
-        )
     }
 }
 
