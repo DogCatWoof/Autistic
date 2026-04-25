@@ -39,9 +39,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
-/** Settings sub-screen for managing Health Connect permissions and viewing today's data. */
+/** Full-page Health Connect screen: permission management and today's snapshot. */
 @Composable
-fun HealthConnectSettingsScreen(modifier: Modifier = Modifier) {
+fun HealthConnectScreen(modifier: Modifier = Modifier) {
     val viewModel: HealthConnectViewModel = koinInject()
     val sdkStatus by viewModel.sdkStatus.collectAsState()
     val grantedPermissions by viewModel.grantedPermissions.collectAsState()

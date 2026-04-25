@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Mood
@@ -75,6 +76,7 @@ import org.meow.autistic.ui.screens.AppDrawerSheet
 import org.meow.autistic.ui.screens.NavBottomSheet
 import org.meow.autistic.ui.screens.EnergyScreen
 import org.meow.autistic.ui.screens.FoodLogScreen
+import org.meow.autistic.ui.screens.HealthConnectScreen
 import org.meow.autistic.ui.screens.MoodScreen
 import org.meow.autistic.ui.screens.NotesScreen
 import org.meow.autistic.ui.screens.ScanScreen
@@ -104,6 +106,7 @@ class MainActivity : ComponentActivity() {
             NavigationItem("Mood", Icons.Filled.Mood, Icons.Outlined.Mood),
             NavigationItem("Food Log", Icons.Filled.Restaurant, Icons.Outlined.Restaurant),
             NavigationItem("Energy", Icons.Filled.Bolt, Icons.Filled.Bolt),
+            NavigationItem("Health", Icons.Filled.MonitorHeart, Icons.Filled.MonitorHeart),
         )
     }
 
@@ -253,6 +256,7 @@ class MainActivity : ComponentActivity() {
                                     "Mood" -> MoodScreen()
                                     "Food Log" -> FoodLogScreen()
                                     "Energy" -> EnergyScreen()
+                                    "Health" -> HealthConnectScreen()
                                 }
                             }
                         }
