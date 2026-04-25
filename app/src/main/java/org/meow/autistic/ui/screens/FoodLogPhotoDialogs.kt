@@ -69,8 +69,7 @@ internal fun PhotoPreviewOverlay(
     uri: Uri,
     mode: PhotoPreviewMode = PhotoPreviewMode.Default,
     onRetake: () -> Unit,
-    onAcceptAsLabel: () -> Unit = {},
-    onAcceptAsFood: () -> Unit = {},
+    onAccept: () -> Unit = {},
     onAcceptAsNutrition: () -> Unit = {},
     onDismiss: () -> Unit,
 ) {
@@ -122,8 +121,7 @@ internal fun PhotoPreviewOverlay(
             if (mode == PhotoPreviewMode.NutritionOnly) {
                 Button(onClick = onAcceptAsNutrition, modifier = Modifier.weight(2f)) { Text("Use as Nutrition Label") }
             } else {
-                Button(onClick = onAcceptAsLabel, modifier = Modifier.weight(1f)) { Text("Label") }
-                Button(onClick = onAcceptAsFood, modifier = Modifier.weight(1f)) { Text("Food") }
+                Button(onClick = onAccept, modifier = Modifier.weight(2f)) { Text("Analyze") }
             }
         }
 
@@ -135,15 +133,15 @@ internal fun PhotoPreviewOverlay(
 }
 
 @Composable
-internal fun LabelNameExtractingDialog(onDismiss: () -> Unit) {
+internal fun PhotoAnalysisLoadingDialog(message: String, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Reading Label") },
+        title = { Text("Please Wait") },
         text = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 CircularProgressIndicator(modifier = Modifier.size(24.dp))
                 Spacer(Modifier.width(12.dp))
-                Text("Identifying food name…")
+                Text(message)
             }
         },
         confirmButton = {},
@@ -175,23 +173,6 @@ internal fun LabelNeedNutritionPhotoDialog(
 }
 
 @Composable
-internal fun NutritionLabelLoadingDialog(onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Analyzing Label") },
-        text = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                Spacer(Modifier.width(12.dp))
-                Text("Reading nutrition information...")
-            }
-        },
-        confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
-}
-
-@Composable
 internal fun NutritionLabelErrorDialog(onDismiss: () -> Unit, onManualEntry: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -205,11 +186,10 @@ internal fun NutritionLabelErrorDialog(onDismiss: () -> Unit, onManualEntry: () 
 @Composable
 internal fun NutritionLabelServingsDialog(
     data: ParsedNutritionData,
-    imagePath: String,
-    title: String = "Nutrition Label",
     onDismiss: () -> Unit,
     onConfirm: (data: ParsedNutritionData, servings: Double) -> Unit,
 ) {
+    var nameText by remember { mutableStateOf(data.description ?: "") }
     var servingsField by remember { mutableStateOf(TextFieldValue("1", selection = TextRange(1))) }
     val servings by remember { derivedStateOf { servingsField.text.toDoubleOrNull()?.coerceAtLeast(0.0) ?: 1.0 } }
     var caloriesText by remember { mutableStateOf(data.calories.fmt) }
@@ -223,12 +203,19 @@ internal fun NutritionLabelServingsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title) },
+        title = { Text("Photo Entry") },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
+                OutlinedTextField(
+                    value = nameText,
+                    onValueChange = { nameText = it },
+                    label = { Text("Name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 if (data.servingSize != null) {
                     Text(
                         "Per serving: ${data.servingSize}",
@@ -275,6 +262,7 @@ internal fun NutritionLabelServingsDialog(
             TextButton(onClick = {
                 onConfirm(
                     data.copy(
+                        description = nameText.trim().takeIf { it.isNotBlank() },
                         calories = caloriesText.toDoubleOrNull() ?: data.calories,
                         protein = proteinText.toDoubleOrNull() ?: data.protein,
                         totalFat = totalFatText.toDoubleOrNull() ?: data.totalFat,
@@ -288,7 +276,7 @@ internal fun NutritionLabelServingsDialog(
                 )
             }) { Text("Accept") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Retry") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
 }
 

@@ -58,6 +58,18 @@
 - Google Tasks + Calendar sync: manual trigger and background schedule (see Sync Scheduling)
 - Daily Reset: shows last-run date and a manual "Run Now" button
 
+### Food Log
+- Users log daily food intake; each entry records description, calories, protein, fat, carbs, fiber, sugars, added sugars, and sugar alcohols
+- Entries are organized by day with prev/next navigation; daily nutrition totals are displayed with a calorie breakdown bar
+- **Manual entry**: a dialog with an optional description field and numeric nutrient inputs; autocomplete suggests from the local food cache
+- **Photo entry**: single "Analyze" button in the photo preview; AI classifies the photo as food, product, or unknown
+  - **Food**: Claude estimates nutrition per serving; results shown in an editable dialog with an editable name field
+  - **Product/barcode**: app checks the food cache by name, then queries USDA FDC and Open Food Facts by barcode; if found, results shown in editable dialog
+  - **Not found**: user is prompted to take a photo of the nutrition label; OCR extracts values and presents editable dialog
+- Accepted entries are saved to the food cache (keyed by description) for future autocomplete
+- Per-serving nutrients are multiplied by a user-specified servings count before saving
+- Stale in-flight analysis items (app killed mid-analysis) are cleared on startup
+
 ### [X] Conversation Scaffolding (Social Support)
 Reduces three loads in real-time social situations: decoding intent, deciding what to say, and managing timing.
 

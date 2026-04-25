@@ -35,7 +35,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -107,9 +106,7 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
     val date by viewModel.date.collectAsState()
     val totals by viewModel.totals.collectAsState()
     val entryList by viewModel.items.collectAsState()
-    val labelState by viewModel.labelAnalysisState.collectAsState()
-    val labelFlowState by viewModel.labelFlowState.collectAsState()
-    val foodPhotoState by viewModel.foodPhotoAnalysisState.collectAsState()
+    val photoFlowState by viewModel.photoFlowState.collectAsState()
     val photoStatuses by viewModel.photoAnalysisStatuses.collectAsState()
     val foodSuggestions by viewModel.foodSuggestions.collectAsState()
     var fabExpanded by remember { mutableStateOf(false) }
@@ -150,57 +147,34 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
         )
     }
 
-    when (labelFlowState) {
-        is LabelFlowState.ExtractingName ->
-            LabelNameExtractingDialog(onDismiss = { viewModel.dismissLabelFlow() })
-        is LabelFlowState.NeedNutritionPhoto -> {
-            val flowState = labelFlowState as LabelFlowState.NeedNutritionPhoto
+    when (val state = photoFlowState) {
+        is PhotoFlowState.Classifying ->
+            PhotoAnalysisLoadingDialog("Analyzing photo…", onDismiss = viewModel::dismissPhotoFlow)
+        is PhotoFlowState.LookingUp ->
+            PhotoAnalysisLoadingDialog("Looking up product…", onDismiss = viewModel::dismissPhotoFlow)
+        is PhotoFlowState.OcrLoading ->
+            PhotoAnalysisLoadingDialog("Reading nutrition label…", onDismiss = viewModel::dismissPhotoFlow)
+        is PhotoFlowState.Ready ->
+            NutritionLabelServingsDialog(
+                data = state.data,
+                onDismiss = viewModel::dismissPhotoFlow,
+                onConfirm = { data, servings -> viewModel.savePhotoEntry(data, servings, state.itemId, state.imagePath) },
+            )
+        is PhotoFlowState.NeedNutritionPhoto -> {
             if (!nutritionPhotoMode && !showCamera) {
                 LabelNeedNutritionPhotoDialog(
-                    foodName = flowState.name,
+                    foodName = state.name ?: "",
                     onTakePhoto = { nutritionPhotoMode = true; launchCamera() },
-                    onDismiss = { viewModel.dismissLabelFlow() },
+                    onDismiss = viewModel::dismissPhotoFlow,
                 )
             }
         }
-        LabelFlowState.Idle -> {}
-    }
-
-    when (val state = labelState) {
-        is LabelAnalysisState.Loading ->
-            NutritionLabelLoadingDialog(onDismiss = viewModel::dismissLabelAnalysis)
-        is LabelAnalysisState.Ready ->
-            NutritionLabelServingsDialog(
-                data = state.data,
-                imagePath = state.imagePath,
-                onDismiss = viewModel::dismissLabelAnalysis,
-                onConfirm = { data, servings -> viewModel.saveLabelEntry(data, servings, state.itemId, state.imagePath) },
-            )
-        is LabelAnalysisState.Error ->
+        is PhotoFlowState.Error ->
             NutritionLabelErrorDialog(
-                onDismiss = viewModel::dismissLabelAnalysis,
-                onManualEntry = { viewModel.dismissLabelAnalysis(); showAddDialog = true },
+                onDismiss = viewModel::dismissPhotoFlow,
+                onManualEntry = { viewModel.dismissPhotoFlow(); showAddDialog = true },
             )
-        LabelAnalysisState.Idle -> {}
-    }
-
-    when (val state = foodPhotoState) {
-        is FoodPhotoAnalysisState.Loading ->
-            NutritionLabelLoadingDialog(onDismiss = viewModel::dismissFoodPhotoAnalysis)
-        is FoodPhotoAnalysisState.Ready ->
-            NutritionLabelServingsDialog(
-                data = state.data,
-                imagePath = state.imagePath,
-                title = state.data.description ?: "Food Photo",
-                onDismiss = viewModel::dismissFoodPhotoAnalysis,
-                onConfirm = { data, servings -> viewModel.saveFoodPhotoEntry(data, servings, state.itemId) },
-            )
-        is FoodPhotoAnalysisState.Error ->
-            NutritionLabelErrorDialog(
-                onDismiss = viewModel::dismissFoodPhotoAnalysis,
-                onManualEntry = { viewModel.dismissFoodPhotoAnalysis(); showAddDialog = true },
-            )
-        FoodPhotoAnalysisState.Idle -> {}
+        PhotoFlowState.Idle -> {}
     }
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -286,23 +260,18 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
                 uri = uri,
                 mode = if (nutritionPhotoMode) PhotoPreviewMode.NutritionOnly else PhotoPreviewMode.Default,
                 onRetake = { previewUri = null },
-                onAcceptAsLabel = {
+                onAccept = {
                     showCamera = false
                     previewUri = null
-                    viewModel.acceptLabelPhoto()
-                },
-                onAcceptAsFood = {
-                    showCamera = false
-                    previewUri = null
-                    viewModel.acceptFoodPhoto()
+                    viewModel.acceptPhoto()
                 },
                 onAcceptAsNutrition = {
-                    val flowState = labelFlowState
+                    val flowState = photoFlowState
                     showCamera = false
                     previewUri = null
                     nutritionPhotoMode = false
-                    if (flowState is LabelFlowState.NeedNutritionPhoto) {
-                        viewModel.continueLabelWithNutritionPhoto(flowState.itemId, flowState.name)
+                    if (flowState is PhotoFlowState.NeedNutritionPhoto) {
+                        viewModel.continueWithNutritionPhoto(flowState.itemId, flowState.name)
                     }
                 },
                 onDismiss = {
@@ -310,7 +279,7 @@ fun FoodLogScreen(modifier: Modifier = Modifier, viewModel: FoodLogViewModel = k
                     previewUri = null
                     if (nutritionPhotoMode) {
                         nutritionPhotoMode = false
-                        viewModel.dismissLabelFlow()
+                        viewModel.dismissPhotoFlow()
                     }
                 },
             )
@@ -443,9 +412,7 @@ private fun FoodLogEntryListItem(
     onClick: () -> Unit,
 ) {
     val timeLabel = item.loggedAt.atZone(ZoneId.systemDefault()).format(timeFormatter)
-    val isPending = analysisStatus == PhotoAnalysisStatus.ScanningLabel ||
-        analysisStatus == PhotoAnalysisStatus.Queued ||
-        analysisStatus == PhotoAnalysisStatus.Analyzing
+    val isPending = analysisStatus == PhotoAnalysisStatus.Analyzing
 
     ListItem(
         modifier = Modifier.clickable(onClick = onClick),
@@ -465,16 +432,6 @@ private fun FoodLogEntryListItem(
         supportingContent = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 when (analysisStatus) {
-                    PhotoAnalysisStatus.ScanningLabel -> PhotoStatusRow(
-                        icon = { CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp) },
-                        text = "Reading nutrition label…",
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    PhotoAnalysisStatus.Queued -> PhotoStatusRow(
-                        icon = { Icon(Icons.Default.Schedule, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-                        text = "Waiting for WiFi to analyze",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                     PhotoAnalysisStatus.Analyzing -> PhotoStatusRow(
                         icon = { CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp) },
                         text = "Analyzing photo…",

@@ -5,6 +5,7 @@ import org.koin.dsl.module
 import org.meow.autistic.data.calendar.CalendarRepository
 import org.meow.autistic.data.health.HealthConnectRepository
 import org.meow.autistic.data.photo.ClaudeVisionClient
+import org.meow.autistic.data.photo.FoodProductLookupService
 import org.meow.autistic.data.product.OpenFoodFactsApiClient
 import org.meow.autistic.data.product.ProductRepository
 import org.meow.autistic.data.product.UsdaFdcApiClient
@@ -19,5 +20,6 @@ val repositoryModule = module {
     single { ProductRepository(get(), get(), get(), get()) }
     single { DailyTaskRepository(get(), get()) }
     single { ClaudeVisionClient() }
+    single { FoodProductLookupService(get(), get()) }
     single { HealthConnectRepository(androidContext(), get()) }
 }

@@ -19,6 +19,21 @@ private const val ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 private const val MODEL = "claude-haiku-4-5-20251001"
 private const val MAX_IMAGE_DIM = 1024
 
+private const val CLASSIFY_PROMPT = "Analyze this image and classify it. " +
+    "If it shows a meal, prepared dish, or raw ingredient: type = \"food\". " +
+    "If it shows a packaged product with a visible barcode or nutrition label: type = \"product\". " +
+    "Otherwise: type = \"unknown\". " +
+    "Return ONLY valid JSON, no other text: " +
+    "{\"type\":\"food\",\"name\":null,\"barcode\":null,\"serving_size\":null," +
+    "\"calories\":0,\"protein_g\":0,\"total_fat_g\":0,\"total_carbs_g\":0," +
+    "\"fiber_g\":0,\"total_sugars_g\":0,\"added_sugars_g\":0,\"sugar_alcohols_g\":0}. " +
+    "Rules: type is exactly \"food\", \"product\", or \"unknown\". " +
+    "name: food or product name, null if unrecognizable. " +
+    "barcode: numeric barcode digits if clearly visible, otherwise null. " +
+    "serving_size: estimated portion for food (e.g. \"1 plate\", \"200g\"), null for product/unknown. " +
+    "Nutrient fields: estimated per-serving values for food type, all 0 for product/unknown. " +
+    "All numeric fields must be numbers, never null."
+
 private const val NUTRITION_LABEL_PROMPT = "Parse this nutrition facts label. " +
     "Return ONLY valid JSON, no other text: " +
     "{\"serving_size\":\"...\",\"calories\":0,\"protein_g\":0,\"total_fat_g\":0," +
@@ -26,35 +41,19 @@ private const val NUTRITION_LABEL_PROMPT = "Parse this nutrition facts label. " 
     "\"sugar_alcohols_g\":0}. All nutrient fields must be numbers. " +
     "Use 0 for missing fields. serving_size may be null if not visible."
 
-private const val FOOD_NAME_PROMPT = "What is the product name printed on this label? " +
-    "Return ONLY the product name as a plain string with no extra text or punctuation."
-
-private const val FOOD_PHOTO_PROMPT = "Analyze this food photo. " +
-    "Return ONLY valid JSON, no other text: " +
-    "{\"description\":\"...\",\"serving_size\":\"...\",\"calories\":0,\"protein_g\":0,\"total_fat_g\":0," +
-    "\"total_carbs_g\":0,\"fiber_g\":0,\"total_sugars_g\":0,\"added_sugars_g\":0,\"sugar_alcohols_g\":0}. " +
-    "description: brief name of the food shown. serving_size: estimated portion (e.g. '1 plate', '200g'). " +
-    "All nutrient fields are numbers per serving. Use 0 for unknown values."
-
 /**
- * Calls the Anthropic Messages API with a photo for nutrition label OCR or food analysis.
- * Set [ANTHROPIC_API_KEY] before use.
+ * Calls the Anthropic Messages API with a photo to classify food images and parse nutrition labels.
  */
 class ClaudeVisionClient(
     private val httpClient: OkHttpClient = OkHttpClient(),
     private val apiKey: String = ANTHROPIC_API_KEY,
 ) {
+    suspend fun classifyAndAnalyze(imagePath: String): PhotoClassificationResult = withContext(Dispatchers.IO) {
+        parseClassificationJson(callApi(imagePath, CLASSIFY_PROMPT))
+    }
+
     suspend fun analyzeNutritionLabel(imagePath: String): ParsedNutritionData = withContext(Dispatchers.IO) {
         parseNutritionJson(callApi(imagePath, NUTRITION_LABEL_PROMPT))
-    }
-
-    suspend fun analyzeFoodPhoto(imagePath: String): ParsedNutritionData = withContext(Dispatchers.IO) {
-        parseNutritionJson(callApi(imagePath, FOOD_PHOTO_PROMPT))
-    }
-
-    suspend fun extractFoodName(imagePath: String): String? = withContext(Dispatchers.IO) {
-        val name = callApi(imagePath, FOOD_NAME_PROMPT).trim()
-        name.takeIf { it.isNotBlank() }
     }
 
     private fun callApi(imagePath: String, prompt: String): String {
@@ -116,12 +115,39 @@ class ClaudeVisionClient(
             })
         }
 
+    private fun parseClassificationJson(text: String): PhotoClassificationResult {
+        val jsonText = text.trim()
+            .removePrefix("```json").removePrefix("```").removeSuffix("```").trim()
+        val json = JsonParser.parseString(jsonText).asJsonObject
+        val type = when (json.get("type")?.asString?.lowercase()) {
+            "food" -> PhotoType.FOOD
+            "product" -> PhotoType.PRODUCT
+            else -> PhotoType.UNKNOWN
+        }
+        val name = json.get("name")?.takeIf { !it.isJsonNull }?.asString
+        val barcode = json.get("barcode")?.takeIf { !it.isJsonNull }?.asString
+        val nutrition = if (type == PhotoType.FOOD) {
+            ParsedNutritionData(
+                description = name,
+                servingSize = json.get("serving_size")?.takeIf { !it.isJsonNull }?.asString,
+                calories = json.dbl("calories"),
+                protein = json.dbl("protein_g"),
+                totalFat = json.dbl("total_fat_g"),
+                totalCarbs = json.dbl("total_carbs_g"),
+                fiber = json.dbl("fiber_g"),
+                totalSugars = json.dbl("total_sugars_g"),
+                addedSugars = json.dbl("added_sugars_g"),
+                sugarAlcohols = json.dbl("sugar_alcohols_g"),
+            )
+        } else null
+        return PhotoClassificationResult(type, name, barcode, nutrition)
+    }
+
     private fun parseNutritionJson(text: String): ParsedNutritionData {
         val jsonText = text.trim()
             .removePrefix("```json").removePrefix("```").removeSuffix("```").trim()
         val json = JsonParser.parseString(jsonText).asJsonObject
         return ParsedNutritionData(
-            description = json.get("description")?.takeIf { !it.isJsonNull }?.asString,
             servingSize = json.get("serving_size")?.takeIf { !it.isJsonNull }?.asString,
             calories = json.dbl("calories"),
             protein = json.dbl("protein_g"),

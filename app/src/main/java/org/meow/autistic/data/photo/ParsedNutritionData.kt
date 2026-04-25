@@ -14,4 +14,5 @@ data class ParsedNutritionData(
     val totalSugars: Double = 0.0,
     val addedSugars: Double = 0.0,
     val sugarAlcohols: Double = 0.0,
+    val barcode: String? = null,
 )
