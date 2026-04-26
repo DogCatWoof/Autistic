@@ -62,12 +62,12 @@ class CalendarRemoteSource(
 ) {
 
     /**
-     * Fetches all events in the primary calendar between [timeMin] and [timeMax] (epoch ms).
+     * Fetches all events in the primary calendar from [timeMin] onward (epoch ms).
      * Recurring events are expanded to individual instances. Deleted events are excluded.
      * Returns events plus a [CalendarSyncResult.nextSyncToken] suitable for the next
      * incremental call to [fetchDeletedEvents].
      */
-    suspend fun fetchEvents(token: String, timeMin: Long, timeMax: Long): CalendarSyncResult =
+    suspend fun fetchEvents(token: String, timeMin: Long): CalendarSyncResult =
         withContext(Dispatchers.IO) {
             val client = clientFactory(token)
             val result = mutableListOf<RemoteEvent>()
@@ -76,7 +76,6 @@ class CalendarRemoteSource(
             do {
                 val request = client.events().list(PRIMARY_CALENDAR)
                   .setTimeMin(DateTime(timeMin))
-                  .setTimeMax(DateTime(timeMax))
                   .setSingleEvents(true)
                   .setShowDeleted(false)
                 if (pageToken != null) request.setPageToken(pageToken)

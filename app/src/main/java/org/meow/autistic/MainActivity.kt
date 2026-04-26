@@ -282,8 +282,8 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(
-                NotificationChannel("test_channel", "Test Channel", NotificationManager.IMPORTANCE_DEFAULT)
-                    .apply { description = "Test Channel Description" }
+                NotificationChannel("mood_channel", "Mood Check-In", NotificationManager.IMPORTANCE_DEFAULT)
+                    .apply { description = "Hourly mood check-in prompts" }
             )
             notificationManager.createNotificationChannel(
                 NotificationChannel(REMINDER_CHANNEL_ID, "Task Reminders", NotificationManager.IMPORTANCE_HIGH)
@@ -294,15 +294,25 @@ class MainActivity : ComponentActivity() {
 }
 
 fun showNotification(context: Context) {
-    val intent = Intent(context, NotificationActivity::class.java)
-    val pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
-    val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-    val builder = NotificationCompat.Builder(context, "test_channel")
+    val views = android.widget.RemoteViews(context.packageName, R.layout.notification_mood_picker)
+    org.meow.autistic.data.mood.MOOD_EMOJIS.forEachIndexed { i, (emoji, label) ->
+        views.setTextViewText(org.meow.autistic.data.mood.MOOD_BUTTON_VIEW_IDS[i], "$emoji\n$label")
+        val intent = Intent(context, org.meow.autistic.data.mood.MoodBroadcastReceiver::class.java).apply {
+            action = org.meow.autistic.data.mood.ACTION_LOG_MOOD
+            putExtra(org.meow.autistic.data.mood.EXTRA_EMOJI, emoji)
+        }
+        val pi = PendingIntent.getBroadcast(
+            context, i, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        views.setOnClickPendingIntent(org.meow.autistic.data.mood.MOOD_BUTTON_VIEW_IDS[i], pi)
+    }
+    val builder = NotificationCompat.Builder(context, "mood_channel")
         .setSmallIcon(R.drawable.ic_launcher_foreground)
-        .setContentTitle("😊 How are you feeling?")
-        .setContentText("Tap to log your mood.")
+        .setContentTitle("How are you feeling?")
+        .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+        .setCustomBigContentView(views)
         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-        .setContentIntent(pendingIntent)
-        .setAutoCancel(true)
-    notificationManager.notify(1, builder.build())
+    (context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager)
+        .notify(org.meow.autistic.data.mood.MOOD_NOTIFICATION_ID, builder.build())
 }

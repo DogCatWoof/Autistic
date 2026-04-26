@@ -65,11 +65,9 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <activity
-            android:name=".NotificationActivity"
-            android:exported="false"
-            android:label="@string/app_name"
-            android:theme="@android:style/Theme.Dialog" />
+        <receiver
+            android:name=".data.mood.MoodBroadcastReceiver"
+            android:exported="false" />
 
         <activity
             android:name=".HealthPermissionsRationaleActivity"

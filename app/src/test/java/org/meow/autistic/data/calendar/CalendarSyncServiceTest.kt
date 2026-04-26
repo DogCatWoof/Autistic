@@ -32,7 +32,7 @@ class CalendarSyncServiceTest {
     @Before
     fun setUp() {
         coEvery { syncTokenStore.getSyncToken() } returns null
-        coEvery { remoteSource.fetchEvents(token, any(), any()) } returns
+        coEvery { remoteSource.fetchEvents(token, any()) } returns
             CalendarSyncResult(emptyList(), newSyncToken)
     }
 
@@ -42,7 +42,7 @@ class CalendarSyncServiceTest {
     fun `pullAndMerge does full sync when no syncToken stored`() = runTest {
         service.pullAndMerge()
 
-        coVerify { remoteSource.fetchEvents(token, any(), any()) }
+        coVerify { remoteSource.fetchEvents(token, any()) }
         coVerify(exactly = 0) { remoteSource.fetchDeletedEvents(any(), any()) }
     }
 
@@ -55,7 +55,7 @@ class CalendarSyncServiceTest {
         service.pullAndMerge()
 
         coVerify { remoteSource.fetchDeletedEvents(token, storedSyncToken) }
-        coVerify(exactly = 0) { remoteSource.fetchEvents(any(), any(), any()) }
+        coVerify(exactly = 0) { remoteSource.fetchEvents(any(), any()) }
     }
 
     // endregion
@@ -72,7 +72,7 @@ class CalendarSyncServiceTest {
         service.pullAndMerge()
 
         coVerify { syncTokenStore.clearSyncToken() }
-        coVerify { remoteSource.fetchEvents(token, any(), any()) }
+        coVerify { remoteSource.fetchEvents(token, any()) }
     }
 
     @Test
@@ -97,7 +97,7 @@ class CalendarSyncServiceTest {
 
     @Test
     fun `pullAndMerge upserts active events`() = runTest {
-        coEvery { remoteSource.fetchEvents(token, any(), any()) } returns
+        coEvery { remoteSource.fetchEvents(token, any()) } returns
             CalendarSyncResult(listOf(activeEvent), newSyncToken)
 
         service.pullAndMerge()
@@ -109,7 +109,7 @@ class CalendarSyncServiceTest {
 
     @Test
     fun `pullAndMerge deletes cancelled events`() = runTest {
-        coEvery { remoteSource.fetchEvents(token, any(), any()) } returns
+        coEvery { remoteSource.fetchEvents(token, any()) } returns
             CalendarSyncResult(listOf(cancelledEvent), newSyncToken)
 
         service.pullAndMerge()
@@ -126,7 +126,7 @@ class CalendarSyncServiceTest {
 
     @Test
     fun `pullAndMerge does not delete when no cancelled events`() = runTest {
-        coEvery { remoteSource.fetchEvents(token, any(), any()) } returns
+        coEvery { remoteSource.fetchEvents(token, any()) } returns
             CalendarSyncResult(listOf(activeEvent), newSyncToken)
 
         service.pullAndMerge()
@@ -158,7 +158,7 @@ class CalendarSyncServiceTest {
 
     @Test
     fun `pullAndMerge does not save syncToken when response token is empty`() = runTest {
-        coEvery { remoteSource.fetchEvents(token, any(), any()) } returns
+        coEvery { remoteSource.fetchEvents(token, any()) } returns
             CalendarSyncResult(emptyList(), "")
 
         service.pullAndMerge()
