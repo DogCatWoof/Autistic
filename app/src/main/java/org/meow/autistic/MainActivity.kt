@@ -69,6 +69,7 @@ import org.meow.autistic.data.mood.MoodCheckInWorker
 import org.meow.autistic.data.navigation.NavPreferencesStore
 import org.meow.autistic.data.navigation.NavStateStore
 import org.meow.autistic.data.task.DailyResetWorker
+import org.meow.autistic.data.sequence.SEQUENCES_CHANNEL_ID
 import org.meow.autistic.data.task.REMINDER_CHANNEL_ID
 import org.meow.autistic.ui.screens.filterNavItems
 import org.meow.autistic.ui.screens.navTitlesFrom
@@ -288,6 +289,10 @@ class MainActivity : ComponentActivity() {
             notificationManager.createNotificationChannel(
                 NotificationChannel(REMINDER_CHANNEL_ID, "Task Reminders", NotificationManager.IMPORTANCE_HIGH)
                     .apply { description = "Reminders for upcoming tasks" }
+            )
+            notificationManager.createNotificationChannel(
+                NotificationChannel(SEQUENCES_CHANNEL_ID, "Sequences", NotificationManager.IMPORTANCE_DEFAULT)
+                    .apply { description = "Active sequence run progress" }
             )
         }
     }

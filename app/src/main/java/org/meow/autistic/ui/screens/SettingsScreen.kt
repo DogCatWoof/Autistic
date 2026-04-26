@@ -62,12 +62,14 @@ fun SettingsScreen(
     var showQueryLog by remember { mutableStateOf(false) }
     var showNavPrefs by remember { mutableStateOf(false) }
     var showDailyTasks by remember { mutableStateOf(false) }
+    var showSequences by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = showQueryLog || showNavPrefs || showDailyTasks) {
+    BackHandler(enabled = showQueryLog || showNavPrefs || showDailyTasks || showSequences) {
         when {
             showQueryLog -> showQueryLog = false
             showNavPrefs -> showNavPrefs = false
             showDailyTasks -> showDailyTasks = false
+            showSequences -> showSequences = false
         }
     }
 
@@ -75,10 +77,12 @@ fun SettingsScreen(
         showQueryLog -> QueryLogScreen(modifier = modifier)
         showNavPrefs -> NavPreferencesScreen(allItems = allNavItems, modifier = modifier)
         showDailyTasks -> DailyTasksSettingsScreen(modifier = modifier)
+        showSequences -> SequenceListScreen(modifier = modifier)
         else -> SettingsMainList(
             onQueryLogClick = { showQueryLog = true },
             onNavPrefsClick = { showNavPrefs = true },
             onDailyTasksClick = { showDailyTasks = true },
+            onSequencesClick = { showSequences = true },
             modifier = modifier,
         )
     }
@@ -89,6 +93,7 @@ private fun SettingsMainList(
     onQueryLogClick: () -> Unit,
     onNavPrefsClick: () -> Unit,
     onDailyTasksClick: () -> Unit,
+    onSequencesClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showLogcat by remember { mutableStateOf(false) }
@@ -241,6 +246,17 @@ private fun SettingsMainList(
                 )
             },
             modifier = Modifier.clickable { onDailyTasksClick() },
+        )
+        ListItem(
+            headlineContent = { Text("Sequences") },
+            supportingContent = { Text("Ordered step checklists for repeating tasks") },
+            trailingContent = {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowForwardIos,
+                    contentDescription = "Open sequences",
+                )
+            },
+            modifier = Modifier.clickable { onSequencesClick() },
         )
         HorizontalDivider()
         SettingsSectionLabel("Navigation")

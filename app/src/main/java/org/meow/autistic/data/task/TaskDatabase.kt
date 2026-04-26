@@ -25,6 +25,11 @@ import org.meow.autistic.data.mood.MoodDao
 import org.meow.autistic.data.mood.MoodEntity
 import org.meow.autistic.data.note.NoteDao
 import org.meow.autistic.data.note.NoteEntity
+import org.meow.autistic.data.sequence.SequenceDao
+import org.meow.autistic.data.sequence.SequenceEntity
+import org.meow.autistic.data.sequence.SequenceRunEntity
+import org.meow.autistic.data.sequence.SequenceStepEntity
+import org.meow.autistic.data.sequence.SequenceStepProgressEntity
 import java.time.Instant
 
 /** Converts [Instant] to/from ISO 8601 TEXT for Room storage. */
@@ -37,8 +42,8 @@ class InstantConverter {
 }
 
 @Database(
-    entities = [TaskEntity::class, CalendarEventEntity::class, DailyTaskEntity::class, NoteEntity::class, MoodEntity::class, FoodLogEntry::class, FoodLogItemEntry::class, HealthSnapshotEntity::class, FoodCacheEntity::class, EnergyProfileEntity::class, EnergyLogEntry::class, ActivityCostEntry::class, StartOfDayEntry::class],
-    version = 15,
+    entities = [TaskEntity::class, CalendarEventEntity::class, DailyTaskEntity::class, NoteEntity::class, MoodEntity::class, FoodLogEntry::class, FoodLogItemEntry::class, HealthSnapshotEntity::class, FoodCacheEntity::class, EnergyProfileEntity::class, EnergyLogEntry::class, ActivityCostEntry::class, StartOfDayEntry::class, SequenceEntity::class, SequenceStepEntity::class, SequenceRunEntity::class, SequenceStepProgressEntity::class],
+    version = 16,
     exportSchema = false,
 )
 @TypeConverters(InstantConverter::class)
@@ -53,6 +58,7 @@ abstract class TaskDatabase : RoomDatabase() {
     abstract fun healthSnapshotDao(): HealthSnapshotDao
     abstract fun foodCacheDao(): FoodCacheDao
     abstract fun energyDao(): EnergyDao
+    abstract fun sequenceDao(): SequenceDao
 
     /** Flushes WAL to the main database file. Call before reading the raw file for backup. */
     fun checkpoint() {

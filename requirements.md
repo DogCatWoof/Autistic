@@ -252,14 +252,14 @@ Reads health data from other apps (Samsung Health, Garmin, Google Fit, etc.) via
 6. [X] **ViewModel + Screen** — `LocationTriggerViewModel`; `LocationTriggersScreen` (list with toggle + map thumbnail); map-pick flow
 7. [X] **Tests** — unit tests for `LocationActionHandler` dispatch logic; mock `GeofencingClient` in repository tests
 
-### [X] Sequences
-1. [X] **Data layer** — `SequenceEntity` (id, name, description); `SequenceStepEntity` (id, sequenceId, stepIndex, instruction, estimatedMinutes); `SequenceRunEntity` (id, sequenceId, startedAt, completedAt?, isPaused); `SequenceStepProgressEntity` (runId, stepId, completedAt?); DAOs; `SequenceRepository`
-2. [X] **Room migration** — bump DB version; add four tables
-3. [X] **ViewModel** — `SequenceViewModel`: sequence list; `SequenceRunViewModel`: active run state, `completeStep()`, `pause()`, `resume()`, `abandon()`
-4. [X] **Screens** — `SequenceListScreen` (list + start button); `SequenceRunScreen` (current step highlighted, progress bar); `SequenceEditorScreen` (drag-to-reorder steps)
-5. [X] **Persistent notification** — active run shows sticky notification with current step + "Mark done" action
-6. [X] **Settings integration** — Sequences entry under Settings
-7. [X] **Tests** — unit tests for step progression and pause/resume state machine
+### [X] Sequences (MVP)
+1. [X] **Data layer** — `SequenceEntity` (id, name); `SequenceStepEntity` (id, sequenceId, instruction, estimatedMinutes, position); `SequenceRunEntity` (id, sequenceId, startedAt, completedAt); `SequenceStepProgressEntity` (runId, stepId, completedAt); `SequenceDao`; `SequenceRepository`
+2. [X] **Room migration** — bump DB to version 16; four new tables
+3. [X] **ViewModels** — `SequenceViewModel` (sequence/step CRUD); `SequenceRunViewModel` (active run state via `flatMapLatest`, `startRun()`, `completeStep()`, `endRun()`)
+4. [X] **Screens** — `SequenceListScreen` (sequence management + active run card with progress bar, current step, Done/End buttons); Settings entry navigates here
+5. [X] **Persistent notification** — `SequenceRunNotificationManager` object; `SequenceStepReceiver` handles Done/End actions from notification; DB version 16
+6. [X] **Settings integration** — Sequences entry under Tasks in Settings
+7. [X] **Tests** — `SequenceRepositoryTest` (unit); `SequenceRunViewModelTest` (unit, mocks notification manager); `SequenceDaoTest` (instrumented)
 
 ### [X] Conversation Scaffolding (MVP)
 1. [X] **ResponseTemplateRepository** — static JSON asset: `IntentClass → List<ResponseTemplate>` (3 per class, 3 tone variants); loaded at startup, cached in memory

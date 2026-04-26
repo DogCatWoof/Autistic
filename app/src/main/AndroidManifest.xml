@@ -69,6 +69,10 @@
             android:name=".data.mood.MoodBroadcastReceiver"
             android:exported="false" />
 
+        <receiver
+            android:name=".data.sequence.SequenceStepReceiver"
+            android:exported="false" />
+
         <activity
             android:name=".HealthPermissionsRationaleActivity"
             android:exported="true"
