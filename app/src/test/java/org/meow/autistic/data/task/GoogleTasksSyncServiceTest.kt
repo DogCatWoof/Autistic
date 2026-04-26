@@ -68,7 +68,7 @@ class GoogleTasksSyncServiceTest {
     }
 
     @Test
-    fun `pushPending deletes completed task locally after pushing to remote`() = runTest {
+    fun `pushPending does not delete completed task locally after pushing to remote`() = runTest {
         val completedTask = localExisting.copy(isCompleted = true)
         coEvery { repository.getPendingPush() } returns listOf(completedTask)
         coEvery { remoteSource.updateTask(token, any()) } returns remoteTask
@@ -76,7 +76,7 @@ class GoogleTasksSyncServiceTest {
         service.pushPending()
 
         coVerify { repository.markSynced(completedTask.id, "remote1", any()) }
-        coVerify { repository.delete(completedTask) }
+        coVerify(exactly = 0) { repository.delete(completedTask) }
     }
 
     // endregion
@@ -130,13 +130,13 @@ class GoogleTasksSyncServiceTest {
     }
 
     @Test
-    fun `pullAndMerge calls deleteAllCompleted after merging`() = runTest {
+    fun `pullAndMerge calls deleteStaleCompleted with 7-day cutoff after merging`() = runTest {
         coEvery { remoteSource.fetchTasks(token) } returns listOf(remoteTask)
         coEvery { repository.getByGoogleTaskId("remote1") } returns null
 
         service.pullAndMerge()
 
-        coVerify { repository.deleteAllCompleted() }
+        coVerify { repository.deleteStaleCompleted(any()) }
     }
 
     // endregion

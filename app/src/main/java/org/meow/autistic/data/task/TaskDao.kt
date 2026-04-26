@@ -40,6 +40,9 @@ interface TaskDao {
     @Query("DELETE FROM tasks WHERE dailyTaskId IS NOT NULL AND isCompleted = 0")
     suspend fun deleteUnfinishedDailyTasks(): Int
 
-    @Query("DELETE FROM tasks WHERE isCompleted = 1")
-    suspend fun deleteAllCompleted(): Int
+    @Query("DELETE FROM tasks WHERE isCompleted = 1 AND completedAt < :cutoff")
+    suspend fun deleteStaleCompleted(cutoff: Instant): Int
+
+    @Query("SELECT * FROM tasks WHERE isCompleted = 1 ORDER BY completedAt DESC")
+    fun getCompletedTasks(): Flow<List<TaskEntity>>
 }

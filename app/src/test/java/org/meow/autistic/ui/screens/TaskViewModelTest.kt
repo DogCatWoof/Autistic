@@ -3,6 +3,8 @@ package org.meow.autistic.ui.screens
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -40,6 +42,7 @@ class TaskViewModelTest {
         every { authManager.isAuthenticated() } returns false
         every { workManager.getWorkInfosForUniqueWorkFlow(any()) } returns flowOf(emptyList())
         every { repository.allTasks } returns flowOf(emptyList())
+        every { repository.completedTasks } returns flowOf(emptyList())
         every { calendarRepository.getAllEvents() } returns flowOf(emptyList())
         viewModel = TaskViewModel(repository, calendarRepository, authManager, syncScheduler, workManager)
     }
@@ -59,19 +62,52 @@ class TaskViewModelTest {
     }
 
     @Test
-    fun `update deletes local-only completed task immediately`() = runTest {
+    fun `update saves local-only completed task with completedAt set`() = runTest {
         val task = TaskEntity(id = 1L, task = "Task", createdAt = Instant.EPOCH, isCompleted = true, googleTaskId = null)
         viewModel.update(task)
-        coVerify { repository.delete(task) }
-        coVerify(exactly = 0) { repository.update(any()) }
+        coVerify { repository.update(match { it.completedAt != null && it.isCompleted }) }
+        coVerify(exactly = 0) { repository.delete(any()) }
     }
 
     @Test
-    fun `update keeps completed synced task as pending_push until sync`() = runTest {
+    fun `update keeps completed synced task as pending_push with completedAt`() = runTest {
         val task = TaskEntity(id = 1L, task = "Task", createdAt = Instant.EPOCH, isCompleted = true, googleTaskId = "gid")
         viewModel.update(task)
-        coVerify { repository.update(task.copy(syncStatus = "pending_push")) }
+        coVerify { repository.update(match { it.syncStatus == "pending_push" && it.completedAt != null }) }
         coVerify(exactly = 0) { repository.markPendingDelete(any()) }
+    }
+
+    @Test
+    fun `update sets completedAt when marking task complete`() = runTest {
+        val task = TaskEntity(id = 1L, task = "Task", createdAt = Instant.EPOCH, isCompleted = true)
+        viewModel.update(task)
+        coVerify { repository.update(match { it.completedAt != null }) }
+    }
+
+    @Test
+    fun `update clears completedAt when un-completing task`() = runTest {
+        val task = TaskEntity(id = 1L, task = "Task", createdAt = Instant.EPOCH, isCompleted = false, completedAt = Instant.EPOCH)
+        viewModel.update(task)
+        coVerify { repository.update(match { it.completedAt == null }) }
+    }
+
+    @Test
+    fun `toggleShowCompleted flips showCompleted state`() = runTest {
+        assertFalse(viewModel.showCompleted.first())
+        viewModel.toggleShowCompleted()
+        assertTrue(viewModel.showCompleted.first())
+        viewModel.toggleShowCompleted()
+        assertFalse(viewModel.showCompleted.first())
+    }
+
+    @Test
+    fun `completedItems returns items from repository completedTasks`() = runTest {
+        val done = TaskEntity(id = 9L, task = "Done", createdAt = Instant.EPOCH, isCompleted = true, completedAt = Instant.now())
+        every { repository.completedTasks } returns flowOf(listOf(done))
+        val vm = TaskViewModel(repository, calendarRepository, authManager, syncScheduler, workManager)
+        val items = vm.completedItems.first()
+        assertTrue(items.isNotEmpty())
+        assertNotNull(items.first().entity.completedAt)
     }
 
     @Test

@@ -26,6 +26,7 @@ class TaskRepositoryTest {
     fun setUp() {
         dao = mockk()
         every { dao.getAllTasks() } returns flowOf(emptyList())
+        every { dao.getCompletedTasks() } returns flowOf(emptyList())
         repository = TaskRepository(dao, QueryLogger())
     }
 
@@ -33,6 +34,7 @@ class TaskRepositoryTest {
     fun `allTasks exposes flow from dao`() = runTest {
         val testDao = mockk<TaskDao>()
         every { testDao.getAllTasks() } returns flowOf(listOf(task))
+        every { testDao.getCompletedTasks() } returns flowOf(emptyList())
         val result = TaskRepository(testDao, QueryLogger()).allTasks.first()
         assertEquals(listOf(task), result)
     }
@@ -116,10 +118,11 @@ class TaskRepositoryTest {
     }
 
     @Test
-    fun `deleteAllCompleted delegates to dao`() = runTest {
-        coEvery { dao.deleteAllCompleted() } returns 2
-        repository.deleteAllCompleted()
-        coVerify { dao.deleteAllCompleted() }
+    fun `deleteStaleCompleted delegates to dao with cutoff`() = runTest {
+        val cutoff = java.time.Instant.now()
+        coEvery { dao.deleteStaleCompleted(cutoff) } returns 2
+        repository.deleteStaleCompleted(cutoff)
+        coVerify { dao.deleteStaleCompleted(cutoff) }
     }
 
     @Test(expected = RuntimeException::class)

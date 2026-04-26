@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Notifications
 import java.time.LocalDate
 import java.time.LocalTime
@@ -60,6 +61,8 @@ fun TaskListScreen(
     dailyViewModel: DailyTasksViewModel = koinViewModel(),
 ) {
     val grouped by viewModel.groupedItems.collectAsState()
+    val completedItems by viewModel.completedItems.collectAsState()
+    val showCompleted by viewModel.showCompleted.collectAsState()
     val isAuthenticated by viewModel.isAuthenticated.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
     var fabExpanded by remember { mutableStateOf(false) }
@@ -82,6 +85,12 @@ fun TaskListScreen(
             TopAppBar(
                 title = { Text("My Tasks") },
                 actions = {
+                    IconButton(onClick = { viewModel.toggleShowCompleted() }) {
+                        Icon(
+                            if (showCompleted) Icons.Default.CheckCircle else Icons.Outlined.CheckCircle,
+                            contentDescription = if (showCompleted) "Show active tasks" else "Show completed tasks",
+                        )
+                    }
                     SyncStatusIcon(
                         syncState = syncState,
                         isAuthenticated = isAuthenticated,
@@ -121,24 +130,35 @@ fun TaskListScreen(
             }
 
             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                if (grouped.pastDue.isNotEmpty()) {
-                    stickyHeader(key = "header_past_due") { SectionHeader("Past Due") }
-                    items(grouped.pastDue, key = { it.itemKey }) { item ->
+                if (showCompleted) {
+                    if (completedItems.isEmpty()) {
+                        item { SectionHeader("No completed tasks in the last 7 days") }
+                    } else {
+                        stickyHeader(key = "header_completed") { SectionHeader("Completed") }
+                        items(completedItems, key = { it.itemKey }) { item ->
+                            TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
+                        }
+                    }
+                } else {
+                    if (grouped.pastDue.isNotEmpty()) {
+                        stickyHeader(key = "header_past_due") { SectionHeader("Past Due") }
+                        items(grouped.pastDue, key = { it.itemKey }) { item ->
+                            TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
+                        }
+                    }
+                    stickyHeader(key = "header_today") {
+                        val todayDate = LocalDate.now(ZoneId.systemDefault())
+                            .format(java.time.format.DateTimeFormatter.ofPattern("EEEE, MMM d"))
+                        SectionHeader("Today — $todayDate")
+                    }
+                    items(grouped.today, key = { it.itemKey }) { item ->
                         TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
                     }
-                }
-                stickyHeader(key = "header_today") {
-                    val todayDate = LocalDate.now(ZoneId.systemDefault())
-                        .format(java.time.format.DateTimeFormatter.ofPattern("EEEE, MMM d"))
-                    SectionHeader("Today — $todayDate")
-                }
-                items(grouped.today, key = { it.itemKey }) { item ->
-                    TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
-                }
-                grouped.later.forEach { (dateLabel, sectionItems) ->
-                    stickyHeader(key = "header_later_$dateLabel") { SectionHeader(dateLabel) }
-                    items(sectionItems, key = { it.itemKey }) { item ->
-                        TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
+                    grouped.later.forEach { (dateLabel, sectionItems) ->
+                        stickyHeader(key = "header_later_$dateLabel") { SectionHeader(dateLabel) }
+                        items(sectionItems, key = { it.itemKey }) { item ->
+                            TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
+                        }
                     }
                 }
             }

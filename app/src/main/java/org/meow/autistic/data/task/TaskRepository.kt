@@ -14,6 +14,7 @@ class TaskRepository(
     private val queryLogger: QueryLogger,
 ) {
     val allTasks: Flow<List<TaskEntity>> = taskDao.getAllTasks()
+    val completedTasks: Flow<List<TaskEntity>> = taskDao.getCompletedTasks()
 
     suspend fun insert(task: TaskEntity) =
         timed("TaskRepository.insert") { taskDao.insertTask(task) }
@@ -48,8 +49,8 @@ class TaskRepository(
     suspend fun deleteByGoogleTaskIds(ids: List<String>) =
         timed("TaskRepository.deleteByGoogleTaskIds") { taskDao.deleteByGoogleTaskIds(ids) }
 
-    suspend fun deleteAllCompleted() =
-        timed("TaskRepository.deleteAllCompleted") { taskDao.deleteAllCompleted() }
+    suspend fun deleteStaleCompleted(cutoff: Instant) =
+        timed("TaskRepository.deleteStaleCompleted") { taskDao.deleteStaleCompleted(cutoff) }
 
     private suspend inline fun <T> timed(label: String, block: suspend () -> T): T {
         val start = SystemClock.elapsedRealtime()

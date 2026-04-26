@@ -20,6 +20,7 @@ import org.meow.autistic.data.sync.SyncScheduler
 import org.meow.autistic.data.task.TaskEntity
 import org.meow.autistic.data.task.TaskReminderWorker
 import org.meow.autistic.data.task.TaskRepository
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -44,6 +45,9 @@ class TaskViewModel(
     private val syncScheduler: SyncScheduler,
     private val workManager: WorkManager,
 ) : ViewModel() {
+
+    private val _showCompleted = MutableStateFlow(false)
+    val showCompleted: StateFlow<Boolean> = _showCompleted.asStateFlow()
 
     val groupedItems: StateFlow<GroupedTaskItems> = combine(
         repository.allTasks,
@@ -83,6 +87,13 @@ class TaskViewModel(
             later = laterByDate,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GroupedTaskItems.EMPTY)
+
+    val completedItems: StateFlow<List<TaskListItem.Task>> = repository.completedTasks
+        .map { tasks ->
+            val todayEnd = todayEndMs()
+            tasks.map { task -> TaskListItem.Task(task, taskSortKey(task, todayEnd)) }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _isAuthenticated = MutableStateFlow(false)
     val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
@@ -131,13 +142,18 @@ class TaskViewModel(
         TaskReminderWorker.scheduleFor(workManager, task.copy(id = id))
     }
 
+    fun toggleShowCompleted() {
+        _showCompleted.value = !_showCompleted.value
+    }
+
     fun update(task: TaskEntity) = viewModelScope.launch {
+        val completedAt = if (task.isCompleted) Instant.now() else null
+        val updated = task.copy(completedAt = completedAt)
         if (task.isCompleted && task.googleTaskId == null) {
-            // Local-only completed task — no sync needed, delete immediately
-            repository.delete(task)
+            repository.update(updated)
             TaskReminderWorker.cancel(workManager, task.id)
         } else {
-            repository.update(task.copy(syncStatus = "pending_push"))
+            repository.update(updated.copy(syncStatus = "pending_push"))
             if (task.reminderMinutesBefore != null) {
                 TaskReminderWorker.scheduleFor(workManager, task)
             } else {

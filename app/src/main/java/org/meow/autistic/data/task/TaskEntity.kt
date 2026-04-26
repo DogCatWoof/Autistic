@@ -34,4 +34,6 @@ data class TaskEntity(
     val isImportant: Boolean = false,
     /** Marks the task as required; drives purple coloring and flag icon. */
     val isRequired: Boolean = false,
+    /** Set when the task is marked complete; used for 7-day retention before deletion. */
+    val completedAt: Instant? = null,
 )

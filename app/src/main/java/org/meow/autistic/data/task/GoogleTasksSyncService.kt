@@ -2,6 +2,7 @@ package org.meow.autistic.data.task
 
 import java.text.SimpleDateFormat
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
@@ -46,7 +47,7 @@ class GoogleTasksSyncService(
         val remoteTasks = remoteSource.fetchTasks(token)
         applyRemoteDeletions(remoteTasks.filter { it.deleted })
         mergeActiveTasks(remoteTasks.filter { !it.deleted })
-        repository.deleteAllCompleted()
+        repository.deleteStaleCompleted(Instant.now().minus(7, ChronoUnit.DAYS))
     }
 
     private suspend fun pushCreatesAndUpdates(token: String) {
@@ -58,9 +59,6 @@ class GoogleTasksSyncService(
             }
             val googleTaskId = requireNotNull(remote.id)
             repository.markSynced(local.id, googleTaskId, Instant.now())
-            if (local.isCompleted) {
-                repository.delete(local)
-            }
         }
     }
 
