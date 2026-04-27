@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -9,6 +11,12 @@ configurations.all {
         force("androidx.concurrent:concurrent-futures:1.2.0")
         force("androidx.concurrent:concurrent-futures-ktx:1.2.0")
     }
+}
+
+val localProps = Properties()
+val localPropsFile = rootProject.file("local.properties")
+if (localPropsFile.exists()) {
+    localPropsFile.inputStream().use { stream -> localProps.load(stream) }
 }
 
 android {
@@ -23,6 +31,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "ANTHROPIC_API_KEY", "\"${localProps.getProperty("anthropic.api.key", "")}\"")
+        buildConfigField("String", "USDA_API_KEY", "\"${localProps.getProperty("usda.api.key", "")}\"")
     }
 
     packaging {
@@ -46,6 +57,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     testOptions {
         unitTests.isReturnDefaultValues = true

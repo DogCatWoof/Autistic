@@ -13,8 +13,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
+import org.meow.autistic.BuildConfig
 
-private const val ANTHROPIC_API_KEY = "ANTHROPIC_KEY_REDACTED"
 private const val ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 private const val MODEL = "claude-haiku-4-5-20251001"
 private const val MAX_IMAGE_DIM = 1024
@@ -46,7 +46,7 @@ private const val NUTRITION_LABEL_PROMPT = "Parse this nutrition facts label. " 
  */
 class ClaudeVisionClient(
     private val httpClient: OkHttpClient = OkHttpClient(),
-    private val apiKey: String = ANTHROPIC_API_KEY,
+    private val apiKey: String = BuildConfig.ANTHROPIC_API_KEY,
 ) {
     suspend fun classifyAndAnalyze(imagePath: String): PhotoClassificationResult = withContext(Dispatchers.IO) {
         parseClassificationJson(callApi(imagePath, CLASSIFY_PROMPT))

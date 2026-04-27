@@ -1,0 +1,87 @@
+{
+  "Question": {
+    "neutral": [
+      "I'm not sure — let me think about that.",
+      "That's a good question. Can you tell me more?",
+      "I'd need a moment to consider that."
+    ],
+    "polite": [
+      "Thank you for asking! Could you give me a little more context?",
+      "That's a thoughtful question. I'd like a moment to consider it.",
+      "I appreciate you asking — could we revisit that in a moment?"
+    ],
+    "direct": [
+      "I don't know right now.",
+      "Need more details.",
+      "Give me a moment."
+    ]
+  },
+  "Command": {
+    "neutral": [
+      "I'll get to that.",
+      "Let me work on that.",
+      "I can do that."
+    ],
+    "polite": [
+      "Of course! I'll take care of that shortly.",
+      "Sure — I'd be happy to help with that.",
+      "Certainly — I'll look into it right away."
+    ],
+    "direct": [
+      "OK.",
+      "On it.",
+      "Got it."
+    ]
+  },
+  "Social": {
+    "neutral": [
+      "Hi! Good to see you.",
+      "I'm doing alright, thanks.",
+      "Nice to chat!"
+    ],
+    "polite": [
+      "Hello! It's lovely to see you.",
+      "I'm doing well, thank you! How about you?",
+      "It's really nice to connect with you today!"
+    ],
+    "direct": [
+      "Hey.",
+      "Good.",
+      "Likewise."
+    ]
+  },
+  "Sarcasm": {
+    "neutral": [
+      "I'm not sure how to take that.",
+      "Interesting way to put it.",
+      "Let me think about what you meant."
+    ],
+    "polite": [
+      "I may have missed the nuance — could you clarify?",
+      "I want to make sure I understand — could you say more?",
+      "I appreciate your point — could you explain a bit further?"
+    ],
+    "direct": [
+      "What do you mean?",
+      "Clarify please.",
+      "I'm confused."
+    ]
+  },
+  "Unknown": {
+    "neutral": [
+      "I'm not sure what you mean.",
+      "Could you say that again?",
+      "I need a moment to process that."
+    ],
+    "polite": [
+      "I want to make sure I understand — could you repeat that?",
+      "I may have missed something — could you say that again?",
+      "I'd like to understand better. Could you explain?"
+    ],
+    "direct": [
+      "Repeat that.",
+      "Not sure.",
+      "Hmm."
+    ]
+  }
+}

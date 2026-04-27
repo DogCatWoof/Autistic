@@ -9,7 +9,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -29,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +52,9 @@ import org.meow.autistic.data.auth.GoogleAuthManager
 import org.meow.autistic.data.auth.TokenStore
 import org.meow.autistic.data.backup.DriveBackupService
 import org.meow.autistic.data.backup.RestoreResult
+import org.meow.autistic.data.conversation.TONE_NEUTRAL
+import org.meow.autistic.data.conversation.TONES
+import org.meow.autistic.data.conversation.TonePreferencesStore
 import org.meow.autistic.data.debug.DebugSettings
 import org.meow.autistic.showNotification
 
@@ -259,6 +267,8 @@ private fun SettingsMainList(
             modifier = Modifier.clickable { onSequencesClick() },
         )
         HorizontalDivider()
+        ConversationToneItem()
+        HorizontalDivider()
         SettingsSectionLabel("Navigation")
         ListItem(
             headlineContent = { Text("Bottom Navigation") },
@@ -365,6 +375,29 @@ private fun DebugModeItem() {
                     debugSettings.isDebugEnabled = enabled
                 },
             )
+        },
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ConversationToneItem() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val selectedTone by TonePreferencesStore.getToneFlow(context).collectAsState(initial = TONE_NEUTRAL)
+    SettingsSectionLabel("Conversation")
+    ListItem(
+        headlineContent = { Text("Response Tone") },
+        supportingContent = {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TONES.forEach { tone ->
+                    FilterChip(
+                        selected = tone == selectedTone,
+                        onClick = { scope.launch { TonePreferencesStore.setTone(context, tone) } },
+                        label = { Text(tone.replaceFirstChar { it.uppercase() }) },
+                    )
+                }
+            }
         },
     )
 }

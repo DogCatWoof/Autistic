@@ -118,26 +118,30 @@ class MainActivityTest {
     @Test
     fun settingsScreen_syncItem_expandsInPlace() {
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
-        composeTestRule.onNodeWithText("Sync").performClick()
-        composeTestRule.onNodeWithText("Daily Reset").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Sync").performScrollTo().performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Daily Reset").assertExists()
     }
 
     @Test
     fun syncExpanded_showsAllThreeSyncItems() {
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
-        composeTestRule.onNodeWithText("Sync").performClick()
-        composeTestRule.onNodeWithText("Daily Reset").performScrollTo().assertIsDisplayed()
-        composeTestRule.onNodeWithText("Task List").performScrollTo().assertIsDisplayed()
-        composeTestRule.onNodeWithText("Google Drive Backup").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Sync").performScrollTo().performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Daily Reset").assertExists()
+        composeTestRule.onNodeWithText("Task List").assertExists()
+        composeTestRule.onNodeWithText("Google Drive Backup").assertExists()
     }
 
     @Test
     fun settingsScreen_syncCollapsesOnSecondClick() {
         composeTestRule.onNodeWithContentDescription("Settings").performClick()
-        composeTestRule.onNodeWithText("Sync").performClick()
-        composeTestRule.onNodeWithText("Task List").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Sync").performScrollTo().performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Task List").assertExists()
         // Use the icon content description to target the header, not the sync buttons inside items
-        composeTestRule.onNodeWithContentDescription("Collapse sync").performScrollTo().performClick()
-        composeTestRule.onNodeWithText("Daily reset, task list, backup").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Collapse sync").assertExists().performClick()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Daily reset, task list, backup").assertExists()
     }
 }

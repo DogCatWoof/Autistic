@@ -70,20 +70,20 @@
 - Per-serving nutrients are multiplied by a user-specified servings count before saving
 - Stale in-flight analysis items (app killed mid-analysis) are cleared on startup
 
-### [X] Conversation Scaffolding (Social Support)
+### Conversation Scaffolding (Social Support)
 Reduces three loads in real-time social situations: decoding intent, deciding what to say, and managing timing.
 
-- [X] **Core loop**: push-to-talk captures audio → on-device transcription → intent/sentiment classification → generate 2–4 response chips + 1 clarifying question → display as tappable chips; optionally spoken via earbud TTS
-- [X] **UI**: single "next move" line by default; expandable panel for alternatives; color/edge urgency cues; turn-taking indicator ("safe to speak now"); pace coach
-- [X] **Response types**: direct answer, clarifier, deferral ("I need a minute"), social glue, boundary-setting
-- [X] **Context modeling**: conversation state (topic, roles, formality); user tone preference (neutral/polite/direct); known scripts for recurring situations
-- [X] **Learning loop**: track selected/edited suggestions; adjust preferred tone, length, and per-contact patterns
-- [X] **Failure modes**: mis-transcription → neutral fallback; low-assist mode (turn-taking + one suggestion only); latency spike → cached generic responses
-- [X] **Privacy**: on-device ASR + intent model by default; no raw audio stored; ephemeral buffers; no data sent externally without explicit consent
-- [X] **Hardware integration**: earbud tap gestures, watch haptics, lock-screen widget
-- [X] **Architecture** (offline-first): (1) fully local — MVP default; (2) hybrid — local for common cases, optional cloud for complex phrasing; (3) cloud-first — explicit opt-in only. Principle: never fail without internet; only improve when it exists
-- [X] **MVP scope**: push-to-talk, on-device transcription, rule-based intent classifier (question/command/social/other), 3 response templates per class with tone settings, quick-tap UI, end-of-session feedback
-- [X] **Extensions**: meeting mode (action items), script packs (medical/interview), multilingual layer
+- **Core loop**: push-to-talk captures audio → on-device transcription → intent/sentiment classification → generate 2–4 response chips + 1 clarifying question → display as tappable chips; optionally spoken via earbud TTS
+- **UI**: single "next move" line by default; expandable panel for alternatives; color/edge urgency cues; turn-taking indicator ("safe to speak now"); pace coach
+- **Response types**: direct answer, clarifier, deferral ("I need a minute"), social glue, boundary-setting
+- **Context modeling**: conversation state (topic, roles, formality); user tone preference (neutral/polite/direct); known scripts for recurring situations
+- **Learning loop**: track selected/edited suggestions; adjust preferred tone, length, and per-contact patterns
+- **Failure modes**: mis-transcription → neutral fallback; low-assist mode (turn-taking + one suggestion only); latency spike → cached generic responses
+- **Privacy**: on-device ASR + intent model by default; no raw audio stored; ephemeral buffers; no data sent externally without explicit consent
+- **Hardware integration**: earbud tap gestures, watch haptics, lock-screen widget
+- **Architecture** (offline-first): (1) fully local — MVP default; (2) hybrid — local for common cases, optional cloud for complex phrasing; (3) cloud-first — explicit opt-in only. Principle: never fail without internet; only improve when it exists
+- **MVP scope**: push-to-talk, on-device transcription, rule-based intent classifier (question/command/social/other), 3 response templates per class with tone settings, quick-tap UI, end-of-session feedback
+- **Extensions**: meeting mode (action items), script packs (medical/interview), multilingual layer
 
 ### [X] Location-based Actions
 - [X] Users define geofence triggers: label, location (map pick or address), radius, and action
@@ -93,13 +93,13 @@ Reduces three loads in real-time social situations: decoding intent, deciding wh
 - [X] Permissions required: `ACCESS_FINE_LOCATION`, `ACCESS_BACKGROUND_LOCATION`
 - [X] Geofences re-register on device reboot via `BootCompletedReceiver`
 
-### [X] Sequences
-- [X] A sequence is an ordered checklist of steps for a complex, repeating multi-part task
-- [X] Each step has an instruction, optional estimated time, and a completion checkbox
-- [X] Examples: morning routine, packing for a trip, preparing for a medical visit
-- [X] Users start a "run"; the current step is highlighted and progress is saved
-- [X] A run can be paused and resumed; completed runs are stored as history
-- [X] Sequences are managed in Settings; an active run surfaces as a persistent notification
+### Sequences
+- A sequence is an ordered checklist of steps for a complex, repeating multi-part task
+- Each step has an instruction, optional estimated time, and a completion checkbox
+- Examples: morning routine, packing for a trip, preparing for a medical visit
+- Users start a "run"; the current step is highlighted and progress is saved
+- A run can be ended early; completed runs are stored as history
+- Sequences are managed in Settings; an active run surfaces as a persistent notification
 
 ### Energy Budgeting
 Models cognitive load over time as a pacing system, not just a to-do list. Prevents overload by simulating the rest of the day before decisions are made.
@@ -252,24 +252,24 @@ Reads health data from other apps (Samsung Health, Garmin, Google Fit, etc.) via
 6. [X] **ViewModel + Screen** — `LocationTriggerViewModel`; `LocationTriggersScreen` (list with toggle + map thumbnail); map-pick flow
 7. [X] **Tests** — unit tests for `LocationActionHandler` dispatch logic; mock `GeofencingClient` in repository tests
 
-### [X] Sequences (MVP)
-1. [X] **Data layer** — `SequenceEntity` (id, name); `SequenceStepEntity` (id, sequenceId, instruction, estimatedMinutes, position); `SequenceRunEntity` (id, sequenceId, startedAt, completedAt); `SequenceStepProgressEntity` (runId, stepId, completedAt); `SequenceDao`; `SequenceRepository`
-2. [X] **Room migration** — bump DB to version 16; four new tables
-3. [X] **ViewModels** — `SequenceViewModel` (sequence/step CRUD); `SequenceRunViewModel` (active run state via `flatMapLatest`, `startRun()`, `completeStep()`, `endRun()`)
-4. [X] **Screens** — `SequenceListScreen` (sequence management + active run card with progress bar, current step, Done/End buttons); Settings entry navigates here
-5. [X] **Persistent notification** — `SequenceRunNotificationManager` object; `SequenceStepReceiver` handles Done/End actions from notification; DB version 16
-6. [X] **Settings integration** — Sequences entry under Tasks in Settings
-7. [X] **Tests** — `SequenceRepositoryTest` (unit); `SequenceRunViewModelTest` (unit, mocks notification manager); `SequenceDaoTest` (instrumented)
+### Sequences (MVP)
+1. **Data layer** — `SequenceEntity` (id, name); `SequenceStepEntity` (id, sequenceId, instruction, estimatedMinutes, position); `SequenceRunEntity` (id, sequenceId, startedAt, completedAt); `SequenceStepProgressEntity` (runId, stepId, completedAt); `SequenceDao`; `SequenceRepository`
+2. **Room migration** — bump DB to version 16; four new tables
+3. **ViewModels** — `SequenceViewModel` (sequence/step CRUD); `SequenceRunViewModel` (active run state via `flatMapLatest`, `startRun()`, `completeStep()`, `endRun()`)
+4. **Screens** — `SequenceListScreen` (sequence management + active run card with progress bar, current step, Done/End buttons); Settings entry navigates here
+5. **Persistent notification** — `SequenceRunNotificationManager` object; `SequenceStepReceiver` handles Done/End actions from notification; DB version 16
+6. **Settings integration** — Sequences entry under Tasks in Settings
+7. **Tests** — `SequenceRepositoryTest` (unit); `SequenceRunViewModelTest` (unit, mocks notification manager); `SequenceDaoTest` (instrumented)
 
-### [X] Conversation Scaffolding (MVP)
-1. [X] **ResponseTemplateRepository** — static JSON asset: `IntentClass → List<ResponseTemplate>` (3 per class, 3 tone variants); loaded at startup, cached in memory
-2. [X] **IntentClassifier** — rule-based (keyword + question-mark heuristic): `Question | Command | Social | Sarcasm | Unknown` with confidence score
-3. [X] **ConversationViewModel** — `transcribedText`, `chips`, `isListening` StateFlows; drives `SpeechRecognizer` (push-to-talk); pipes through classifier → templates
-4. [X] **ConversationScreen** — push-to-talk button; chip row; expandable alternatives; urgency strip; turn-taking indicator
-5. [X] **TonePreferencesStore** — DataStore for tone and verbosity; exposed in Settings
-6. [X] **TTS** — `TextToSpeech` for earbud output; optional, toggleable
-7. [X] **Nav tab** — add "Talk" tab to `BOTTOM_ITEMS`
-8. [X] **Tests** — unit tests for `IntentClassifier` across all classes; chip selection ordering
+### Conversation Scaffolding (MVP)
+1. **ResponseTemplateRepository** — static JSON asset: `IntentClass → List<ResponseTemplate>` (3 per class, 3 tone variants); loaded at startup, cached in memory
+2. **IntentClassifier** — rule-based (keyword + question-mark heuristic): `Question | Command | Social | Sarcasm | Unknown` with confidence score
+3. **ConversationViewModel** — `transcribedText`, `chips`, `isListening` StateFlows; drives `SpeechRecognizer` (push-to-talk); pipes through classifier → templates
+4. **ConversationScreen** — push-to-talk button; chip row; expandable alternatives; urgency strip; turn-taking indicator
+5. **TonePreferencesStore** — DataStore for tone and verbosity; exposed in Settings
+6. **TTS** — `TextToSpeech` for earbud output; optional, toggleable
+7. **Nav tab** — add "Talk" tab to `BOTTOM_ITEMS`
+8. **Tests** — unit tests for `IntentClassifier` across all classes; chip selection ordering
 
 ### Event List — Rules-Based Coloring, Icons, Importance, and Required
 
