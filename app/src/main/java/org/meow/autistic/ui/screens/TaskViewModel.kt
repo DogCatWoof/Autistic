@@ -76,10 +76,10 @@ class TaskViewModel(
         val todayDate = LocalDate.now()
         val laterByDate = upcoming
             .filter { !isToday(it, todayStart, todayEnd) }
-            .groupBy { dateLabel(it, todayDate) }
+            .groupBy { dateLabelWithDate(it, todayDate) }
             .entries
             .sortedBy { (_, items) -> items.minOf { it.sortKey } }
-            .map { (label, items) -> label to items }
+            .map { (pair, items) -> Triple(pair.first, pair.second, items) }
 
         GroupedTaskItems(
             pastDue = pastDue,
@@ -193,16 +193,17 @@ class TaskViewModel(
         is TaskListItem.Event -> item.entity.startAt.toEpochMilli() < todayEnd && item.entity.endAt.toEpochMilli() > todayStart
     }
 
-    private fun dateLabel(item: TaskListItem, todayDate: LocalDate): String {
+    private fun dateLabelWithDate(item: TaskListItem, todayDate: LocalDate): Pair<String, LocalDate?> {
         val instant = when (item) {
             is TaskListItem.Task -> item.entity.dueAt
             is TaskListItem.Event -> item.entity.startAt
-        } ?: return "Later"
+        } ?: return "Later" to null
         val date = instant.atZone(ZoneId.systemDefault()).toLocalDate()
-        return when {
+        val label = when {
             date == todayDate.plusDays(1) -> "Tomorrow"
             else -> date.format(DateTimeFormatter.ofPattern("MMM d"))
         }
+        return label to date
     }
 
     private fun todayStartMs(): Long =

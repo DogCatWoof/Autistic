@@ -17,10 +17,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Mood
+import androidx.compose.material.icons.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Settings
@@ -66,11 +68,14 @@ import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import org.meow.autistic.data.health.HealthConnectSyncWorker
 import org.meow.autistic.data.mood.MoodCheckInWorker
 import org.meow.autistic.data.navigation.NavPreferencesStore
 import org.meow.autistic.data.navigation.NavStateStore
 import org.meow.autistic.data.task.DailyResetWorker
 import org.meow.autistic.data.sequence.SEQUENCES_CHANNEL_ID
+import org.meow.autistic.data.sync.SyncScheduler
 import org.meow.autistic.data.task.REMINDER_CHANNEL_ID
 import org.meow.autistic.ui.screens.filterNavItems
 import org.meow.autistic.ui.screens.navTitlesFrom
@@ -80,10 +85,12 @@ import org.meow.autistic.ui.screens.ConversationScreen
 import org.meow.autistic.ui.screens.EnergyScreen
 import org.meow.autistic.ui.screens.FoodLogScreen
 import org.meow.autistic.ui.screens.HealthConnectScreen
+import org.meow.autistic.ui.screens.IntegratedHealthScreen
 import org.meow.autistic.ui.screens.MoodScreen
 import org.meow.autistic.ui.screens.NotesScreen
 import org.meow.autistic.ui.screens.ScanScreen
 import org.meow.autistic.ui.screens.SettingsScreen
+import org.meow.autistic.ui.screens.SequenceListScreen
 import org.meow.autistic.ui.screens.TaskListScreen
 import org.meow.autistic.ui.theme.AutisticTheme
 
@@ -110,7 +117,9 @@ class MainActivity : ComponentActivity() {
             NavigationItem("Food Log", Icons.Filled.Restaurant, Icons.Outlined.Restaurant),
             NavigationItem("Energy", Icons.Filled.Bolt, Icons.Filled.Bolt),
             NavigationItem("Health", Icons.Filled.MonitorHeart, Icons.Filled.MonitorHeart),
+            NavigationItem("Vitals", Icons.Filled.FavoriteBorder, Icons.Filled.FavoriteBorder),
             NavigationItem("Talk", Icons.Filled.Chat, Icons.Filled.Chat),
+            NavigationItem("Sequences", Icons.Filled.PlaylistPlay, Icons.Filled.PlaylistPlay),
         )
     }
 
@@ -120,6 +129,12 @@ class MainActivity : ComponentActivity() {
         createNotificationChannel()
         DailyResetWorker.enqueue(this)
         MoodCheckInWorker.enqueue(this)
+        HealthConnectSyncWorker.enqueue(this)
+        val syncScheduler = SyncScheduler(androidx.work.WorkManager.getInstance(this))
+        syncScheduler.schedulePeriodicSync()
+        if (GoogleSignIn.getLastSignedInAccount(this) != null) {
+            syncScheduler.triggerImmediate()
+        }
         val savedDestination = runBlocking { NavStateStore.getDestinationFlow(this@MainActivity).first() }
         val initialDestination = when (intent?.action) {
             "org.meow.autistic.OPEN_SCAN"  -> "Scan"
@@ -261,7 +276,9 @@ class MainActivity : ComponentActivity() {
                                     "Food Log" -> FoodLogScreen()
                                     "Energy" -> EnergyScreen()
                                     "Health" -> HealthConnectScreen()
+                                    "Vitals" -> IntegratedHealthScreen()
                                     "Talk" -> ConversationScreen()
+                                    "Sequences" -> SequenceListScreen()
                                 }
                             }
                         }
@@ -316,11 +333,25 @@ fun showNotification(context: Context) {
         )
         views.setOnClickPendingIntent(org.meow.autistic.data.mood.MOOD_BUTTON_VIEW_IDS[i], pi)
     }
+    val remoteInput = androidx.core.app.RemoteInput.Builder(org.meow.autistic.data.mood.REMOTE_INPUT_NOTE_KEY)
+        .setLabel("Describe your activity…")
+        .build()
+    val noteIntent = Intent(context, org.meow.autistic.data.mood.MoodBroadcastReceiver::class.java).apply {
+        action = org.meow.autistic.data.mood.ACTION_LOG_MOOD_WITH_NOTE
+    }
+    val notePi = PendingIntent.getBroadcast(
+        context, 200, noteIntent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
+    )
+    val noteAction = NotificationCompat.Action.Builder(0, "Add note…", notePi)
+        .addRemoteInput(remoteInput)
+        .build()
     val builder = NotificationCompat.Builder(context, "mood_channel")
         .setSmallIcon(R.drawable.ic_launcher_foreground)
         .setContentTitle("How are you feeling?")
         .setStyle(NotificationCompat.DecoratedCustomViewStyle())
         .setCustomBigContentView(views)
+        .addAction(noteAction)
         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
     (context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager)
         .notify(org.meow.autistic.data.mood.MOOD_NOTIFICATION_ID, builder.build())

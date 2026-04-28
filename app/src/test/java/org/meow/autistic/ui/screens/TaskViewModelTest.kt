@@ -159,7 +159,7 @@ class TaskViewModelTest {
         val completed = TaskEntity(id = 2L, task = "Done", createdAt = Instant.EPOCH, isCompleted = true)
         val vm = makeViewModel(listOf(active, completed))
         val grouped = vm.groupedItems.first()
-        val allItems = grouped.today + grouped.later.flatMap { it.second }
+        val allItems = grouped.today + grouped.later.flatMap { it.third }
         assertTrue(allItems.all { it is TaskListItem.Task && !it.entity.isCompleted })
     }
 
@@ -169,7 +169,7 @@ class TaskViewModelTest {
         val pendingDelete = TaskEntity(id = 2L, task = "Deleted", createdAt = Instant.EPOCH, syncStatus = "pending_delete")
         val vm = makeViewModel(listOf(active, pendingDelete))
         val grouped = vm.groupedItems.first()
-        val allItems = grouped.today + grouped.later.flatMap { it.second }
+        val allItems = grouped.today + grouped.later.flatMap { it.third }
         assertTrue(allItems.none { it is TaskListItem.Task && it.entity.syncStatus == "pending_delete" })
     }
 

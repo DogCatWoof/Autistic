@@ -95,24 +95,23 @@ class TaskDaoTest {
     }
 
     @Test
-    fun getPendingPush_returnsOnlyPendingPushItems() = runTest {
-        dao.insertTask(
-            TaskEntity(
-                task = "Push me",
-                createdAt = Instant.ofEpochMilli(1000L),
-                syncStatus = "pending_push"
-            )
-        )
-        dao.insertTask(
-            TaskEntity(
-                task = "Synced",
-                createdAt = Instant.ofEpochMilli(2000L),
-                syncStatus = "synced"
-            )
-        )
+    fun getPendingPush_includesPendingPushAndLocalNonDailyTasks() = runTest {
+        dao.insertTask(TaskEntity(task = "Push me", createdAt = Instant.ofEpochMilli(1000L), syncStatus = "pending_push"))
+        dao.insertTask(TaskEntity(task = "Local regular", createdAt = Instant.ofEpochMilli(2000L), syncStatus = "local"))
+        dao.insertTask(TaskEntity(task = "Synced", createdAt = Instant.ofEpochMilli(3000L), syncStatus = "synced"))
+        dao.insertTask(TaskEntity(task = "Daily local", createdAt = Instant.ofEpochMilli(4000L), syncStatus = "local", dailyTaskId = 1L))
         val result = dao.getPendingPush()
-        assertEquals(1, result.size)
-        assertEquals("Push me", result[0].task)
+        assertEquals(2, result.size)
+        val names = result.map { it.task }.toSet()
+        assertTrue(names.contains("Push me"))
+        assertTrue(names.contains("Local regular"))
+    }
+
+    @Test
+    fun getPendingPush_excludesDailyTasksWithLocalStatus() = runTest {
+        dao.insertTask(TaskEntity(task = "Daily", createdAt = Instant.ofEpochMilli(1000L), syncStatus = "local", dailyTaskId = 42L))
+        val result = dao.getPendingPush()
+        assertTrue(result.isEmpty())
     }
 
     @Test

@@ -48,10 +48,16 @@ class TokenStore(private val prefs: SharedPreferences) {
 
         private fun deletePrefsFile(context: Context) {
             runCatching {
-                // Delete the XML on disk so Android has no cached bad state.
                 File(context.applicationInfo.dataDir, "shared_prefs/$FILE_NAME.xml").delete()
-                // Also clear the in-memory SharedPreferences cache.
                 context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE).edit(commit = true) { clear() }
+            }
+            // If the Keystore master key itself is invalid (biometric change, backup/restore),
+            // the prefs wipe alone won't help — delete the key so a fresh one is generated.
+            runCatching {
+                java.security.KeyStore.getInstance("AndroidKeyStore").apply {
+                    load(null)
+                    deleteEntry(MasterKey.DEFAULT_MASTER_KEY_ALIAS)
+                }
             }
         }
 

@@ -9,13 +9,17 @@ val MOOD_EMOJIS: List<Pair<String, String>> = listOf(
     "😊" to "Happy",
     "😢" to "Sad",
     "😠" to "Angry",
-    "😰" to "Anxious",
     "😌" to "Calm",
     "😴" to "Tired",
     "😑" to "Bored",
-    "😤" to "Frustrated",
     "🥺" to "Lonely",
     "😜" to "Playful",
+    "😇" to "Content",
+    "🥰" to "Loved",
+    "🤒" to "Sick",
+    "😓" to "Stress",
+    "😰" to "Anxious",
+    "🤯" to "Too much",
 )
 
 /** A single mood reading recorded by the user. */

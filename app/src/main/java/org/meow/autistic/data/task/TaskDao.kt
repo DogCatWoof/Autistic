@@ -18,7 +18,7 @@ interface TaskDao {
     @Delete
     suspend fun deleteTask(task: TaskEntity): Int
 
-    @Query("SELECT * FROM tasks WHERE syncStatus = 'pending_push'")
+    @Query("SELECT * FROM tasks WHERE syncStatus = 'pending_push' OR (syncStatus = 'local' AND dailyTaskId IS NULL)")
     suspend fun getPendingPush(): List<TaskEntity>
 
     @Query("SELECT * FROM tasks WHERE syncStatus = 'pending_delete'")

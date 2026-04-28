@@ -2,6 +2,7 @@ package org.meow.autistic.ui.screens
 
 import org.meow.autistic.data.calendar.CalendarEventEntity
 import org.meow.autistic.data.task.TaskEntity
+import java.time.LocalDate
 
 sealed class TaskListItem {
     abstract val sortKey: Long
@@ -19,7 +20,7 @@ sealed class TaskListItem {
 data class GroupedTaskItems(
     val pastDue: List<TaskListItem>,
     val today: List<TaskListItem>,
-    val later: List<Pair<String, List<TaskListItem>>>,
+    val later: List<Triple<String, LocalDate?, List<TaskListItem>>>,
 ) {
     companion object {
         val EMPTY = GroupedTaskItems(emptyList(), emptyList(), emptyList())

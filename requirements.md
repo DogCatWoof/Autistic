@@ -28,7 +28,6 @@
 - Conflict rule: remote wins on pull; local edits are queued and pushed before the next pull
 - A manual sync button in the top bar shows a spinner during sync and the last-synced timestamp when idle
 - A "Connect Google Tasks" banner is shown when the user is not authenticated
-- [X] On a metered (cellular) network, a confirmation dialog is shown before manual sync
 
 ### Scan and Lookup Groceries
 - Users scan grocery product barcodes using the device camera
@@ -241,6 +240,35 @@ Reads health data from other apps (Samsung Health, Garmin, Google Fit, etc.) via
 
 ---
 
+### Integrated Health Screen
+
+A dedicated screen that surfaces accumulated health metrics for a single selected day, with navigation between days and a weekly summary popup.
+
+#### Layout
+- **Day navigator** — header bar with back/forward chevrons and the selected date (e.g. "Mon Apr 27"); tapping the date label opens the weekly popup; defaults to today; forward arrow disabled on today
+- **Top section** — summary cards for the selected day:
+  - Calories (food log intake vs. Health Connect burned, shown as in/out balance)
+  - Blood sugar (latest reading for the day + daily average)
+  - Steps (day total)
+  - Sleep (hours for the night ending on this day)
+  - Heart rate (average for the day)
+  - Weight (most recent reading on or before this day)
+- **Bottom section** — scrollable list of individual Health Connect records for the selected day; each row shows data type, value, and time; empty state per section when no data
+
+#### Weekly Popup
+- Triggered by tapping the date label in the day navigator
+- Shows a 7-day summary ending on the selected day
+- Contains charts and diagrams (specific charts TBD — candidates: step bar chart, sleep duration bar chart, calorie balance line, blood sugar scatter, weight trend line)
+- Dismisses on tap-outside or back gesture
+
+#### Requirements
+- Data sourced from `HealthSnapshotEntity` (populated by `HealthConnectSyncWorker`) and the food log for calorie intake
+- Pull-to-refresh on the day view triggers `refreshTodaySnapshot()` (only active when viewing today)
+- Navigating to a past day with no snapshot triggers a background fetch for that date
+- Empty states shown per metric when no Health Connect data is available for the selected day
+
+---
+
 ## Plan
 
 ### [X] Location-based Actions
@@ -289,7 +317,7 @@ Reads health data from other apps (Samsung Health, Garmin, Google Fit, etc.) via
 3. **`HealthConnectPermissionRequest`** — composable helper that calls `rememberLauncherForActivityResult(HealthDataRequestPermissions())`; invoked from a Settings entry; shows which permissions are granted vs. missing
 4. **Settings screen entry** — "Health Connect" row in Settings; opens permission request flow; shows last-synced timestamp per data type
 5. **Surface in existing screens** — Food Log: show today's steps + calories burned as a summary card; Mood: show last night's sleep duration + avg heart rate; Energy Budgeting: feed all signals into the model
-6. [X] **`HealthConnectSyncWorker`** — `CoroutineWorker`; reads each data type and writes to a `HealthSnapshotEntity` table (date, steps, sleepMinutes, avgHeartRate, weightKg, caloriesBurned); runs on any network, once per hour
+6. **`HealthConnectSyncWorker`** — `CoroutineWorker`; reads each data type and writes to a `HealthSnapshotEntity` table (date, steps, sleepMinutes, avgHeartRate, weightKg, caloriesBurned); runs on any network, once per hour
 7. **Privacy policy** — add a privacy policy URL to app metadata and Play Store listing before shipping; document that health data stays on-device only
 8. **Tests** — unit tests for `HealthConnectRepository` using a fake `HealthConnectClient`; verify null-safe handling when SDK unavailable
 

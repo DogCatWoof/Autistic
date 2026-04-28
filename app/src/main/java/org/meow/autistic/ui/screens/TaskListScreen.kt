@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Notifications
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -149,13 +150,18 @@ fun TaskListScreen(
                     stickyHeader(key = "header_today") {
                         val todayDate = LocalDate.now(ZoneId.systemDefault())
                             .format(java.time.format.DateTimeFormatter.ofPattern("EEEE, MMM d"))
-                        SectionHeader("Today — $todayDate")
+                        SectionHeader("Today — $todayDate", background = ColorToday, contentColor = Color.White)
                     }
                     items(grouped.today, key = { it.itemKey }) { item ->
                         TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
                     }
-                    grouped.later.forEach { (dateLabel, sectionItems) ->
-                        stickyHeader(key = "header_later_$dateLabel") { SectionHeader(dateLabel) }
+                    grouped.later.forEach { (dateLabel, date, sectionItems) ->
+                        val weekEnd = LocalDate.now(ZoneId.systemDefault()).with(DayOfWeek.SUNDAY)
+                        val bg = when {
+                            date != null && !date.isAfter(weekEnd) -> ColorThisWeek
+                            else -> ColorFuture
+                        }
+                        stickyHeader(key = "header_later_$dateLabel") { SectionHeader(dateLabel, background = bg, contentColor = Color.White) }
                         items(sectionItems, key = { it.itemKey }) { item ->
                             TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
                         }
@@ -332,17 +338,25 @@ fun GoogleAuthBanner(onConnectClick: () -> Unit) {
 }
 
 @Composable
-fun SectionHeader(title: String) {
+fun SectionHeader(
+    title: String,
+    background: Color = MaterialTheme.colorScheme.primaryContainer,
+    contentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
+) {
     Text(
         text = title,
         style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onPrimaryContainer,
+        color = contentColor,
         modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.primaryContainer)
+            .background(background)
             .padding(horizontal = 16.dp, vertical = 8.dp),
     )
 }
+
+private val ColorToday = Color(0xFF2E7D32)
+private val ColorThisWeek = Color(0xFF689F38)
+private val ColorFuture = Color(0xFFF9A825)
 
 @Composable
 fun TaskListItemRow(
