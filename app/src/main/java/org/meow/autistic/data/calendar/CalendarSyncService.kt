@@ -1,8 +1,11 @@
 package org.meow.autistic.data.calendar
 
 import com.google.api.client.googleapis.json.GoogleJsonResponseException
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 private const val HTTP_GONE = 410
+private const val FULL_SYNC_DAYS = 60L
 
 /**
  * Orchestrates read-only sync between Google Calendar and the local Room database.
@@ -63,7 +66,8 @@ class CalendarSyncService(
     }
 
     private suspend fun fullSync(token: String): CalendarSyncResult {
-        return remoteSource.fetchEvents(token, System.currentTimeMillis())
+        val timeMin = Instant.now().minus(FULL_SYNC_DAYS, ChronoUnit.DAYS).toEpochMilli()
+        return remoteSource.fetchEvents(token, timeMin)
     }
 
     private suspend fun applyResult(result: CalendarSyncResult) {

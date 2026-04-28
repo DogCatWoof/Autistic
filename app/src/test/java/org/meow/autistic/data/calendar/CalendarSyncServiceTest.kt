@@ -5,10 +5,14 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 class CalendarSyncServiceTest {
 
@@ -44,6 +48,19 @@ class CalendarSyncServiceTest {
 
         coVerify { remoteSource.fetchEvents(token, any()) }
         coVerify(exactly = 0) { remoteSource.fetchDeletedEvents(any(), any()) }
+    }
+
+    @Test
+    fun `fullSync uses timeMin of 60 days ago`() = runTest {
+        val timeMinSlot = slot<Long>()
+        coEvery { remoteSource.fetchEvents(token, capture(timeMinSlot)) } returns
+            CalendarSyncResult(emptyList(), newSyncToken)
+
+        service.pullAndMerge()
+
+        val expected = Instant.now().minus(60, ChronoUnit.DAYS).toEpochMilli()
+        val delta = Math.abs(timeMinSlot.captured - expected)
+        assertTrue("timeMin should be ~60 days ago (delta=${delta}ms)", delta < 5_000L)
     }
 
     @Test
