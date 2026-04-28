@@ -1,5 +1,6 @@
 package org.meow.autistic.data.calendar
 
+import android.util.Log
 import com.google.api.client.http.HttpRequestInitializer
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
@@ -11,6 +12,7 @@ import kotlinx.coroutines.withContext
 
 private const val APP_NAME = "Autistic"
 private const val PRIMARY_CALENDAR = "primary"
+private const val TAG = "CalendarRemoteSource"
 
 /**
  * A single Google Calendar event as returned by the API.
@@ -79,8 +81,18 @@ class CalendarRemoteSource(
                   .setSingleEvents(true)
                   .setShowDeleted(false)
                 if (pageToken != null) request.setPageToken(pageToken)
+                val url = request.buildHttpRequestUrl().build()
+                Log.d(TAG, "fetchEvents → GET $url")
                 val response = request.execute()
-                response.items?.forEach { result.add(it.toRemoteEvent()) }
+                Log.d(TAG, "fetchEvents ← ${response.items?.size ?: 0} events, " +
+                    "nextPageToken=${response.nextPageToken}, " +
+                    "nextSyncToken=${response.nextSyncToken}")
+                response.items?.forEach { event ->
+                    Log.d(TAG, "  event id=${event.id} summary=${event.summary} " +
+                        "start=${event.start?.dateTime ?: event.start?.date} " +
+                        "status=${event.status}")
+                    result.add(event.toRemoteEvent())
+                }
                 pageToken = response.nextPageToken
                 if (response.nextSyncToken != null) syncToken = response.nextSyncToken
             } while (pageToken != null)
@@ -105,8 +117,18 @@ class CalendarRemoteSource(
                     .setSyncToken(syncToken)
                     .setShowDeleted(true)
                 if (pageToken != null) request.setPageToken(pageToken)
+                val url = request.buildHttpRequestUrl().build()
+                Log.d(TAG, "fetchDeletedEvents → GET $url")
                 val response = request.execute()
-                response.items?.forEach { result.add(it.toRemoteEvent()) }
+                Log.d(TAG, "fetchDeletedEvents ← ${response.items?.size ?: 0} events, " +
+                    "nextPageToken=${response.nextPageToken}, " +
+                    "nextSyncToken=${response.nextSyncToken}")
+                response.items?.forEach { event ->
+                    Log.d(TAG, "  event id=${event.id} summary=${event.summary} " +
+                        "start=${event.start?.dateTime ?: event.start?.date} " +
+                        "status=${event.status}")
+                    result.add(event.toRemoteEvent())
+                }
                 pageToken = response.nextPageToken
                 if (response.nextSyncToken != null) nextSync = response.nextSyncToken
             } while (pageToken != null)
@@ -118,7 +140,11 @@ class CalendarRemoteSource(
      */
     suspend fun deleteEvent(token: String, eventId: String) {
         withContext(Dispatchers.IO) {
-            clientFactory(token).events().delete(PRIMARY_CALENDAR, eventId).execute()
+            val request = clientFactory(token).events().delete(PRIMARY_CALENDAR, eventId)
+            val url = request.buildHttpRequestUrl().build()
+            Log.d(TAG, "deleteEvent → DELETE $url")
+            request.execute()
+            Log.d(TAG, "deleteEvent ← 204 No Content (eventId=$eventId)")
         }
     }
 }
