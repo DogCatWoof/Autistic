@@ -37,11 +37,9 @@ data class RemoteEvent(
  * Result of a single sync fetch, accumulating all pages.
  *
  * @param events All events returned across all pages.
- * @param nextSyncToken Token from the final response page; pass to the next incremental sync.
  */
 data class CalendarSyncResult(
     val events: List<RemoteEvent>,
-    val nextSyncToken: String,
 )
 
 /**
@@ -66,15 +64,12 @@ class CalendarRemoteSource(
     /**
      * Fetches all events in the primary calendar from [timeMin] onward (epoch ms).
      * Recurring events are expanded to individual instances. Deleted events are excluded.
-     * Returns events plus a [CalendarSyncResult.nextSyncToken] suitable for the next
-     * incremental call to [fetchDeletedEvents].
      */
     suspend fun fetchEvents(token: String, timeMin: Long): CalendarSyncResult =
         withContext(Dispatchers.IO) {
             val client = clientFactory(token)
             val result = mutableListOf<RemoteEvent>()
             var pageToken: String? = null
-            var syncToken = ""
             do {
                 val request = client.events().list(PRIMARY_CALENDAR)
                   .setTimeMin(DateTime(timeMin))
@@ -85,8 +80,7 @@ class CalendarRemoteSource(
                 Log.d(TAG, "fetchEvents → GET $url")
                 val response = request.execute()
                 Log.d(TAG, "fetchEvents ← ${response.items?.size ?: 0} events, " +
-                    "nextPageToken=${response.nextPageToken}, " +
-                    "nextSyncToken=${response.nextSyncToken}")
+                    "nextPageToken=${response.nextPageToken}")
                 response.items?.forEach { event ->
                     Log.d(TAG, "  event id=${event.id} summary=${event.summary} " +
                         "start=${event.start?.dateTime ?: event.start?.date} " +
@@ -94,45 +88,8 @@ class CalendarRemoteSource(
                     result.add(event.toRemoteEvent())
                 }
                 pageToken = response.nextPageToken
-                if (response.nextSyncToken != null) syncToken = response.nextSyncToken
             } while (pageToken != null)
-            CalendarSyncResult(result, syncToken)
-        }
-
-    /**
-     * Fetches all changes (new, updated, and cancelled events) since the last sync.
-     *
-     * @param syncToken Token received from the previous [fetchEvents] or [fetchDeletedEvents] call.
-     * @throws com.google.api.client.googleapis.json.GoogleJsonResponseException with status 410
-     *   when [syncToken] has expired; caller should discard the token and do a full sync.
-     */
-    suspend fun fetchDeletedEvents(token: String, syncToken: String): CalendarSyncResult =
-        withContext(Dispatchers.IO) {
-            val client = clientFactory(token)
-            val result = mutableListOf<RemoteEvent>()
-            var pageToken: String? = null
-            var nextSync = ""
-            do {
-                val request = client.events().list(PRIMARY_CALENDAR)
-                    .setSyncToken(syncToken)
-                    .setShowDeleted(true)
-                if (pageToken != null) request.setPageToken(pageToken)
-                val url = request.buildHttpRequestUrl().build()
-                Log.d(TAG, "fetchDeletedEvents → GET $url")
-                val response = request.execute()
-                Log.d(TAG, "fetchDeletedEvents ← ${response.items?.size ?: 0} events, " +
-                    "nextPageToken=${response.nextPageToken}, " +
-                    "nextSyncToken=${response.nextSyncToken}")
-                response.items?.forEach { event ->
-                    Log.d(TAG, "  event id=${event.id} summary=${event.summary} " +
-                        "start=${event.start?.dateTime ?: event.start?.date} " +
-                        "status=${event.status}")
-                    result.add(event.toRemoteEvent())
-                }
-                pageToken = response.nextPageToken
-                if (response.nextSyncToken != null) nextSync = response.nextSyncToken
-            } while (pageToken != null)
-            CalendarSyncResult(result, nextSync)
+            CalendarSyncResult(result)
         }
 
     /**

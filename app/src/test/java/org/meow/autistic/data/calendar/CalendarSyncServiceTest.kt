@@ -30,7 +30,7 @@ class CalendarSyncServiceTest {
     @Before
     fun setUp() {
         coEvery { remoteSource.fetchEvents(token, any()) } returns
-            CalendarSyncResult(emptyList(), "")
+            CalendarSyncResult(emptyList())
     }
 
     // region full sync
@@ -46,7 +46,7 @@ class CalendarSyncServiceTest {
     fun `pullAndMerge uses timeMin of 60 days ago`() = runTest {
         val timeMinSlot = slot<Long>()
         coEvery { remoteSource.fetchEvents(token, capture(timeMinSlot)) } returns
-            CalendarSyncResult(emptyList(), "")
+            CalendarSyncResult(emptyList())
 
         service.pullAndMerge()
 
@@ -62,7 +62,7 @@ class CalendarSyncServiceTest {
     @Test
     fun `pullAndMerge upserts active events`() = runTest {
         coEvery { remoteSource.fetchEvents(token, any()) } returns
-            CalendarSyncResult(listOf(activeEvent), "")
+            CalendarSyncResult(listOf(activeEvent))
 
         service.pullAndMerge()
 
@@ -74,7 +74,7 @@ class CalendarSyncServiceTest {
     @Test
     fun `pullAndMerge deletes cancelled events`() = runTest {
         coEvery { remoteSource.fetchEvents(token, any()) } returns
-            CalendarSyncResult(listOf(cancelledEvent), "")
+            CalendarSyncResult(listOf(cancelledEvent))
 
         service.pullAndMerge()
 
@@ -91,7 +91,7 @@ class CalendarSyncServiceTest {
     @Test
     fun `pullAndMerge does not delete when no cancelled events`() = runTest {
         coEvery { remoteSource.fetchEvents(token, any()) } returns
-            CalendarSyncResult(listOf(activeEvent), "")
+            CalendarSyncResult(listOf(activeEvent))
 
         service.pullAndMerge()
 

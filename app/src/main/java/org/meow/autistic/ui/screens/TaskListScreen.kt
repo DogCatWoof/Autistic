@@ -354,9 +354,9 @@ fun SectionHeader(
     )
 }
 
-private val ColorToday = Color(0xFF2E7D32)
-private val ColorThisWeek = Color(0xFF689F38)
-private val ColorFuture = Color(0xFFF9A825)
+private val ColorToday = Color(0xFF4A7C59)
+private val ColorThisWeek = Color(0xFF6B8F5E)
+private val ColorFuture = Color(0xFF8A7A4A)
 
 @Composable
 fun TaskListItemRow(
