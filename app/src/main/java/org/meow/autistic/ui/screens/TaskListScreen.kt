@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Notifications
 import java.time.DayOfWeek
@@ -66,6 +67,7 @@ fun TaskListScreen(
     val showCompleted by viewModel.showCompleted.collectAsState()
     val isAuthenticated by viewModel.isAuthenticated.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
+    val undoStack by viewModel.undoStack.collectAsState()
     var fabExpanded by remember { mutableStateOf(false) }
     var addType by remember { mutableStateOf<AddType?>(null) }
     val fabRotation by animateFloatAsState(
@@ -86,6 +88,15 @@ fun TaskListScreen(
             TopAppBar(
                 title = { Text("My Tasks") },
                 actions = {
+                    if (undoStack.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.undo() }) {
+                            BadgedBox(badge = {
+                                if (undoStack.size > 1) Badge { Text("${undoStack.size}") }
+                            }) {
+                                Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo")
+                            }
+                        }
+                    }
                     IconButton(onClick = { viewModel.toggleShowCompleted() }) {
                         Icon(
                             if (showCompleted) Icons.Outlined.CheckCircle else Icons.Default.CheckCircle,
@@ -413,7 +424,7 @@ fun SectionHeader(
 
 private val ColorToday = Color(0xFF4A7C59)
 private val ColorThisWeek = Color(0xFF6B8F5E)
-private val ColorFuture = Color(0xFF9E8800)
+private val ColorFuture = Color(0xFF556655)
 
 @Composable
 fun TaskListItemRow(
@@ -430,7 +441,7 @@ fun TaskListItemRow(
             task = item.entity,
             backgroundColor = bgColor,
             leadingIcon = icon,
-            onToggle = { viewModel.update(item.entity.copy(isCompleted = it)) },
+            onToggle = { viewModel.toggleComplete(item.entity, it) },
             onDelete = { viewModel.delete(item.entity) },
             onClick = { onTaskClick(item.entity) },
         )

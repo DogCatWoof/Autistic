@@ -31,6 +31,9 @@ class CalendarRepository(
     suspend fun markHidden(googleEventId: String) =
         timed("CalendarRepository.markHidden") { dao.markHidden(googleEventId) }
 
+    suspend fun markVisible(googleEventId: String) =
+        timed("CalendarRepository.markVisible") { dao.markVisible(googleEventId) }
+
     suspend fun markPendingDelete(googleEventId: String) =
         timed("CalendarRepository.markPendingDelete") { dao.markPendingDelete(googleEventId) }
 

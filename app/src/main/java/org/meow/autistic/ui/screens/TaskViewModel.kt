@@ -12,8 +12,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.meow.autistic.data.auth.GoogleAuthManager
+import org.meow.autistic.data.calendar.CalendarEventEntity
 import org.meow.autistic.data.calendar.CalendarRepository
 import org.meow.autistic.data.sync.IMMEDIATE_WORK_NAME
 import org.meow.autistic.data.sync.SyncScheduler
@@ -24,6 +26,13 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+
+sealed class UndoableAction {
+    data class TaskDeleted(val task: TaskEntity) : UndoableAction()
+    data class TaskToggled(val previousTask: TaskEntity) : UndoableAction()
+    data class EventHidden(val event: CalendarEventEntity) : UndoableAction()
+    data class EventDeleted(val event: CalendarEventEntity) : UndoableAction()
+}
 
 sealed class SyncState {
     object Idle : SyncState()
@@ -48,6 +57,13 @@ class TaskViewModel(
 
     private val _showCompleted = MutableStateFlow(false)
     val showCompleted: StateFlow<Boolean> = _showCompleted.asStateFlow()
+
+    private val _undoStack = MutableStateFlow<List<UndoableAction>>(emptyList())
+    val undoStack: StateFlow<List<UndoableAction>> = _undoStack.asStateFlow()
+
+    private fun pushUndo(action: UndoableAction) {
+        _undoStack.update { current -> (listOf(action) + current).take(3) }
+    }
 
     val groupedItems: StateFlow<GroupedTaskItems> = combine(
         repository.allTasks,
@@ -162,21 +178,45 @@ class TaskViewModel(
         }
     }
 
+    fun toggleComplete(task: TaskEntity, isCompleted: Boolean) {
+        pushUndo(UndoableAction.TaskToggled(task))
+        update(task.copy(isCompleted = isCompleted))
+    }
+
     fun delete(task: TaskEntity) = viewModelScope.launch {
+        pushUndo(UndoableAction.TaskDeleted(task))
         TaskReminderWorker.cancel(workManager, task.id)
         if (task.googleTaskId != null) repository.markPendingDelete(task.id)
         else repository.delete(task)
+    }
+
+    fun undo() = viewModelScope.launch {
+        val action = _undoStack.value.firstOrNull() ?: return@launch
+        _undoStack.update { it.drop(1) }
+        when (action) {
+            is UndoableAction.TaskDeleted -> {
+                val id = repository.insert(action.task)
+                if (action.task.reminderMinutesBefore != null) {
+                    TaskReminderWorker.scheduleFor(workManager, action.task.copy(id = id))
+                }
+            }
+            is UndoableAction.TaskToggled -> update(action.previousTask)
+            is UndoableAction.EventHidden -> calendarRepository.markVisible(action.event.googleEventId)
+            is UndoableAction.EventDeleted -> calendarRepository.upsertEvents(listOf(action.event))
+        }
     }
 
     fun insertCalendarEvent(event: org.meow.autistic.data.calendar.CalendarEventEntity) = viewModelScope.launch {
         calendarRepository.upsertEvents(listOf(event))
     }
 
-    fun completeEvent(event: org.meow.autistic.data.calendar.CalendarEventEntity) = viewModelScope.launch {
+    fun completeEvent(event: CalendarEventEntity) = viewModelScope.launch {
+        pushUndo(UndoableAction.EventHidden(event))
         calendarRepository.markHidden(event.googleEventId)
     }
 
-    fun deleteEvent(event: org.meow.autistic.data.calendar.CalendarEventEntity) = viewModelScope.launch {
+    fun deleteEvent(event: CalendarEventEntity) = viewModelScope.launch {
+        pushUndo(UndoableAction.EventDeleted(event))
         calendarRepository.markPendingDelete(event.googleEventId)
     }
 

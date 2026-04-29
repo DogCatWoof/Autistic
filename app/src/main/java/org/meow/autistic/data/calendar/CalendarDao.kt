@@ -25,6 +25,9 @@ interface CalendarDao {
     @Query("UPDATE calendar_events SET isHidden = 1 WHERE googleEventId = :id")
     suspend fun markHidden(id: String)
 
+    @Query("UPDATE calendar_events SET isHidden = 0 WHERE googleEventId = :id")
+    suspend fun markVisible(id: String)
+
     @Query("UPDATE calendar_events SET syncStatus = 'pending_delete' WHERE googleEventId = :id")
     suspend fun markPendingDelete(id: String)
 
