@@ -148,9 +148,13 @@ fun TaskListScreen(
                         }
                     }
                     stickyHeader(key = "header_today") {
-                        val todayDate = LocalDate.now(ZoneId.systemDefault())
-                            .format(java.time.format.DateTimeFormatter.ofPattern("EEEE, MMM d"))
-                        SectionHeader("Today — $todayDate", background = ColorToday, contentColor = Color.White)
+                        val today = LocalDate.now(ZoneId.systemDefault())
+                        SectionHeader(
+                            title = "Today — ${today.format(java.time.format.DateTimeFormatter.ofPattern("EEEE"))}",
+                            trailingText = today.format(java.time.format.DateTimeFormatter.ofPattern("MMM d")),
+                            background = ColorToday,
+                            contentColor = Color.White,
+                        )
                     }
                     items(grouped.today, key = { it.itemKey }) { item ->
                         TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
@@ -161,7 +165,10 @@ fun TaskListScreen(
                             date != null && !date.isAfter(weekEnd) -> ColorThisWeek
                             else -> ColorFuture
                         }
-                        stickyHeader(key = "header_later_$dateLabel") { SectionHeader(dateLabel, background = bg, contentColor = Color.White) }
+                        val trailingDate = date?.format(java.time.format.DateTimeFormatter.ofPattern("MMM d"))
+                        stickyHeader(key = "header_later_$dateLabel") {
+                            SectionHeader(dateLabel, trailingText = trailingDate, background = bg, contentColor = Color.White)
+                        }
                         items(sectionItems, key = { it.itemKey }) { item ->
                             TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
                         }
@@ -340,18 +347,23 @@ fun GoogleAuthBanner(onConnectClick: () -> Unit) {
 @Composable
 fun SectionHeader(
     title: String,
+    trailingText: String? = null,
     background: Color = MaterialTheme.colorScheme.primaryContainer,
     contentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
 ) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleSmall,
-        color = contentColor,
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(background)
             .padding(horizontal = 16.dp, vertical = 8.dp),
-    )
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text = title, style = MaterialTheme.typography.titleSmall, color = contentColor)
+        if (trailingText != null) {
+            Text(text = trailingText, style = MaterialTheme.typography.titleSmall, color = contentColor)
+        }
+    }
 }
 
 private val ColorToday = Color(0xFF4A7C59)
