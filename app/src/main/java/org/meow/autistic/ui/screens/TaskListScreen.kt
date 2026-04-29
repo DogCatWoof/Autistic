@@ -88,7 +88,7 @@ fun TaskListScreen(
                 actions = {
                     IconButton(onClick = { viewModel.toggleShowCompleted() }) {
                         Icon(
-                            if (showCompleted) Icons.Default.CheckCircle else Icons.Outlined.CheckCircle,
+                            if (showCompleted) Icons.Outlined.CheckCircle else Icons.Default.CheckCircle,
                             contentDescription = if (showCompleted) "Show active tasks" else "Show completed tasks",
                         )
                     }
