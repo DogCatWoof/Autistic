@@ -166,8 +166,9 @@ fun TaskListScreen(
                             else -> ColorFuture
                         }
                         val trailingDate = date?.format(java.time.format.DateTimeFormatter.ofPattern("MMM d"))
+                        val isTomorrow = date == LocalDate.now(ZoneId.systemDefault()).plusDays(1)
                         stickyHeader(key = "header_later_${date?.toString() ?: dateLabel}") {
-                            SectionHeader(dateLabel, trailingText = trailingDate, background = bg, contentColor = Color.White)
+                            SectionHeader(dateLabel, trailingText = trailingDate, centerTitle = date != null && !isTomorrow, background = bg, contentColor = Color.White)
                         }
                         items(sectionItems, key = { it.itemKey }) { item ->
                             TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
@@ -348,6 +349,7 @@ fun GoogleAuthBanner(onConnectClick: () -> Unit) {
 fun SectionHeader(
     title: String,
     trailingText: String? = null,
+    centerTitle: Boolean = false,
     background: Color = MaterialTheme.colorScheme.primaryContainer,
     contentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
 ) {
@@ -361,7 +363,7 @@ fun SectionHeader(
             text = title,
             style = MaterialTheme.typography.titleSmall,
             color = contentColor,
-            modifier = Modifier.align(Alignment.Center),
+            modifier = Modifier.align(if (centerTitle) Alignment.Center else Alignment.CenterStart),
         )
         if (trailingText != null) {
             Text(

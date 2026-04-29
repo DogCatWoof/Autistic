@@ -5,7 +5,7 @@
 A personal Android app for autistic adults. Manages daily tasks, calendar events, food logging, mood tracking, energy budgeting, health data, notes, sequences (checklists), and a conversation assistant for tone coaching. All data is local-first (Room), with optional Google sync (Tasks + Calendar + Drive backup) and Health Connect integration.
 
 ---
-
+L
 ## Tech Stack
 
 | Area | Library |
