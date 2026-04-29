@@ -150,7 +150,8 @@ fun TaskListScreen(
                     stickyHeader(key = "header_today") {
                         val today = LocalDate.now(ZoneId.systemDefault())
                         SectionHeader(
-                            title = "Today — ${today.format(java.time.format.DateTimeFormatter.ofPattern("EEEE"))}",
+                            title = "Today",
+                            centerText = today.format(java.time.format.DateTimeFormatter.ofPattern("EEEE")),
                             trailingText = today.format(java.time.format.DateTimeFormatter.ofPattern("MMM d")),
                             background = ColorToday,
                             contentColor = Color.White,
@@ -168,7 +169,17 @@ fun TaskListScreen(
                         val trailingDate = date?.format(java.time.format.DateTimeFormatter.ofPattern("MMM d"))
                         val isTomorrow = date == LocalDate.now(ZoneId.systemDefault()).plusDays(1)
                         stickyHeader(key = "header_later_${date?.toString() ?: dateLabel}") {
-                            SectionHeader(dateLabel, trailingText = trailingDate, centerTitle = date != null && !isTomorrow, background = bg, contentColor = Color.White)
+                            if (isTomorrow) {
+                                SectionHeader(
+                                    title = "Tomorrow",
+                                    centerText = date.format(java.time.format.DateTimeFormatter.ofPattern("EEEE")),
+                                    trailingText = trailingDate,
+                                    background = bg,
+                                    contentColor = Color.White,
+                                )
+                            } else {
+                                SectionHeader(dateLabel, trailingText = trailingDate, centerTitle = date != null, background = bg, contentColor = Color.White)
+                            }
                         }
                         items(sectionItems, key = { it.itemKey }) { item ->
                             TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
@@ -349,6 +360,7 @@ fun GoogleAuthBanner(onConnectClick: () -> Unit) {
 fun SectionHeader(
     title: String,
     trailingText: String? = null,
+    centerText: String? = null,
     centerTitle: Boolean = false,
     background: Color = MaterialTheme.colorScheme.primaryContainer,
     contentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -359,26 +371,49 @@ fun SectionHeader(
             .background(background)
             .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            color = contentColor,
-            modifier = Modifier.align(if (centerTitle) Alignment.Center else Alignment.CenterStart),
-        )
-        if (trailingText != null) {
+        if (centerText != null) {
             Text(
-                text = trailingText,
+                text = title,
                 style = MaterialTheme.typography.titleSmall,
                 color = contentColor,
-                modifier = Modifier.align(Alignment.CenterEnd),
+                modifier = Modifier.align(Alignment.CenterStart),
             )
+            Text(
+                text = centerText,
+                style = MaterialTheme.typography.titleSmall,
+                color = contentColor,
+                modifier = Modifier.align(Alignment.Center),
+            )
+            if (trailingText != null) {
+                Text(
+                    text = trailingText,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = contentColor,
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                )
+            }
+        } else {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = contentColor,
+                modifier = Modifier.align(if (centerTitle) Alignment.Center else Alignment.CenterStart),
+            )
+            if (trailingText != null) {
+                Text(
+                    text = trailingText,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = contentColor,
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                )
+            }
         }
     }
 }
 
 private val ColorToday = Color(0xFF4A7C59)
 private val ColorThisWeek = Color(0xFF6B8F5E)
-private val ColorFuture = Color(0xFF8A7A4A)
+private val ColorFuture = Color(0xFF9E8800)
 
 @Composable
 fun TaskListItemRow(
