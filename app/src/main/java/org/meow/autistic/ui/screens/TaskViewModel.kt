@@ -199,9 +199,10 @@ class TaskViewModel(
             is TaskListItem.Event -> item.entity.startAt
         } ?: return "Later" to null
         val date = instant.atZone(ZoneId.systemDefault()).toLocalDate()
+        val dayOfWeek = date.format(DateTimeFormatter.ofPattern("EEE"))
         val label = when {
-            date == todayDate.plusDays(1) -> "Tomorrow"
-            else -> date.format(DateTimeFormatter.ofPattern("MMM d"))
+            date == todayDate.plusDays(1) -> "Tomorrow — $dayOfWeek"
+            else -> date.format(DateTimeFormatter.ofPattern("EEE, MMM d"))
         }
         return label to date
     }
