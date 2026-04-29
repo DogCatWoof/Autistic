@@ -351,17 +351,25 @@ fun SectionHeader(
     background: Color = MaterialTheme.colorScheme.primaryContainer,
     contentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
 ) {
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .background(background)
             .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text = title, style = MaterialTheme.typography.titleSmall, color = contentColor)
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            color = contentColor,
+            modifier = Modifier.align(Alignment.Center),
+        )
         if (trailingText != null) {
-            Text(text = trailingText, style = MaterialTheme.typography.titleSmall, color = contentColor)
+            Text(
+                text = trailingText,
+                style = MaterialTheme.typography.titleSmall,
+                color = contentColor,
+                modifier = Modifier.align(Alignment.CenterEnd),
+            )
         }
     }
 }
