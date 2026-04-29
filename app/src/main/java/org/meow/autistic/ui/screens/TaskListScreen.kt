@@ -166,7 +166,7 @@ fun TaskListScreen(
                             else -> ColorFuture
                         }
                         val trailingDate = date?.format(java.time.format.DateTimeFormatter.ofPattern("MMM d"))
-                        stickyHeader(key = "header_later_$dateLabel") {
+                        stickyHeader(key = "header_later_${date?.toString() ?: dateLabel}") {
                             SectionHeader(dateLabel, trailingText = trailingDate, background = bg, contentColor = Color.White)
                         }
                         items(sectionItems, key = { it.itemKey }) { item ->
