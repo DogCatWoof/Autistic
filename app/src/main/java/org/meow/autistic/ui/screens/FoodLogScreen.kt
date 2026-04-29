@@ -321,7 +321,7 @@ private fun CalorieBreakdown(totals: FoodLogEntry) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text("Total", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
         Text(
-            "${totals.calories.fmt} kcal",
+            "${totals.calories.fmt} Cal",
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.End,
@@ -361,7 +361,7 @@ private fun CalorieLegendRow(label: String, kcal: Double, total: Double, color: 
             modifier = Modifier.weight(1f).padding(start = 6.dp),
         )
         Text(
-            "${kcal.fmt} kcal",
+            "${kcal.fmt} Cal",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.widthIn(min = 60.dp),
@@ -454,7 +454,7 @@ private fun FoodLogEntryListItem(
                 }
                 if (!isPending) {
                     Text(
-                        "${item.calories.fmt} kcal · ${item.netCarbs.fmt}g net carbs",
+                        "${item.calories.fmt} Cal · ${item.netCarbs.fmt}g net carbs",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -573,7 +573,7 @@ private fun AddFoodEntryDialog(
                     }
                 }
                 FoodLogDialogLabel("Calories")
-                FoodLogNutrientInputRow("Calories", calories, "kcal") { calories = it }
+                FoodLogNutrientInputRow("Calories", calories, "Cal") { calories = it }
                 FoodLogNutrientInputRow("Protein", protein, "g") { protein = it }
                 FoodLogNutrientInputRow("Total Fat", totalFat, "g") { totalFat = it }
                 FoodLogDialogLabel("Carbohydrates")

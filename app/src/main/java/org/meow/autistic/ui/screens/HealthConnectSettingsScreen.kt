@@ -176,7 +176,7 @@ private fun TableDataRow(snapshot: HealthSnapshotEntity, onClick: () -> Unit) {
         TableCell(snapshot.steps?.toString() ?: "—", DATA_COL)
         TableCell(snapshot.sleepMinutes?.let { formatSleep(it) } ?: "—", DATA_COL)
         TableCell(snapshot.avgHeartRateBpm?.let { "${it.roundToInt()}" } ?: "—", DATA_COL)
-        TableCell(snapshot.weightKg?.let { "${"%.1f".format(it)}" } ?: "—", DATA_COL)
+        TableCell(snapshot.weightKg?.let { "${"%.1f".format(it * 2.20462)}" } ?: "—", DATA_COL)
         TableCell(snapshot.caloriesBurned?.let { "${it.roundToInt()}" } ?: "—", DATA_COL)
         TableCell(snapshot.bloodGlucoseMmol?.let { "${"%.1f".format(it)}" } ?: "—", DATA_COL)
     }

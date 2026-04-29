@@ -241,7 +241,7 @@ internal fun NutritionLabelServingsDialog(
                     )
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                NutritionEditRow("Calories", caloriesText, "kcal") { caloriesText = it }
+                NutritionEditRow("Calories", caloriesText, "Cal") { caloriesText = it }
                 NutritionEditRow("Protein", proteinText, "g") { proteinText = it }
                 NutritionEditRow("Total Fat", totalFatText, "g") { totalFatText = it }
                 NutritionEditRow("Total Carbs", totalCarbsText, "g") { totalCarbsText = it }
@@ -367,7 +367,7 @@ internal fun FoodLogItemDetailDialog(item: FoodLogItemEntry, onDismiss: () -> Un
                     Text(item.aiAnalysisResult, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 HorizontalDivider()
-                NutrientDetailRow("Calories", item.calories, " kcal", highlight = true)
+                NutrientDetailRow("Calories", item.calories, " Cal", highlight = true)
                 NutrientDetailRow("Protein", item.protein, "g")
                 NutrientDetailRow("Total Fat", item.totalFat, "g")
                 NutrientDetailRow("Total Carbs", item.totalCarbs, "g")

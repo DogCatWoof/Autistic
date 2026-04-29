@@ -210,7 +210,7 @@ private fun CaloriesProgressCard(burned: Int, goal: Int, modifier: Modifier = Mo
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = "%,d / %,d kcal".format(burned, goal),
+                    text = "%,d / %,d Cal".format(burned, goal),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                 )
@@ -278,7 +278,7 @@ private fun WeightCard(modifier: Modifier = Modifier, weight: String, onEditClic
 
 @Composable
 private fun WeightEntryDialog(current: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
-    var text by remember { mutableStateOf(current.removeSuffix(" kg")) }
+    var text by remember { mutableStateOf(current.removeSuffix(" lbs")) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Enter weight") },
@@ -286,7 +286,7 @@ private fun WeightEntryDialog(current: String, onConfirm: (String) -> Unit, onDi
             OutlinedTextField(
                 value = text,
                 onValueChange = { text = it },
-                label = { Text("kg") },
+                label = { Text("lbs") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
             )
@@ -294,7 +294,7 @@ private fun WeightEntryDialog(current: String, onConfirm: (String) -> Unit, onDi
         confirmButton = {
             TextButton(
                 enabled = text.toDoubleOrNull() != null,
-                onClick = { onConfirm("$text kg") },
+                onClick = { onConfirm("$text lbs") },
             ) { Text("Save") }
         },
         dismissButton = {
@@ -449,18 +449,18 @@ private fun mockSnapshotFor(date: LocalDate): MockSnapshot {
         bloodSugarLatest = "5.${seed % 9}",
         bloodSugarAvg = "5.${(seed + 2) % 9}",
         carbs = 120 + (seed * 17 % 80),
-        weight = "%.1f kg".format(74.0 + (seed % 10) * 0.3),
+        weight = "%.1f lbs".format((74.0 + (seed % 10) * 0.3) * 2.20462),
     )
 }
 
 private fun mockRecordsFor(date: LocalDate): List<MockRecord> {
     val seed = date.dayOfYear
     return listOf(
-        MockRecord(Icons.Default.LocalFireDepartment, Color(0xFFE65100), "Calories burned", "${1600 + seed * 53 % 600} kcal", "11:59 PM"),
+        MockRecord(Icons.Default.LocalFireDepartment, Color(0xFFE65100), "Calories burned", "${1600 + seed * 53 % 600} Cal", "11:59 PM"),
         MockRecord(Icons.Default.Restaurant, Color(0xFF6D4C41), "Carbs", "${60 + seed * 7 % 40}g — lunch", "12:30 PM"),
         MockRecord(Icons.Default.Restaurant, Color(0xFF6D4C41), "Carbs", "${30 + seed * 5 % 30}g — breakfast", "8:00 AM"),
         MockRecord(Icons.Default.Bloodtype, Color(0xFFB71C1C), "Blood glucose", "5.${seed % 9} mmol/L", "1:00 PM"),
         MockRecord(Icons.Default.Bloodtype, Color(0xFFB71C1C), "Blood glucose", "6.${(seed + 3) % 9} mmol/L", "8:00 AM"),
-        MockRecord(Icons.Default.MonitorWeight, Color(0xFF2E7D32), "Weight", "%.1f kg".format(74.0 + (seed % 10) * 0.3), "7:15 AM"),
+        MockRecord(Icons.Default.MonitorWeight, Color(0xFF2E7D32), "Weight", "%.1f lbs".format((74.0 + (seed % 10) * 0.3) * 2.20462), "7:15 AM"),
     )
 }
