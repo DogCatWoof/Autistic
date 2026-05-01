@@ -22,6 +22,7 @@ import org.meow.autistic.data.sync.SyncScheduler
 import org.meow.autistic.data.task.TaskEntity
 import org.meow.autistic.data.task.TaskReminderWorker
 import org.meow.autistic.data.task.TaskRepository
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -163,13 +164,11 @@ class TaskViewModel(
     }
 
     fun update(task: TaskEntity) = viewModelScope.launch {
-        val completedAt = if (task.isCompleted) Instant.now() else null
-        val updated = task.copy(completedAt = completedAt)
         if (task.isCompleted && task.googleTaskId == null) {
-            repository.update(updated)
+            repository.update(task)
             TaskReminderWorker.cancel(workManager, task.id)
         } else {
-            repository.update(updated.copy(syncStatus = "pending_push"))
+            repository.update(task.copy(syncStatus = "pending_push"))
             if (task.reminderMinutesBefore != null) {
                 TaskReminderWorker.scheduleFor(workManager, task)
             } else {
@@ -180,7 +179,8 @@ class TaskViewModel(
 
     fun toggleComplete(task: TaskEntity, isCompleted: Boolean) {
         pushUndo(UndoableAction.TaskToggled(task))
-        update(task.copy(isCompleted = isCompleted))
+        val completedAt = if (isCompleted) Instant.now() else null
+        update(task.copy(completedAt = completedAt))
     }
 
     fun delete(task: TaskEntity) = viewModelScope.launch {
@@ -195,12 +195,26 @@ class TaskViewModel(
         _undoStack.update { it.drop(1) }
         when (action) {
             is UndoableAction.TaskDeleted -> {
-                val id = repository.insert(action.task)
-                if (action.task.reminderMinutesBefore != null) {
-                    TaskReminderWorker.scheduleFor(workManager, action.task.copy(id = id))
+                val task = action.task
+                if (task.googleTaskId != null) {
+                    repository.update(task)
+                } else {
+                    repository.insert(task)
+                    if (task.reminderMinutesBefore != null) {
+                        TaskReminderWorker.scheduleFor(workManager, task)
+                    }
                 }
             }
-            is UndoableAction.TaskToggled -> update(action.previousTask)
+            is UndoableAction.TaskToggled -> {
+                val prev = action.previousTask
+                val syncStatus = if (prev.googleTaskId != null) "pending_push" else prev.syncStatus
+                repository.update(prev.copy(syncStatus = syncStatus))
+                if (prev.reminderMinutesBefore != null && !prev.isCompleted) {
+                    TaskReminderWorker.scheduleFor(workManager, prev)
+                } else {
+                    TaskReminderWorker.cancel(workManager, prev.id)
+                }
+            }
             is UndoableAction.EventHidden -> calendarRepository.markVisible(action.event.googleEventId)
             is UndoableAction.EventDeleted -> calendarRepository.upsertEvents(listOf(action.event))
         }
@@ -239,11 +253,21 @@ class TaskViewModel(
             is TaskListItem.Event -> item.entity.startAt
         } ?: return "Later" to null
         val date = instant.atZone(ZoneId.systemDefault()).toLocalDate()
-        val label = when {
-            date == todayDate.plusDays(1) -> "Tomorrow — ${date.format(DateTimeFormatter.ofPattern("EEEE"))}"
-            else -> date.format(DateTimeFormatter.ofPattern("EEEE"))
+        val thisWeekEnd = todayDate.with(DayOfWeek.SUNDAY)
+        return when {
+            date == todayDate.plusDays(1) -> "Tomorrow" to date
+            !date.isAfter(thisWeekEnd) -> date.format(DateTimeFormatter.ofPattern("EEEE")) to date
+            else -> {
+                val weekStart = date.with(DayOfWeek.MONDAY)
+                val weekEnd = weekStart.plusDays(6)
+                val label = if (weekStart.month == weekEnd.month) {
+                    "${weekStart.format(DateTimeFormatter.ofPattern("MMM d"))} – ${weekEnd.format(DateTimeFormatter.ofPattern("d"))}"
+                } else {
+                    "${weekStart.format(DateTimeFormatter.ofPattern("MMM d"))} – ${weekEnd.format(DateTimeFormatter.ofPattern("MMM d"))}"
+                }
+                label to weekStart
+            }
         }
-        return label to date
     }
 
     private fun todayStartMs(): Long =

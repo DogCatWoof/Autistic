@@ -95,7 +95,7 @@ class GoogleTasksSyncService(
         val (parsedNotes, parsedProps) = parseNotesField(remote.notes)
         return existing.copy(
             task = remote.title,
-            isCompleted = remote.status == "completed",
+            completedAt = if (remote.status == "completed") existing.completedAt ?: now else null,
             dueAt = remote.due?.fromRfc3339(),
             notes = parsedNotes,
             extraPropertiesJson = parsedProps,
@@ -110,7 +110,7 @@ class GoogleTasksSyncService(
         val (parsedNotes, parsedProps) = parseNotesField(remote.notes)
         return TaskEntity(
             task = remote.title,
-            isCompleted = remote.status == "completed",
+            completedAt = if (remote.status == "completed") now else null,
             createdAt = now,
             dueAt = remote.due?.fromRfc3339(),
             notes = parsedNotes,

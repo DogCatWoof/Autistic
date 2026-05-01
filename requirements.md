@@ -84,14 +84,6 @@ Reduces three loads in real-time social situations: decoding intent, deciding wh
 - **MVP scope**: push-to-talk, on-device transcription, rule-based intent classifier (question/command/social/other), 3 response templates per class with tone settings, quick-tap UI, end-of-session feedback
 - **Extensions**: meeting mode (action items), script packs (medical/interview), multilingual layer
 
-### [X] Location-based Actions
-- [X] Users define geofence triggers: label, location (map pick or address), radius, and action
-- [X] Actions: show a reminder notification, open a specific screen, or add a predefined task
-- [X] Examples: "Arrive at supermarket → show shopping list"; "Leave work → log commute"
-- [X] Triggers are managed in Settings with an on/off toggle per trigger
-- [X] Permissions required: `ACCESS_FINE_LOCATION`, `ACCESS_BACKGROUND_LOCATION`
-- [X] Geofences re-register on device reboot via `BootCompletedReceiver`
-
 ### Sequences
 - A sequence is an ordered checklist of steps for a complex, repeating multi-part task
 - Each step has an instruction, optional estimated time, and a completion checkbox
@@ -99,20 +91,6 @@ Reduces three loads in real-time social situations: decoding intent, deciding wh
 - Users start a "run"; the current step is highlighted and progress is saved
 - A run can be ended early; completed runs are stored as history
 - Sequences are managed in Settings; an active run surfaces as a persistent notification
-
-### Energy Budgeting
-Models cognitive load over time as a pacing system, not just a to-do list. Prevents overload by simulating the rest of the day before decisions are made.
-
-- **Core model**: daily capacity in finite energy units; each activity has a cost; recovery restores units; costs are personalized and learned over time; recovery is nonlinear (short break = partial; long quiet period = full)
-- **User inputs**: start-of-day check (sleep quality, stress, physical state); optional quick tags during the day; 1–2 tap end-of-block rating (easier/normal/harder); minimal logging — infer when possible
-- [X] **Automatic signals**: calendar events, location transitions, wearables (HR/HRV), phone usage patterns
-- **Key features**: live budget bar with confidence band; forward projection ("If you attend this meeting, projected end-of-day balance: −2 units"); [X] swap suggestions; [X] stop cues; [X] recovery prescriptions
-- **Personalization loop**: daily predicted-vs-actual comparison; weighted update of per-activity costs; [X] track hidden costs (transitions, context switching)
-- [X] **Modes**: Conservative (higher cost estimates), Learning (explore to improve model), Protection (hard cap, blocks new commitments when projected negative)
-- [X] **Visualizations**: day timeline green→red; weekly overload patterns; trigger correlations
-- [X] **Integrations**: Google Calendar (auto-tag meetings), wearables, optional clinician export
-- **Privacy**: on-device modeling; [X] user can disable any signal; inspectable logs
-- **MVP scope**: manual tagging + [X] calendar import, fixed initial cost table with quick user adjustments, live budget bar + forward projection, [X] end-of-day calibration (DailyCalibrationWorker not wired)
 
 ---
 
@@ -271,15 +249,6 @@ A dedicated screen that surfaces accumulated health metrics for a single selecte
 
 ## Plan
 
-### [X] Location-based Actions
-1. [X] **Data layer** — `LocationTriggerEntity` (id, label, latitude, longitude, radiusMeters, actionType, actionPayload, isEnabled); `LocationTriggerDao`; `LocationTriggerRepository`
-2. [X] **Room migration** — bump DB version; add table
-3. [X] **Geofencing** — `GeofenceManager` wraps `GeofencingClient`: registers/deregisters geofences; `GeofenceBroadcastReceiver` dispatches to `LocationActionHandler` (notification, task enqueue, or deep-link)
-4. [X] **Boot receiver** — `BootCompletedReceiver` re-registers all enabled geofences on restart
-5. [X] **Permissions** — runtime request for `ACCESS_FINE_LOCATION` + `ACCESS_BACKGROUND_LOCATION`; settings warning when background permission missing
-6. [X] **ViewModel + Screen** — `LocationTriggerViewModel`; `LocationTriggersScreen` (list with toggle + map thumbnail); map-pick flow
-7. [X] **Tests** — unit tests for `LocationActionHandler` dispatch logic; mock `GeofencingClient` in repository tests
-
 ### Sequences (MVP)
 1. **Data layer** — `SequenceEntity` (id, name); `SequenceStepEntity` (id, sequenceId, instruction, estimatedMinutes, position); `SequenceRunEntity` (id, sequenceId, startedAt, completedAt); `SequenceStepProgressEntity` (runId, stepId, completedAt); `SequenceDao`; `SequenceRepository`
 2. **Room migration** — bump DB to version 16; four new tables
@@ -320,14 +289,3 @@ A dedicated screen that surfaces accumulated health metrics for a single selecte
 6. **`HealthConnectSyncWorker`** — `CoroutineWorker`; reads each data type and writes to a `HealthSnapshotEntity` table (date, steps, sleepMinutes, avgHeartRate, weightKg, caloriesBurned); runs on any network, once per hour
 7. **Privacy policy** — add a privacy policy URL to app metadata and Play Store listing before shipping; document that health data stays on-device only
 8. **Tests** — unit tests for `HealthConnectRepository` using a fake `HealthConnectClient`; verify null-safe handling when SDK unavailable
-
-### Energy Budgeting (MVP)
-1. **Data layer** — `EnergyProfileEntity` (dailyCapacity, mode); `ActivityCostEntity` (activityType, baseCost, learnedCost, sampleCount); `EnergyLogEntity` (date, activityType, startAt, endAt, reportedDifficulty); `StartOfDayCheckEntity` (date, sleepQuality, stressLevel, physicalState, baselineMultiplier); DAOs; `EnergyRepository`
-2. **Room migration** — bump DB version; add tables
-3. **EnergyRepository** — `getTodayBalance()`, `getProjection(pendingActivities)`, `calibrateDay()` (weighted moving-average cost update)
-4. **ViewModel** — `EnergyViewModel`: `todayBalance`, `projection` StateFlows; `logActivity()`, `submitStartOfDay()`, `rateLastBlock()`
-5. **EnergyScreen** — budget bar with confidence band; day timeline; start-of-day bottom sheet; quick-tag FAB; forward projection card
-6. [X] **DailyCalibrationWorker** — midnight; calls `calibrateDay()` for closing day
-7. [X] **Calendar integration** — annotate calendar events with estimated energy cost on fetch; meeting keywords map to activity types
-8. **Nav tab** — add "Energy" tab
-9. **Tests** — unit tests for balance calculation, projection logic, calibration math

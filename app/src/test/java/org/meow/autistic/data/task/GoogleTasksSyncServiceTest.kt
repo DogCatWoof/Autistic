@@ -69,7 +69,7 @@ class GoogleTasksSyncServiceTest {
 
     @Test
     fun `pushPending does not delete completed task locally after pushing to remote`() = runTest {
-        val completedTask = localExisting.copy(isCompleted = true)
+        val completedTask = localExisting.copy(completedAt = Instant.now())
         coEvery { repository.getPendingPush() } returns listOf(completedTask)
         coEvery { remoteSource.updateTask(token, any()) } returns remoteTask
 
@@ -166,7 +166,7 @@ class GoogleTasksSyncServiceTest {
 
     @Test
     fun `pullAndMerge preserves local-only fields on merge`() = runTest {
-        val existing = localExisting.copy(category = "Work", reminderSet = true, syncStatus = "synced")
+        val existing = localExisting.copy(category = "Work", reminderMinutesBefore = 15, syncStatus = "synced")
         coEvery { remoteSource.fetchTasks(token) } returns listOf(remoteTask)
         coEvery { repository.getByGoogleTaskId("remote1") } returns existing
 

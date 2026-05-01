@@ -85,7 +85,7 @@ class DailyResetWorker(
                     dailyTaskId = dailyTask.id,
                     syncStatus = "local",
                     expectedTimeMinutes = dailyTask.expectedTimeMinutes,
-                    isRequired = dailyTask.isRequired,
+                    isImportant = dailyTask.isRequired,
                 )
             )
         }

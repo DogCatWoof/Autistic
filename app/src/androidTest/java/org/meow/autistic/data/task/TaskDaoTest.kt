@@ -69,7 +69,7 @@ class TaskDaoTest {
     fun updateTask_persistsChanges() = runTest {
         dao.insertTask(TaskEntity(task = "Original", createdAt = Instant.ofEpochMilli(1000L)))
         val inserted = dao.getAllTasks().first()[0]
-        dao.updateTask(inserted.copy(task = "Updated", isCompleted = true))
+        dao.updateTask(inserted.copy(task = "Updated", completedAt = Instant.ofEpochMilli(9000L)))
         val updated = dao.getAllTasks().first()[0]
         assertEquals("Updated", updated.task)
         assertTrue(updated.isCompleted)
@@ -211,18 +211,11 @@ class TaskDaoTest {
     @Test
     fun deleteStaleCompleted_removesOnlyStaleCompletedTasks() = runTest {
         val cutoff = Instant.ofEpochMilli(5000L)
-        dao.insertTask(
-            TaskEntity(
-                task = "Active",
-                createdAt = Instant.ofEpochMilli(1000L),
-                isCompleted = false,
-            )
-        )
+        dao.insertTask(TaskEntity(task = "Active", createdAt = Instant.ofEpochMilli(1000L)))
         dao.insertTask(
             TaskEntity(
                 task = "Stale Done",
                 createdAt = Instant.ofEpochMilli(2000L),
-                isCompleted = true,
                 completedAt = Instant.ofEpochMilli(1000L),
             )
         )
@@ -230,7 +223,6 @@ class TaskDaoTest {
             TaskEntity(
                 task = "Recent Done",
                 createdAt = Instant.ofEpochMilli(3000L),
-                isCompleted = true,
                 completedAt = Instant.ofEpochMilli(9000L),
             )
         )
@@ -244,8 +236,8 @@ class TaskDaoTest {
 
     @Test
     fun getCompletedTasks_returnsOnlyCompletedTasks() = runTest {
-        dao.insertTask(TaskEntity(task = "Active", createdAt = Instant.ofEpochMilli(1000L), isCompleted = false))
-        dao.insertTask(TaskEntity(task = "Done", createdAt = Instant.ofEpochMilli(2000L), isCompleted = true, completedAt = Instant.now()))
+        dao.insertTask(TaskEntity(task = "Active", createdAt = Instant.ofEpochMilli(1000L)))
+        dao.insertTask(TaskEntity(task = "Done", createdAt = Instant.ofEpochMilli(2000L), completedAt = Instant.now()))
         val completed = dao.getCompletedTasks().first()
         assertEquals(1, completed.size)
         assertEquals("Done", completed[0].task)

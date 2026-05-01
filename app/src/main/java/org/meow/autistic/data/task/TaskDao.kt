@@ -37,12 +37,12 @@ interface TaskDao {
     suspend fun deleteByGoogleTaskIds(googleTaskIds: List<String>): Int
 
     /** Removes all incomplete tasks that were generated from daily task templates. */
-    @Query("DELETE FROM tasks WHERE dailyTaskId IS NOT NULL AND isCompleted = 0")
+    @Query("DELETE FROM tasks WHERE dailyTaskId IS NOT NULL AND completedAt IS NULL")
     suspend fun deleteUnfinishedDailyTasks(): Int
 
-    @Query("DELETE FROM tasks WHERE isCompleted = 1 AND completedAt < :cutoff")
+    @Query("DELETE FROM tasks WHERE completedAt IS NOT NULL AND completedAt < :cutoff")
     suspend fun deleteStaleCompleted(cutoff: Instant): Int
 
-    @Query("SELECT * FROM tasks WHERE isCompleted = 1 ORDER BY completedAt DESC")
+    @Query("SELECT * FROM tasks WHERE completedAt IS NOT NULL ORDER BY completedAt DESC")
     fun getCompletedTasks(): Flow<List<TaskEntity>>
 }

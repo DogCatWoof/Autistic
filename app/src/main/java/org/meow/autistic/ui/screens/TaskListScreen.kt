@@ -173,23 +173,29 @@ fun TaskListScreen(
                     }
                     grouped.later.forEach { (dateLabel, date, sectionItems) ->
                         val weekEnd = LocalDate.now(ZoneId.systemDefault()).with(DayOfWeek.SUNDAY)
-                        val bg = when {
-                            date != null && !date.isAfter(weekEnd) -> ColorThisWeek
-                            else -> ColorFuture
-                        }
-                        val trailingDate = date?.format(java.time.format.DateTimeFormatter.ofPattern("MMM d"))
+                        val isAfterThisWeek = date == null || date.isAfter(weekEnd)
                         val isTomorrow = date == LocalDate.now(ZoneId.systemDefault()).plusDays(1)
+                        val bg = if (isAfterThisWeek) ColorFuture else ColorThisWeek
+                        val trailingDate = date?.format(java.time.format.DateTimeFormatter.ofPattern("MMM d"))
                         stickyHeader(key = "header_later_${date?.toString() ?: dateLabel}") {
-                            if (isTomorrow) {
-                                SectionHeader(
+                            when {
+                                isTomorrow -> SectionHeader(
                                     title = "Tomorrow",
                                     centerText = date.format(java.time.format.DateTimeFormatter.ofPattern("EEEE")),
                                     trailingText = trailingDate,
                                     background = bg,
                                     contentColor = Color.White,
                                 )
-                            } else {
-                                SectionHeader(dateLabel, trailingText = trailingDate, centerTitle = date != null, background = bg, contentColor = Color.White)
+                                isAfterThisWeek -> SectionHeader(
+                                    dateLabel,
+                                    centerTitle = true,
+                                    background = bg,
+                                    contentColor = ColorFutureContent,
+                                )
+                                else -> SectionHeader(
+                                    dateLabel, trailingText = trailingDate, centerTitle = true,
+                                    background = bg, contentColor = Color.White,
+                                )
                             }
                         }
                         items(sectionItems, key = { it.itemKey }) { item ->
@@ -212,20 +218,17 @@ fun TaskListScreen(
         when (addType) {
             AddType.Task -> AddTaskDialog(
                 onDismiss = { addType = null },
-                onConfirm = { task, dueAt, reminderMinutesBefore, notes, expectedTime, isImportant, isRequired ->
+                onConfirm = { task, dueAt, reminderMinutesBefore, notes, expectedTime, isImportant ->
                     viewModel.insert(
                         TaskEntity(
                             task = task,
                             dueAt = dueAt,
                             notes = notes,
-                            isCompleted = false,
-                            reminderSet = reminderMinutesBefore != null,
                             reminderMinutesBefore = reminderMinutesBefore,
                             createdAt = Instant.now(),
                             syncStatus = "local",
                             expectedTimeMinutes = expectedTime,
                             isImportant = isImportant,
-                            isRequired = isRequired,
                         )
                     )
                     addType = null
@@ -279,20 +282,19 @@ fun TaskListScreen(
             EditTaskDialog(
                 task = task,
                 onDismiss = { selectedTask = null },
-                onSave = { taskText, reminderMinutesBefore, notes, expectedTime, isImportant, isRequired ->
+                onSave = { taskText, reminderMinutesBefore, notes, expectedTime, isImportant ->
                     viewModel.update(task.copy(
                         task = taskText,
-                        reminderSet = reminderMinutesBefore != null,
                         reminderMinutesBefore = reminderMinutesBefore,
                         notes = notes,
                         expectedTimeMinutes = expectedTime,
                         isImportant = isImportant,
-                        isRequired = isRequired,
                     ))
                     selectedTask = null
                 },
                 onComplete = {
-                    viewModel.update(task.copy(isCompleted = !task.isCompleted))
+                    val newCompletedAt = if (!task.isCompleted) Instant.now() else null
+                    viewModel.update(task.copy(completedAt = newCompletedAt))
                     selectedTask = null
                 },
                 onDelete = {
@@ -424,7 +426,8 @@ fun SectionHeader(
 
 private val ColorToday = Color(0xFF4A7C59)
 private val ColorThisWeek = Color(0xFF6B8F5E)
-private val ColorFuture = Color(0xFF556655)
+private val ColorFuture = Color(0xFFD4C055)
+private val ColorFutureContent = Color(0xFF2A1F00)
 
 @Composable
 fun TaskListItemRow(
@@ -766,7 +769,7 @@ private fun AddCalendarEventDialog(
 @Composable
 fun AddTaskDialog(
     onDismiss: () -> Unit,
-    onConfirm: (String, Instant?, Int?, String?, Int?, Boolean, Boolean) -> Unit,
+    onConfirm: (String, Instant?, Int?, String?, Int?, Boolean) -> Unit,
 ) {
     var taskText by remember { mutableStateOf("") }
     var notesText by remember { mutableStateOf("") }
@@ -774,7 +777,6 @@ fun AddTaskDialog(
     var reminderEnabled by remember { mutableStateOf(false) }
     var reminderMinutesText by remember { mutableStateOf("15") }
     var isImportant by remember { mutableStateOf(false) }
-    var isRequired by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -827,17 +829,13 @@ fun AddTaskDialog(
                     Switch(checked = isImportant, onCheckedChange = { isImportant = it })
                     Text("Important")
                 }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Switch(checked = isRequired, onCheckedChange = { isRequired = it })
-                    Text("Required")
-                }
             }
         },
         confirmButton = {
             TextButton(
                 onClick = {
                     val reminder = if (reminderEnabled) reminderMinutesText.toIntOrNull() ?: 15 else null
-                    onConfirm(taskText, null, reminder, notesText.takeIf { it.isNotBlank() }, expectedTimeText.toIntOrNull(), isImportant, isRequired)
+                    onConfirm(taskText, null, reminder, notesText.takeIf { it.isNotBlank() }, expectedTimeText.toIntOrNull(), isImportant)
                 },
                 enabled = taskText.isNotBlank(),
             ) { Text("Save") }
@@ -892,18 +890,16 @@ fun CalendarEventDialog(
 fun EditTaskDialog(
     task: TaskEntity,
     onDismiss: () -> Unit,
-    onSave: (String, Int?, String?, Int?, Boolean, Boolean) -> Unit,
+    onSave: (String, Int?, String?, Int?, Boolean) -> Unit,
     onComplete: () -> Unit,
     onDelete: () -> Unit,
 ) {
     var taskText by remember { mutableStateOf(task.task) }
     var notesText by remember { mutableStateOf(task.notes ?: "") }
     var expectedTimeText by remember { mutableStateOf(task.expectedTimeMinutes?.toString() ?: "") }
-    val initialReminderEnabled = task.reminderMinutesBefore != null || task.reminderSet
-    var reminderEnabled by remember { mutableStateOf(initialReminderEnabled) }
+    var reminderEnabled by remember { mutableStateOf(task.reminderMinutesBefore != null) }
     var reminderMinutesText by remember { mutableStateOf(task.reminderMinutesBefore?.toString() ?: "15") }
     var isImportant by remember { mutableStateOf(task.isImportant) }
-    var isRequired by remember { mutableStateOf(task.isRequired) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -956,17 +952,13 @@ fun EditTaskDialog(
                     Switch(checked = isImportant, onCheckedChange = { isImportant = it })
                     Text("Important")
                 }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Switch(checked = isRequired, onCheckedChange = { isRequired = it })
-                    Text("Required")
-                }
             }
         },
         confirmButton = {
             TextButton(
                 onClick = {
                     val reminder = if (reminderEnabled) reminderMinutesText.toIntOrNull() ?: 15 else null
-                    onSave(taskText, reminder, notesText.takeIf { it.isNotBlank() }, expectedTimeText.toIntOrNull(), isImportant, isRequired)
+                    onSave(taskText, reminder, notesText.takeIf { it.isNotBlank() }, expectedTimeText.toIntOrNull(), isImportant)
                 },
                 enabled = taskText.isNotBlank(),
             ) { Text("Save") }

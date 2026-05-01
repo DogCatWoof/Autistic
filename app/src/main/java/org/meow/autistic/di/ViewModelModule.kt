@@ -4,7 +4,6 @@ import org.koin.android.ext.koin.androidApplication
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import org.meow.autistic.ui.screens.DailyTasksViewModel
-import org.meow.autistic.ui.screens.EnergyViewModel
 import org.meow.autistic.ui.screens.ConversationViewModel
 import org.meow.autistic.ui.screens.SequenceRunViewModel
 import org.meow.autistic.ui.screens.SequenceViewModel
@@ -23,7 +22,6 @@ val viewModelModule = module {
     viewModel { MoodViewModel(get()) }
     viewModel { FoodLogViewModel(get(), get(), get(), get(), get(), androidApplication()) }
     viewModel { HealthConnectViewModel(get(), get()) }
-    viewModel { EnergyViewModel(get(), get()) }
     viewModel { SequenceViewModel(get()) }
     viewModel { SequenceRunViewModel(get(), androidApplication()) }
     viewModel { ConversationViewModel(get(), androidApplication()) }

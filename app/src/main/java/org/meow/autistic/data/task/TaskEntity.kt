@@ -13,12 +13,10 @@ data class TaskEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val task: String,
-    val isCompleted: Boolean = false,
     val createdAt: Instant,
     val dueAt: Instant? = null,
     val notes: String? = null,
     val category: String = "General",
-    val reminderSet: Boolean = false,
     val googleTaskId: String? = null,
     val googleTaskListId: String? = null,
     val extraPropertiesJson: String? = null,
@@ -32,8 +30,9 @@ data class TaskEntity(
     val reminderMinutesBefore: Int? = null,
     /** Marks the task as high-priority; drives amber coloring and star icon. */
     val isImportant: Boolean = false,
-    /** Marks the task as required; drives purple coloring and flag icon. */
-    val isRequired: Boolean = false,
     /** Set when the task is marked complete; used for 7-day retention before deletion. */
     val completedAt: Instant? = null,
-)
+) {
+    val isCompleted: Boolean get() = completedAt != null
+    val reminderSet: Boolean get() = reminderMinutesBefore != null
+}

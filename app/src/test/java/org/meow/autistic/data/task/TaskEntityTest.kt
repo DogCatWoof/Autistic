@@ -43,7 +43,8 @@ class TaskEntityTest {
             createdAt = Instant.ofEpochMilli(1000L),
             category = "Work"
         )
-        val copy = original.copy(isCompleted = true)
+        val completedAt = Instant.ofEpochMilli(5000L)
+        val copy = original.copy(completedAt = completedAt)
         assertEquals(original.id, copy.id)
         assertEquals(original.task, copy.task)
         assertEquals(original.category, copy.category)
@@ -99,19 +100,9 @@ class TaskEntityTest {
     }
 
     @Test
-    fun `inequality when isCompleted differs`() {
-        val a = TaskEntity(
-            id = 1L,
-            task = "Task",
-            createdAt = Instant.ofEpochMilli(1000L),
-            isCompleted = false
-        )
-        val b = TaskEntity(
-            id = 1L,
-            task = "Task",
-            createdAt = Instant.ofEpochMilli(1000L),
-            isCompleted = true
-        )
+    fun `inequality when completedAt differs`() {
+        val a = TaskEntity(id = 1L, task = "Task", createdAt = Instant.ofEpochMilli(1000L))
+        val b = TaskEntity(id = 1L, task = "Task", createdAt = Instant.ofEpochMilli(1000L), completedAt = Instant.ofEpochMilli(5000L))
         assertNotEquals(a, b)
     }
 

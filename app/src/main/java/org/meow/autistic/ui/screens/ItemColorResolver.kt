@@ -11,7 +11,6 @@ private val AMBER_PASTEL = Color(0xFFFFF8E1)
 private val RED_PASTEL = Color(0xFFFFEBEE)
 private val ORANGE_PASTEL = Color(0xFFFFF3E0)
 private val BLUE_PASTEL = Color(0xFFE3F2FD)
-private val PURPLE_PASTEL = Color(0xFFF3E5F5)
 
 fun resolveItemColor(item: TaskListItem, now: Instant): Color = when (item) {
     is TaskListItem.Task -> resolveTaskColor(item.entity, now)
@@ -27,7 +26,6 @@ private fun resolveTaskColor(task: TaskEntity, now: Instant): Color {
         val todayEnd = LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant()
         if (due.isBefore(todayEnd)) return BLUE_PASTEL
     }
-    if (task.isRequired) return PURPLE_PASTEL
     return Color.Unspecified
 }
 

@@ -63,7 +63,7 @@ class TaskViewModelTest {
 
     @Test
     fun `update saves local-only completed task with completedAt set`() = runTest {
-        val task = TaskEntity(id = 1L, task = "Task", createdAt = Instant.EPOCH, isCompleted = true, googleTaskId = null)
+        val task = TaskEntity(id = 1L, task = "Task", createdAt = Instant.EPOCH, completedAt = Instant.now(), googleTaskId = null)
         viewModel.update(task)
         coVerify { repository.update(match { it.completedAt != null && it.isCompleted }) }
         coVerify(exactly = 0) { repository.delete(any()) }
@@ -71,22 +71,22 @@ class TaskViewModelTest {
 
     @Test
     fun `update keeps completed synced task as pending_push with completedAt`() = runTest {
-        val task = TaskEntity(id = 1L, task = "Task", createdAt = Instant.EPOCH, isCompleted = true, googleTaskId = "gid")
+        val task = TaskEntity(id = 1L, task = "Task", createdAt = Instant.EPOCH, completedAt = Instant.now(), googleTaskId = "gid")
         viewModel.update(task)
         coVerify { repository.update(match { it.syncStatus == "pending_push" && it.completedAt != null }) }
         coVerify(exactly = 0) { repository.markPendingDelete(any()) }
     }
 
     @Test
-    fun `update sets completedAt when marking task complete`() = runTest {
-        val task = TaskEntity(id = 1L, task = "Task", createdAt = Instant.EPOCH, isCompleted = true)
+    fun `update saves task with completedAt when completed`() = runTest {
+        val task = TaskEntity(id = 1L, task = "Task", createdAt = Instant.EPOCH, completedAt = Instant.now())
         viewModel.update(task)
         coVerify { repository.update(match { it.completedAt != null }) }
     }
 
     @Test
-    fun `update clears completedAt when un-completing task`() = runTest {
-        val task = TaskEntity(id = 1L, task = "Task", createdAt = Instant.EPOCH, isCompleted = false, completedAt = Instant.EPOCH)
+    fun `update saves task without completedAt when not completed`() = runTest {
+        val task = TaskEntity(id = 1L, task = "Task", createdAt = Instant.EPOCH, completedAt = null)
         viewModel.update(task)
         coVerify { repository.update(match { it.completedAt == null }) }
     }
@@ -102,7 +102,7 @@ class TaskViewModelTest {
 
     @Test
     fun `completedItems returns items from repository completedTasks`() = runTest {
-        val done = TaskEntity(id = 9L, task = "Done", createdAt = Instant.EPOCH, isCompleted = true, completedAt = Instant.now())
+        val done = TaskEntity(id = 9L, task = "Done", createdAt = Instant.EPOCH, completedAt = Instant.now())
         every { repository.completedTasks } returns flowOf(listOf(done))
         val vm = TaskViewModel(repository, calendarRepository, authManager, syncScheduler, workManager)
         val items = vm.completedItems.first()
@@ -155,8 +155,8 @@ class TaskViewModelTest {
 
     @Test
     fun `groupedItems filters out completed tasks`() = runTest {
-        val active = TaskEntity(id = 1L, task = "Active", createdAt = Instant.EPOCH, isCompleted = false)
-        val completed = TaskEntity(id = 2L, task = "Done", createdAt = Instant.EPOCH, isCompleted = true)
+        val active = TaskEntity(id = 1L, task = "Active", createdAt = Instant.EPOCH)
+        val completed = TaskEntity(id = 2L, task = "Done", createdAt = Instant.EPOCH, completedAt = Instant.now())
         val vm = makeViewModel(listOf(active, completed))
         val grouped = vm.groupedItems.first()
         val allItems = grouped.today + grouped.later.flatMap { it.third }
@@ -175,7 +175,7 @@ class TaskViewModelTest {
 
     @Test
     fun `groupedItems is empty when all tasks are completed or pending_delete`() = runTest {
-        val completed = TaskEntity(id = 1L, task = "Done", createdAt = Instant.EPOCH, isCompleted = true)
+        val completed = TaskEntity(id = 1L, task = "Done", createdAt = Instant.EPOCH, completedAt = Instant.now())
         val pendingDelete = TaskEntity(id = 2L, task = "Deleted", createdAt = Instant.EPOCH, syncStatus = "pending_delete")
         val vm = makeViewModel(listOf(completed, pendingDelete))
         val grouped = vm.groupedItems.first()

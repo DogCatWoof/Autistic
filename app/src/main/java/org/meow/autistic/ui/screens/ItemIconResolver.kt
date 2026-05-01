@@ -4,7 +4,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddTask
 import androidx.compose.material.icons.filled.CheckBoxOutlineBlank
 import androidx.compose.material.icons.filled.Event
-import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.IndeterminateCheckBox
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Star
@@ -19,7 +18,6 @@ fun resolveItemIcon(item: TaskListItem): ImageVector = when (item) {
 
 private fun resolveTaskIcon(task: TaskEntity): ImageVector {
     if (task.isImportant) return Icons.Default.Star
-    if (task.isRequired) return Icons.Default.Flag
     if (task.dailyTaskId != null) return Icons.Default.Repeat
     return Icons.Default.AddTask
 }
