@@ -169,11 +169,15 @@ class TaskViewModel(
             TaskReminderWorker.cancel(workManager, task.id)
         } else {
             repository.update(task.copy(syncStatus = "pending_push"))
-            if (task.reminderMinutesBefore != null) {
-                TaskReminderWorker.scheduleFor(workManager, task)
-            } else {
-                TaskReminderWorker.cancel(workManager, task.id)
-            }
+            syncReminder(task)
+        }
+    }
+
+    private fun syncReminder(task: TaskEntity) {
+        if (task.reminderMinutesBefore != null) {
+            TaskReminderWorker.scheduleFor(workManager, task)
+        } else {
+            TaskReminderWorker.cancel(workManager, task.id)
         }
     }
 
@@ -200,20 +204,14 @@ class TaskViewModel(
                     repository.update(task)
                 } else {
                     repository.insert(task)
-                    if (task.reminderMinutesBefore != null) {
-                        TaskReminderWorker.scheduleFor(workManager, task)
-                    }
+                    syncReminder(task)
                 }
             }
             is UndoableAction.TaskToggled -> {
                 val prev = action.previousTask
                 val syncStatus = if (prev.googleTaskId != null) "pending_push" else prev.syncStatus
                 repository.update(prev.copy(syncStatus = syncStatus))
-                if (prev.reminderMinutesBefore != null && !prev.isCompleted) {
-                    TaskReminderWorker.scheduleFor(workManager, prev)
-                } else {
-                    TaskReminderWorker.cancel(workManager, prev.id)
-                }
+                if (!prev.isCompleted) syncReminder(prev) else TaskReminderWorker.cancel(workManager, prev.id)
             }
             is UndoableAction.EventHidden -> calendarRepository.markVisible(action.event.googleEventId)
             is UndoableAction.EventDeleted -> calendarRepository.upsertEvents(listOf(action.event))

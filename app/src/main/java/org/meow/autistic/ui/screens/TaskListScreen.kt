@@ -293,8 +293,7 @@ fun TaskListScreen(
                     selectedTask = null
                 },
                 onComplete = {
-                    val newCompletedAt = if (!task.isCompleted) Instant.now() else null
-                    viewModel.update(task.copy(completedAt = newCompletedAt))
+                    viewModel.toggleComplete(task, !task.isCompleted)
                     selectedTask = null
                 },
                 onDelete = {
