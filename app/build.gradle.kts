@@ -15,9 +15,18 @@ configurations.all {
 }
 
 val localProps = Properties()
-val localPropsFile = rootProject.file("local.properties")
+val localPropsFile = rootProject.file("local-only/local.properties")
 if (localPropsFile.exists()) {
     localPropsFile.inputStream().use { stream -> localProps.load(stream) }
+}
+
+tasks.matching { it.name.startsWith("process") && it.name.endsWith("GoogleServices") }.configureEach {
+    doFirst {
+        copy {
+            from(rootProject.file("local-only/google-services.json"))
+            into(layout.projectDirectory)
+        }
+    }
 }
 
 android {
@@ -35,6 +44,7 @@ android {
 
         buildConfigField("String", "ANTHROPIC_API_KEY", "\"${localProps.getProperty("anthropic.api.key", "")}\"")
         buildConfigField("String", "USDA_API_KEY", "\"${localProps.getProperty("usda.api.key", "")}\"")
+        buildConfigField("String", "FIREBASE_WEB_CLIENT_ID", "\"${localProps.getProperty("firebase.web.client.id", "")}\"")
     }
 
     packaging {

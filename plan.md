@@ -18,7 +18,7 @@ The app currently stores all data locally in Room and syncs Tasks/Calendar with 
 
 **Goal:** Sign users into Firebase Auth using their existing Google account, so Firestore Security Rules can use `request.auth.uid`. No changes to Google OAuth token flow (Tasks/Calendar/Drive still use `GoogleAuthManager.getValidToken()`).
 
-- [ ] `data/auth/GoogleAuthManager.kt`
+- [x] `data/auth/GoogleAuthManager.kt`
   - After successful Google sign-in (`handleSignInResult`), call `FirebaseAuth.getInstance().signInWithCredential(GoogleAuthProvider.getCredential(idToken, null))`.
   - `isAuthenticated()`: also check `FirebaseAuth.getInstance().currentUser != null`.
   - `signOut()`: also call `FirebaseAuth.getInstance().signOut()`.

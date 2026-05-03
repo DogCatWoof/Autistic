@@ -13,12 +13,20 @@ import com.google.android.gms.tasks.Tasks as GmsTasks
 import com.google.api.services.calendar.CalendarScopes
 import com.google.api.services.drive.DriveScopes
 import com.google.api.services.tasks.TasksScopes
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.meow.autistic.BuildConfig
 import java.util.concurrent.TimeUnit
 
 /**
  * Manages Google OAuth sign-in, access-token retrieval, and sign-out.
+ * Also signs users into Firebase Auth using their Google credential so that
+ * Firestore Security Rules can reference request.auth.uid.
  *
  * Requested scopes:
  * - [TasksScopes.TASKS] — read + write access to Google Tasks
@@ -28,6 +36,7 @@ import java.util.concurrent.TimeUnit
 class GoogleAuthManager(
     private val context: Context,
     private val tokenStore: TokenStore,
+    private val authScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) {
 
     companion object {
@@ -37,17 +46,20 @@ class GoogleAuthManager(
     }
 
     private val signInClient: GoogleSignInClient by lazy {
-        val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+        val builder = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
             .requestScopes(Scope(TasksScopes.TASKS), Scope(CalendarScopes.CALENDAR), Scope(DriveScopes.DRIVE_FILE))
-            .build()
-        GoogleSignIn.getClient(context, options)
+        if (BuildConfig.FIREBASE_WEB_CLIENT_ID.isNotEmpty()) {
+            builder.requestIdToken(BuildConfig.FIREBASE_WEB_CLIENT_ID)
+        }
+        GoogleSignIn.getClient(context, builder.build())
     }
 
-    /** Returns true if the user is signed in and has granted all required scopes. */
+    /** Returns true if signed in via Google with all required scopes and Firebase Auth is active. */
     fun isAuthenticated(): Boolean {
         val account = GoogleSignIn.getLastSignedInAccount(context) ?: return false
         return GoogleSignIn.hasPermissions(account, *SCOPES.map { Scope(it) }.toTypedArray())
+            && FirebaseAuth.getInstance().currentUser != null
     }
 
     /** Returns the [Intent] to launch via an [ActivityResultLauncher] to start sign-in. */
@@ -55,6 +67,7 @@ class GoogleAuthManager(
 
     /**
      * Processes the result delivered back from the sign-in Activity.
+     * On success also signs into Firebase Auth using the Google ID token (async, non-blocking).
      *
      * @return true if the account was saved successfully, false on failure or cancellation.
      */
@@ -63,6 +76,14 @@ class GoogleAuthManager(
             val account = GoogleSignIn.getSignedInAccountFromIntent(data)
                 .getResult(ApiException::class.java)
             tokenStore.saveAccount(account.email ?: return false)
+            account.idToken?.let { idToken ->
+                authScope.launch {
+                    val credential = GoogleAuthProvider.getCredential(idToken, null)
+                    FirebaseAuth.getInstance()
+                        .signInWithCredential(credential)
+                        .addOnFailureListener { Log.w(TAG, "Firebase credential sign-in failed", it) }
+                }
+            }
             true
         } catch (e: ApiException) {
             Log.w(TAG, "Sign-in failed with status: ${e.statusCode}")
@@ -101,12 +122,22 @@ class GoogleAuthManager(
     }
 
     /**
+     * Returns the Firebase UID of the currently signed-in user.
+     *
+     * @throws IllegalStateException if not signed into Firebase Auth.
+     */
+    fun getFirebaseUid(): String =
+        FirebaseAuth.getInstance().currentUser?.uid
+            ?: throw IllegalStateException("Not signed in to Firebase Auth")
+
+    /**
      * Revokes the current session and clears all stored tokens and account data.
      */
     suspend fun signOut(): Unit = withContext(Dispatchers.IO) {
         runCatching {
             GmsTasks.await(signInClient.signOut(), SIGN_OUT_TIMEOUT_SEC, TimeUnit.SECONDS)
         }.onFailure { Log.w(TAG, "Sign-out task failed", it) }
+        FirebaseAuth.getInstance().signOut()
         tokenStore.clear()
     }
 }
