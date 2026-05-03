@@ -56,7 +56,7 @@ The app currently stores all data locally in Room and syncs Tasks/Calendar with 
 - [x] `getPendingFirestoreSync()` — query where `pendingFirestoreSync = 1 AND isDeleted = 0`
 - [x] `getPendingFirestoreDelete()` — query where `pendingFirestoreSync = 1 AND isDeleted = 1`
 - [x] `markFirestoreSynced(id, firestoreId)` — clears `pendingFirestoreSync`, sets `firestoreId`
-
+2
 ### Migration:
 - [x] `data/task/TaskDatabase.kt` — bump version 17 → 18, add `Migration(17, 18)` with `ALTER TABLE` for each affected table. Do NOT use destructive migration.
 
