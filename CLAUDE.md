@@ -1,5 +1,10 @@
 # Autistic — Project Rules
 
+## File Editing
+
+- You are the sole editor of all files in this project. Skip conflict checks and re-reads of files already read this session.
+- If a file was changed externally, the user will say **"X was updated externally"** — re-read it before proceeding.
+
 ## Response Style
 
 - Make code edits silently — do not narrate individual changes inline.
