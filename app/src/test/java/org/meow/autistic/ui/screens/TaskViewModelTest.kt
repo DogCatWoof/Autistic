@@ -19,6 +19,7 @@ import org.junit.Before
 import org.junit.Test
 import org.meow.autistic.data.auth.GoogleAuthManager
 import org.meow.autistic.data.calendar.CalendarRepository
+import org.meow.autistic.data.debug.ExceptionReporter
 import org.meow.autistic.data.sync.SyncScheduler
 import org.meow.autistic.data.task.TaskEntity
 import org.meow.autistic.data.task.TaskRepository
@@ -32,6 +33,7 @@ class TaskViewModelTest {
     private val authManager = mockk<GoogleAuthManager>()
     private val syncScheduler = mockk<SyncScheduler>(relaxed = true)
     private val workManager = mockk<androidx.work.WorkManager>(relaxed = true)
+    private val exceptionReporter = mockk<ExceptionReporter>(relaxed = true)
     private val testDispatcher = UnconfinedTestDispatcher()
 
     private lateinit var viewModel: TaskViewModel
@@ -44,7 +46,7 @@ class TaskViewModelTest {
         every { repository.allTasks } returns flowOf(emptyList())
         every { repository.completedTasks } returns flowOf(emptyList())
         every { calendarRepository.getAllEvents() } returns flowOf(emptyList())
-        viewModel = TaskViewModel(repository, calendarRepository, authManager, syncScheduler, workManager)
+        viewModel = TaskViewModel(repository, calendarRepository, authManager, syncScheduler, workManager, exceptionReporter)
     }
 
     @After
@@ -104,7 +106,7 @@ class TaskViewModelTest {
     fun `completedItems returns items from repository completedTasks`() = runTest {
         val done = TaskEntity(id = 9L, task = "Done", createdAt = Instant.EPOCH, completedAt = Instant.now())
         every { repository.completedTasks } returns flowOf(listOf(done))
-        val vm = TaskViewModel(repository, calendarRepository, authManager, syncScheduler, workManager)
+        val vm = TaskViewModel(repository, calendarRepository, authManager, syncScheduler, workManager, exceptionReporter)
         val items = vm.completedItems.first()
         assertTrue(items.isNotEmpty())
         assertNotNull(items.first().entity.completedAt)
@@ -150,7 +152,7 @@ class TaskViewModelTest {
 
     private fun makeViewModel(tasks: List<TaskEntity>): TaskViewModel {
         every { repository.allTasks } returns flowOf(tasks)
-        return TaskViewModel(repository, calendarRepository, authManager, syncScheduler, workManager)
+        return TaskViewModel(repository, calendarRepository, authManager, syncScheduler, workManager, exceptionReporter)
     }
 
     @Test

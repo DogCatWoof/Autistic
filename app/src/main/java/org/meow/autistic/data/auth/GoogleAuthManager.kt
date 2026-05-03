@@ -55,11 +55,10 @@ class GoogleAuthManager(
         GoogleSignIn.getClient(context, builder.build())
     }
 
-    /** Returns true if signed in via Google with all required scopes and Firebase Auth is active. */
+    /** Returns true if signed in via Google with all required scopes. */
     fun isAuthenticated(): Boolean {
         val account = GoogleSignIn.getLastSignedInAccount(context) ?: return false
         return GoogleSignIn.hasPermissions(account, *SCOPES.map { Scope(it) }.toTypedArray())
-            && FirebaseAuth.getInstance().currentUser != null
     }
 
     /** Returns the [Intent] to launch via an [ActivityResultLauncher] to start sign-in. */

@@ -15,13 +15,11 @@ class ExceptionReporter(
 ) {
     fun report(e: Throwable) {
         Log.e(TAG, "Unhandled exception: ${e.javaClass.simpleName}", e)
-        if (settings.isDebugEnabled) {
-            val msg = buildString {
-                append(e.javaClass.simpleName)
-                e.message?.let { append(": $it") }
-            }
-            GlobalErrorHandler.report(msg)
+        val msg = buildString {
+            append(e.javaClass.simpleName)
+            e.message?.let { append(": $it") }
         }
+        GlobalErrorHandler.report(msg)
     }
 
     private companion object {

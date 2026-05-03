@@ -60,24 +60,24 @@ class SyncOrchestratorTest {
     // region failure handling
 
     @Test
-    fun `sync returns Retry when pushPending throws`() = runTest {
+    fun `sync returns Error when pushPending throws`() = runTest {
         coEvery { tasksSyncService.pushPending() } throws RuntimeException("network error")
 
-        assertEquals(SyncOutcome.Retry, orchestrator.sync())
+        assertEquals(SyncOutcome.Error("network error"), orchestrator.sync())
     }
 
     @Test
-    fun `sync returns Retry when tasks pullAndMerge throws`() = runTest {
+    fun `sync returns Error when tasks pullAndMerge throws`() = runTest {
         coEvery { tasksSyncService.pullAndMerge() } throws RuntimeException("network error")
 
-        assertEquals(SyncOutcome.Retry, orchestrator.sync())
+        assertEquals(SyncOutcome.Error("network error"), orchestrator.sync())
     }
 
     @Test
-    fun `sync returns Retry when calendar pullAndMerge throws`() = runTest {
+    fun `sync returns Error when calendar pullAndMerge throws`() = runTest {
         coEvery { calendarSyncService.pullAndMerge() } throws RuntimeException("network error")
 
-        assertEquals(SyncOutcome.Retry, orchestrator.sync())
+        assertEquals(SyncOutcome.Error("network error"), orchestrator.sync())
     }
 
     @Test

@@ -15,7 +15,7 @@ import org.meow.autistic.ui.screens.ScanViewModel
 import org.meow.autistic.ui.screens.TaskViewModel
 
 val viewModelModule = module {
-    viewModel { TaskViewModel(get(), get(), get(), get(), get()) }
+    viewModel { TaskViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { ScanViewModel(get(), androidApplication()) }
     viewModel { DailyTasksViewModel(get()) }
     viewModel { NotesViewModel(get()) }

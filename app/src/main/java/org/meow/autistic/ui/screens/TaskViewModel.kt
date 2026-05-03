@@ -13,8 +13,10 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
 import org.meow.autistic.data.auth.GoogleAuthManager
+import org.meow.autistic.data.debug.ExceptionReporter
 import org.meow.autistic.data.calendar.CalendarEventEntity
 import org.meow.autistic.data.calendar.CalendarRepository
 import org.meow.autistic.data.sync.IMMEDIATE_WORK_NAME
@@ -54,7 +56,10 @@ class TaskViewModel(
     private val authManager: GoogleAuthManager,
     private val syncScheduler: SyncScheduler,
     private val workManager: WorkManager,
+    private val exceptionReporter: ExceptionReporter,
 ) : ViewModel() {
+
+    private val exceptionHandler = CoroutineExceptionHandler { _, e -> exceptionReporter.report(e) }
 
     private val _showCompleted = MutableStateFlow(false)
     val showCompleted: StateFlow<Boolean> = _showCompleted.asStateFlow()
@@ -140,7 +145,7 @@ class TaskViewModel(
         _isAuthenticated.value = authManager.isAuthenticated()
     }
 
-    fun signOut() = viewModelScope.launch {
+    fun signOut() = viewModelScope.launch(exceptionHandler) {
         authManager.signOut()
         updateAuthStatus()
     }
@@ -154,7 +159,7 @@ class TaskViewModel(
         }
     }
 
-    fun insert(task: TaskEntity) = viewModelScope.launch {
+    fun insert(task: TaskEntity) = viewModelScope.launch(exceptionHandler) {
         val id = repository.insert(task)
         TaskReminderWorker.scheduleFor(workManager, task.copy(id = id))
     }
@@ -163,7 +168,7 @@ class TaskViewModel(
         _showCompleted.value = !_showCompleted.value
     }
 
-    fun update(task: TaskEntity) = viewModelScope.launch {
+    fun update(task: TaskEntity) = viewModelScope.launch(exceptionHandler) {
         if (task.isCompleted && task.googleTaskId == null) {
             repository.update(task)
             TaskReminderWorker.cancel(workManager, task.id)
@@ -187,14 +192,14 @@ class TaskViewModel(
         update(task.copy(completedAt = completedAt))
     }
 
-    fun delete(task: TaskEntity) = viewModelScope.launch {
+    fun delete(task: TaskEntity) = viewModelScope.launch(exceptionHandler) {
         pushUndo(UndoableAction.TaskDeleted(task))
         TaskReminderWorker.cancel(workManager, task.id)
         if (task.googleTaskId != null) repository.markPendingDelete(task.id)
         else repository.delete(task)
     }
 
-    fun undo() = viewModelScope.launch {
+    fun undo() = viewModelScope.launch(exceptionHandler) {
         val action = _undoStack.value.firstOrNull() ?: return@launch
         _undoStack.update { it.drop(1) }
         when (action) {
@@ -218,16 +223,16 @@ class TaskViewModel(
         }
     }
 
-    fun insertCalendarEvent(event: org.meow.autistic.data.calendar.CalendarEventEntity) = viewModelScope.launch {
+    fun insertCalendarEvent(event: org.meow.autistic.data.calendar.CalendarEventEntity) = viewModelScope.launch(exceptionHandler) {
         calendarRepository.upsertEvents(listOf(event))
     }
 
-    fun completeEvent(event: CalendarEventEntity) = viewModelScope.launch {
+    fun completeEvent(event: CalendarEventEntity) = viewModelScope.launch(exceptionHandler) {
         pushUndo(UndoableAction.EventHidden(event))
         calendarRepository.markHidden(event.googleEventId)
     }
 
-    fun deleteEvent(event: CalendarEventEntity) = viewModelScope.launch {
+    fun deleteEvent(event: CalendarEventEntity) = viewModelScope.launch(exceptionHandler) {
         pushUndo(UndoableAction.EventDeleted(event))
         calendarRepository.markPendingDelete(event.googleEventId)
     }

@@ -62,11 +62,10 @@ class GoogleAuthManagerTest {
     }
 
     @Test
-    fun `isAuthenticated returns true when Google and Firebase are both authenticated`() {
+    fun `isAuthenticated returns true when Google account has all permissions`() {
         val account = mockk<GoogleSignInAccount>()
         every { GoogleSignIn.getLastSignedInAccount(context) } returns account
         every { GoogleSignIn.hasPermissions(account, any<Scope>(), any<Scope>(), any<Scope>()) } returns true
-        every { firebaseAuth.currentUser } returns mockk<FirebaseUser>()
         assertTrue(manager.isAuthenticated())
     }
 
@@ -75,15 +74,6 @@ class GoogleAuthManagerTest {
         val account = mockk<GoogleSignInAccount>()
         every { GoogleSignIn.getLastSignedInAccount(context) } returns account
         every { GoogleSignIn.hasPermissions(account, any<Scope>(), any<Scope>(), any<Scope>()) } returns false
-        assertFalse(manager.isAuthenticated())
-    }
-
-    @Test
-    fun `isAuthenticated returns false when Firebase user is null`() {
-        val account = mockk<GoogleSignInAccount>()
-        every { GoogleSignIn.getLastSignedInAccount(context) } returns account
-        every { GoogleSignIn.hasPermissions(account, any<Scope>(), any<Scope>(), any<Scope>()) } returns true
-        every { firebaseAuth.currentUser } returns null
         assertFalse(manager.isAuthenticated())
     }
 

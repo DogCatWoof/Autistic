@@ -61,8 +61,8 @@ class SyncOrchestrator(
                 SyncOutcome.Retry
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Sync failed: ${e.message}")
-            SyncOutcome.Retry
+            Log.e(TAG, "Sync failed: ${e.message}", e)
+            SyncOutcome.Error(e.message ?: "Sync failed")
         }
     }
 }
