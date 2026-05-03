@@ -7,10 +7,10 @@ The app currently stores all data locally in Room and syncs Tasks/Calendar with 
 
 ## Prerequisites — Needs Explicit Approval (build.gradle changes)
 
-- [ ] Create a Firebase project at console.firebase.google.com, add the Android app, download `google-services.json` → place in `app/`.
-- [ ] **`build.gradle.kts` (root):** add `google-services` plugin classpath.
-- [ ] **`app/build.gradle.kts`:** add Firebase BOM + dependencies: `firebase-bom`, `firebase-auth-ktx`, `firebase-firestore-ktx`.
-- [ ] Apply `google-services` plugin in `app/build.gradle.kts`.
+- [x] Create a Firebase project at console.firebase.google.com, add the Android app, download `google-services.json` → place in `app/`.
+- [x] **`build.gradle.kts` (root):** add `google-services` plugin classpath.
+- [x] **`app/build.gradle.kts`:** add Firebase BOM + dependencies: `firebase-bom`, `firebase-auth-ktx`, `firebase-firestore-ktx`.
+- [x] Apply `google-services` plugin in `app/build.gradle.kts`.
 
 ---
 
