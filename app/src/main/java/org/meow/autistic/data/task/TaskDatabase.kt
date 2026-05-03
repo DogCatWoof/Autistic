@@ -103,6 +103,7 @@ abstract class TaskDatabase : RoomDatabase() {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, TaskDatabase::class.java, "autistic_database")
                     .addMigrations(MIGRATION_17_18)
+                    .fallbackToDestructiveMigration(true)
                     .build()
                     .also { Instance = it }
             }
