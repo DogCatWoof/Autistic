@@ -19,4 +19,10 @@ interface HealthSnapshotDao {
 
     @Upsert
     suspend fun upsert(entry: HealthSnapshotEntity)
+
+    @Query("SELECT * FROM health_snapshots WHERE pendingFirestoreSync = 1")
+    suspend fun getPendingFirestoreSync(): List<HealthSnapshotEntity>
+
+    @Query("UPDATE health_snapshots SET pendingFirestoreSync = 0, firestoreId = :firestoreId WHERE date = :date")
+    suspend fun markFirestoreSynced(date: String, firestoreId: String)
 }

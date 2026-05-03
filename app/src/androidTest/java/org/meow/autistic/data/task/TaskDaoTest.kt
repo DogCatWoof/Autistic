@@ -242,4 +242,31 @@ class TaskDaoTest {
         assertEquals(1, completed.size)
         assertEquals("Done", completed[0].task)
     }
+
+    @Test
+    fun getPendingFirestoreSync_excludesPendingDeleteTasks() = runTest {
+        dao.insertTask(TaskEntity(task = "Sync me", createdAt = Instant.ofEpochMilli(1000L), pendingFirestoreSync = true, syncStatus = "local"))
+        dao.insertTask(TaskEntity(task = "Delete me", createdAt = Instant.ofEpochMilli(2000L), pendingFirestoreSync = true, syncStatus = "pending_delete"))
+        val result = dao.getPendingFirestoreSync()
+        assertEquals(1, result.size)
+        assertEquals("Sync me", result[0].task)
+    }
+
+    @Test
+    fun getPendingFirestoreDelete_returnsOnlyPendingDeleteWithSyncFlag() = runTest {
+        dao.insertTask(TaskEntity(task = "Delete me", createdAt = Instant.ofEpochMilli(1000L), pendingFirestoreSync = true, syncStatus = "pending_delete"))
+        dao.insertTask(TaskEntity(task = "Keep me", createdAt = Instant.ofEpochMilli(2000L), pendingFirestoreSync = true, syncStatus = "local"))
+        val result = dao.getPendingFirestoreDelete()
+        assertEquals(1, result.size)
+        assertEquals("Delete me", result[0].task)
+    }
+
+    @Test
+    fun markFirestoreSynced_clearsFlagAndSetsId() = runTest {
+        val id = dao.insertTask(TaskEntity(task = "Task", createdAt = Instant.ofEpochMilli(1000L), pendingFirestoreSync = true))
+        dao.markFirestoreSynced(id, "fs-doc-1")
+        val result = dao.getAllTasks().first().first()
+        assertEquals("fs-doc-1", result.firestoreId)
+        assertEquals(false, result.pendingFirestoreSync)
+    }
 }

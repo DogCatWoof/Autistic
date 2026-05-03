@@ -29,4 +29,13 @@ interface FoodLogItemDao {
 
     @Query("DELETE FROM food_log_items WHERE date < :cutoffDate")
     suspend fun deleteOlderThan(cutoffDate: String)
+
+    @Query("SELECT * FROM food_log_items WHERE pendingFirestoreSync = 1 AND isDeleted = 0")
+    suspend fun getPendingFirestoreSync(): List<FoodLogItemEntry>
+
+    @Query("SELECT * FROM food_log_items WHERE pendingFirestoreSync = 1 AND isDeleted = 1")
+    suspend fun getPendingFirestoreDelete(): List<FoodLogItemEntry>
+
+    @Query("UPDATE food_log_items SET pendingFirestoreSync = 0, firestoreId = :firestoreId WHERE id = :id")
+    suspend fun markFirestoreSynced(id: Long, firestoreId: String)
 }

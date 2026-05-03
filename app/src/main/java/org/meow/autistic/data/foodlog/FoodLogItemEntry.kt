@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.time.Instant
 
+
 /**
  * One food item logged for a specific calendar day.
  * Net Carbs = Total Carbs − Dietary Fiber − Sugar Alcohols.
@@ -29,6 +30,10 @@ data class FoodLogItemEntry(
     val totalSugars: Double = 0.0,
     val addedSugars: Double = 0.0,
     val sugarAlcohols: Double = 0.0,
+    val firestoreId: String? = null,
+    val lastModifiedAt: Instant = Instant.now(),
+    val pendingFirestoreSync: Boolean = true,
+    val isDeleted: Boolean = false,
 ) {
     val netCarbs: Double get() = (totalCarbs - fiber - sugarAlcohols).coerceAtLeast(0.0)
 }

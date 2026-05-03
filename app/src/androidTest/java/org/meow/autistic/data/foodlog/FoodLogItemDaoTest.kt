@@ -110,4 +110,31 @@ class FoodLogItemDaoTest {
         val item = entry("2026-04-18", totalCarbs = 2.0, fiber = 10.0)
         assertEquals(0.0, item.netCarbs, 0.001)
     }
+
+    @Test
+    fun getPendingFirestoreSync_excludesDeleted() = runTest {
+        dao.insert(FoodLogItemEntry(date = "2026-04-18", loggedAt = Instant.now(), description = "Eggs", pendingFirestoreSync = true))
+        dao.insert(FoodLogItemEntry(date = "2026-04-18", loggedAt = Instant.now(), description = "Deleted", pendingFirestoreSync = true, isDeleted = true))
+        val result = dao.getPendingFirestoreSync()
+        assertEquals(1, result.size)
+        assertEquals("Eggs", result[0].description)
+    }
+
+    @Test
+    fun getPendingFirestoreDelete_returnsOnlyDeleted() = runTest {
+        dao.insert(FoodLogItemEntry(date = "2026-04-18", loggedAt = Instant.now(), description = "Eggs", pendingFirestoreSync = true))
+        dao.insert(FoodLogItemEntry(date = "2026-04-18", loggedAt = Instant.now(), description = "Deleted", pendingFirestoreSync = true, isDeleted = true))
+        val result = dao.getPendingFirestoreDelete()
+        assertEquals(1, result.size)
+        assertEquals("Deleted", result[0].description)
+    }
+
+    @Test
+    fun markFirestoreSynced_clearsFlagAndSetsId() = runTest {
+        val id = dao.insert(FoodLogItemEntry(date = "2026-04-18", loggedAt = Instant.now(), description = "Eggs", pendingFirestoreSync = true))
+        dao.markFirestoreSynced(id, "fs-food-1")
+        val result = dao.getByDate("2026-04-18").first().first()
+        assertEquals("fs-food-1", result.firestoreId)
+        assertEquals(false, result.pendingFirestoreSync)
+    }
 }

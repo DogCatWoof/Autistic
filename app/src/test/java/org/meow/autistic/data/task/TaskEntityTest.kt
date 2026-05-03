@@ -62,8 +62,9 @@ class TaskEntityTest {
 
     @Test
     fun `equality holds for same data`() {
-        val a = TaskEntity(id = 1L, task = "Task", createdAt = Instant.ofEpochMilli(1000L))
-        val b = TaskEntity(id = 1L, task = "Task", createdAt = Instant.ofEpochMilli(1000L))
+        val ts = Instant.ofEpochMilli(1000L)
+        val a = TaskEntity(id = 1L, task = "Task", createdAt = ts, lastModifiedAt = ts)
+        val b = TaskEntity(id = 1L, task = "Task", createdAt = ts, lastModifiedAt = ts)
         assertEquals(a, b)
     }
 

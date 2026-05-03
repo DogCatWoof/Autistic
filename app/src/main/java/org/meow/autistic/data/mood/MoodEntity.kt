@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.time.Instant
 
+
 /** Emoji options available in the notification mood picker. */
 val MOOD_EMOJIS: List<Pair<String, String>> = listOf(
     "😊" to "Happy",
@@ -31,4 +32,8 @@ data class MoodEntity(
     val activity: String = "",
     val notes: String = "",
     val createdAt: Instant,
+    val firestoreId: String? = null,
+    val lastModifiedAt: Instant = Instant.now(),
+    val pendingFirestoreSync: Boolean = true,
+    val isDeleted: Boolean = false,
 )

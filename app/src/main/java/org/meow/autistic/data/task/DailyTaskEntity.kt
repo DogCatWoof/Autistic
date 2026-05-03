@@ -2,6 +2,7 @@ package org.meow.autistic.data.task
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.time.Instant
 
 /**
  * A recurring daily task template.
@@ -22,4 +23,7 @@ data class DailyTaskEntity(
     val expectedTimeMinutes: Int? = null,
     /** Propagated to each generated [TaskEntity] instance. */
     val isRequired: Boolean = false,
+    val firestoreId: String? = null,
+    val lastModifiedAt: Instant = Instant.now(),
+    val pendingFirestoreSync: Boolean = true,
 )

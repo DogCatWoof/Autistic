@@ -15,4 +15,6 @@ data class HealthSnapshotEntity(
     val caloriesBurned: Double? = null,
     val bloodGlucoseMmol: Double? = null,
     val lastUpdatedAt: Instant = Instant.now(),
+    val firestoreId: String? = null,
+    val pendingFirestoreSync: Boolean = true,
 )

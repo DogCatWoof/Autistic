@@ -6,6 +6,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import org.meow.autistic.data.calendar.CalendarDao
 import org.meow.autistic.data.calendar.CalendarEventEntity
 import org.meow.autistic.data.foodlog.FoodCacheDao
@@ -36,9 +38,43 @@ class InstantConverter {
     fun toInstant(value: String?): Instant? = value?.let { Instant.parse(it) }
 }
 
+internal val MIGRATION_17_18 = object : Migration(17, 18) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tasks ADD COLUMN firestoreId TEXT")
+        db.execSQL("ALTER TABLE tasks ADD COLUMN lastModifiedAt TEXT NOT NULL DEFAULT '1970-01-01T00:00:00Z'")
+        db.execSQL("ALTER TABLE tasks ADD COLUMN pendingFirestoreSync INTEGER NOT NULL DEFAULT 1")
+        db.execSQL("ALTER TABLE notes ADD COLUMN firestoreId TEXT")
+        db.execSQL("ALTER TABLE notes ADD COLUMN pendingFirestoreSync INTEGER NOT NULL DEFAULT 1")
+        db.execSQL("ALTER TABLE moods ADD COLUMN firestoreId TEXT")
+        db.execSQL("ALTER TABLE moods ADD COLUMN lastModifiedAt TEXT NOT NULL DEFAULT '1970-01-01T00:00:00Z'")
+        db.execSQL("ALTER TABLE moods ADD COLUMN pendingFirestoreSync INTEGER NOT NULL DEFAULT 1")
+        db.execSQL("ALTER TABLE moods ADD COLUMN isDeleted INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE food_log_items ADD COLUMN firestoreId TEXT")
+        db.execSQL("ALTER TABLE food_log_items ADD COLUMN lastModifiedAt TEXT NOT NULL DEFAULT '1970-01-01T00:00:00Z'")
+        db.execSQL("ALTER TABLE food_log_items ADD COLUMN pendingFirestoreSync INTEGER NOT NULL DEFAULT 1")
+        db.execSQL("ALTER TABLE food_log_items ADD COLUMN isDeleted INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE health_snapshots ADD COLUMN firestoreId TEXT")
+        db.execSQL("ALTER TABLE health_snapshots ADD COLUMN pendingFirestoreSync INTEGER NOT NULL DEFAULT 1")
+        db.execSQL("ALTER TABLE sequences ADD COLUMN firestoreId TEXT")
+        db.execSQL("ALTER TABLE sequences ADD COLUMN lastModifiedAt TEXT NOT NULL DEFAULT '1970-01-01T00:00:00Z'")
+        db.execSQL("ALTER TABLE sequences ADD COLUMN pendingFirestoreSync INTEGER NOT NULL DEFAULT 1")
+        db.execSQL("ALTER TABLE sequences ADD COLUMN isDeleted INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE sequence_steps ADD COLUMN firestoreId TEXT")
+        db.execSQL("ALTER TABLE sequence_steps ADD COLUMN lastModifiedAt TEXT NOT NULL DEFAULT '1970-01-01T00:00:00Z'")
+        db.execSQL("ALTER TABLE sequence_steps ADD COLUMN pendingFirestoreSync INTEGER NOT NULL DEFAULT 1")
+        db.execSQL("ALTER TABLE sequence_steps ADD COLUMN isDeleted INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE sequence_runs ADD COLUMN firestoreId TEXT")
+        db.execSQL("ALTER TABLE sequence_runs ADD COLUMN lastModifiedAt TEXT NOT NULL DEFAULT '1970-01-01T00:00:00Z'")
+        db.execSQL("ALTER TABLE sequence_runs ADD COLUMN pendingFirestoreSync INTEGER NOT NULL DEFAULT 1")
+        db.execSQL("ALTER TABLE daily_tasks ADD COLUMN firestoreId TEXT")
+        db.execSQL("ALTER TABLE daily_tasks ADD COLUMN lastModifiedAt TEXT NOT NULL DEFAULT '1970-01-01T00:00:00Z'")
+        db.execSQL("ALTER TABLE daily_tasks ADD COLUMN pendingFirestoreSync INTEGER NOT NULL DEFAULT 1")
+    }
+}
+
 @Database(
     entities = [TaskEntity::class, CalendarEventEntity::class, DailyTaskEntity::class, NoteEntity::class, MoodEntity::class, FoodLogEntry::class, FoodLogItemEntry::class, HealthSnapshotEntity::class, FoodCacheEntity::class, SequenceEntity::class, SequenceStepEntity::class, SequenceRunEntity::class, SequenceStepProgressEntity::class],
-    version = 17,
+    version = 18,
     exportSchema = false,
 )
 @TypeConverters(InstantConverter::class)
@@ -66,7 +102,7 @@ abstract class TaskDatabase : RoomDatabase() {
         fun getDatabase(context: Context): TaskDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, TaskDatabase::class.java, "autistic_database")
-                    .fallbackToDestructiveMigration()
+                    .addMigrations(MIGRATION_17_18)
                     .build()
                     .also { Instance = it }
             }

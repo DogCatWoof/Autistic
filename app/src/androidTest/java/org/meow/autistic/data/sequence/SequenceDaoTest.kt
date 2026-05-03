@@ -169,4 +169,64 @@ class SequenceDaoTest {
     }
 
     // endregion
+
+    // region Firestore sync
+
+    @Test
+    fun getPendingFirestoreSync_excludesDeletedSequences() = runTest {
+        dao.insertSequence(SequenceEntity(name = "Active", pendingFirestoreSync = true))
+        dao.insertSequence(SequenceEntity(name = "Deleted", pendingFirestoreSync = true, isDeleted = true))
+        val result = dao.getPendingFirestoreSync()
+        assertEquals(1, result.size)
+        assertEquals("Active", result[0].name)
+    }
+
+    @Test
+    fun getPendingFirestoreDelete_returnsOnlyDeletedSequences() = runTest {
+        dao.insertSequence(SequenceEntity(name = "Active", pendingFirestoreSync = true))
+        dao.insertSequence(SequenceEntity(name = "Deleted", pendingFirestoreSync = true, isDeleted = true))
+        val result = dao.getPendingFirestoreDelete()
+        assertEquals(1, result.size)
+        assertEquals("Deleted", result[0].name)
+    }
+
+    @Test
+    fun markSequenceFirestoreSynced_clearsFlagAndSetsId() = runTest {
+        val id = dao.insertSequence(SequenceEntity(name = "Routine", pendingFirestoreSync = true))
+        dao.markSequenceFirestoreSynced(id, "fs-seq-1")
+        val result = dao.getById(id)
+        assertEquals("fs-seq-1", result?.firestoreId)
+        assertEquals(false, result?.pendingFirestoreSync)
+    }
+
+    @Test
+    fun getPendingFirestoreStepSync_excludesDeletedSteps() = runTest {
+        val seqId = dao.insertSequence(SequenceEntity(name = "Routine"))
+        dao.insertStep(SequenceStepEntity(sequenceId = seqId, instruction = "Active", position = 0, pendingFirestoreSync = true))
+        dao.insertStep(SequenceStepEntity(sequenceId = seqId, instruction = "Deleted", position = 1, pendingFirestoreSync = true, isDeleted = true))
+        val result = dao.getPendingFirestoreStepSync()
+        assertEquals(1, result.size)
+        assertEquals("Active", result[0].instruction)
+    }
+
+    @Test
+    fun getPendingFirestoreRunSync_returnsOnlyPendingRuns() = runTest {
+        val seqId = dao.insertSequence(SequenceEntity(name = "Routine"))
+        dao.insertRun(SequenceRunEntity(sequenceId = seqId, startedAt = Instant.EPOCH, pendingFirestoreSync = true))
+        dao.insertRun(SequenceRunEntity(sequenceId = seqId, startedAt = Instant.EPOCH, pendingFirestoreSync = false))
+        val result = dao.getPendingFirestoreRunSync()
+        assertEquals(1, result.size)
+    }
+
+    @Test
+    fun markRunFirestoreSynced_clearsFlagAndSetsId() = runTest {
+        val seqId = dao.insertSequence(SequenceEntity(name = "Routine"))
+        val runId = dao.insertRun(SequenceRunEntity(sequenceId = seqId, startedAt = Instant.EPOCH, pendingFirestoreSync = true))
+        dao.markRunFirestoreSynced(runId, "fs-run-1")
+        val result = dao.getRunById(runId)
+        assertEquals("fs-run-1", result?.firestoreId)
+        assertEquals(false, result?.pendingFirestoreSync)
+    }
+
+    // endregion
 }

@@ -90,12 +90,42 @@ class NoteDaoTest {
         val now = Instant.now()
         val note = NoteEntity(id = 1, title = "Gone", content = "...", createdAt = now, updatedAt = now)
         dao.insert(note)
-        
+
         dao.delete(note)
-        
+
         val active = dao.getActiveNotes().first()
         val deleted = dao.getDeletedNotes().first()
         assertTrue(active.isEmpty())
         assertTrue(deleted.isEmpty())
+    }
+
+    @Test
+    fun getPendingFirestoreSync_excludesDeleted() = runTest {
+        val now = Instant.now()
+        dao.insert(NoteEntity(title = "Active", content = "...", createdAt = now, updatedAt = now, pendingFirestoreSync = true))
+        dao.insert(NoteEntity(title = "Deleted", content = "...", createdAt = now, updatedAt = now, isDeleted = true, pendingFirestoreSync = true))
+        val result = dao.getPendingFirestoreSync()
+        assertEquals(1, result.size)
+        assertEquals("Active", result[0].title)
+    }
+
+    @Test
+    fun getPendingFirestoreDelete_returnsOnlyDeleted() = runTest {
+        val now = Instant.now()
+        dao.insert(NoteEntity(title = "Active", content = "...", createdAt = now, updatedAt = now, pendingFirestoreSync = true))
+        dao.insert(NoteEntity(title = "Deleted", content = "...", createdAt = now, updatedAt = now, isDeleted = true, pendingFirestoreSync = true))
+        val result = dao.getPendingFirestoreDelete()
+        assertEquals(1, result.size)
+        assertEquals("Deleted", result[0].title)
+    }
+
+    @Test
+    fun markFirestoreSynced_clearsFlagAndSetsId() = runTest {
+        val now = Instant.now()
+        dao.insert(NoteEntity(id = 1, title = "Note", content = "...", createdAt = now, updatedAt = now, pendingFirestoreSync = true))
+        dao.markFirestoreSynced(1, "fs-note-1")
+        val result = dao.getActiveNotes().first().first()
+        assertEquals("fs-note-1", result.firestoreId)
+        assertEquals(false, result.pendingFirestoreSync)
     }
 }

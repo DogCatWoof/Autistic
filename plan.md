@@ -23,7 +23,7 @@ The app currently stores all data locally in Room and syncs Tasks/Calendar with 
   - `isAuthenticated()`: also check `FirebaseAuth.getInstance().currentUser != null`.
   - `signOut()`: also call `FirebaseAuth.getInstance().signOut()`.
   - Add `getFirebaseUid(): String` — returns `currentUser!!.uid`, throws if not signed in.
-- [ ] Verify: sign in → `FirebaseAuth.getInstance().currentUser` non-null; sign out → Firebase user cleared.
+- [x] Verify: sign in → `FirebaseAuth.getInstance().currentUser` non-null; sign out → Firebase user cleared.
 
 ---
 
@@ -53,12 +53,12 @@ The app currently stores all data locally in Room and syncs Tasks/Calendar with 
 | `DailyTaskEntity` | `data/task/DailyTaskEntity.kt` | Add `firestoreId`, `lastModifiedAt`, `pendingFirestoreSync`. |
 
 ### DAOs to update (add to each affected DAO):
-- [ ] `getPendingFirestoreSync()` — query where `pendingFirestoreSync = 1 AND isDeleted = 0`
-- [ ] `getPendingFirestoreDelete()` — query where `pendingFirestoreSync = 1 AND isDeleted = 1`
-- [ ] `markFirestoreSynced(id, firestoreId)` — clears `pendingFirestoreSync`, sets `firestoreId`
+- [x] `getPendingFirestoreSync()` — query where `pendingFirestoreSync = 1 AND isDeleted = 0`
+- [x] `getPendingFirestoreDelete()` — query where `pendingFirestoreSync = 1 AND isDeleted = 1`
+- [x] `markFirestoreSynced(id, firestoreId)` — clears `pendingFirestoreSync`, sets `firestoreId`
 
 ### Migration:
-- [ ] `data/task/TaskDatabase.kt` — bump version 17 → 18, add `Migration(17, 18)` with `ALTER TABLE` for each affected table. Do NOT use destructive migration.
+- [x] `data/task/TaskDatabase.kt` — bump version 17 → 18, add `Migration(17, 18)` with `ALTER TABLE` for each affected table. Do NOT use destructive migration.
 
 ---
 

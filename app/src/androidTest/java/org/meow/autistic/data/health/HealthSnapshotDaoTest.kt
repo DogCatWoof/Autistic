@@ -125,4 +125,22 @@ class HealthSnapshotDaoTest {
         val results = dao.getRecent(7).first()
         assertEquals(emptyList<HealthSnapshotEntity>(), results)
     }
+
+    @Test
+    fun getPendingFirestoreSync_returnsOnlyPendingItems() = runTest {
+        dao.upsert(HealthSnapshotEntity(date = "2025-01-01", pendingFirestoreSync = true))
+        dao.upsert(HealthSnapshotEntity(date = "2025-01-02", pendingFirestoreSync = false))
+        val result = dao.getPendingFirestoreSync()
+        assertEquals(1, result.size)
+        assertEquals("2025-01-01", result[0].date)
+    }
+
+    @Test
+    fun markFirestoreSynced_clearsFlagAndSetsId() = runTest {
+        dao.upsert(HealthSnapshotEntity(date = "2025-01-01", pendingFirestoreSync = true))
+        dao.markFirestoreSynced("2025-01-01", "fs-snap-1")
+        val result = dao.getByDate("2025-01-01").first()
+        assertEquals("fs-snap-1", result?.firestoreId)
+        assertEquals(false, result?.pendingFirestoreSync)
+    }
 }

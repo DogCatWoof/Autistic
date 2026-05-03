@@ -25,4 +25,10 @@ interface DailyTaskDao {
 
     @Delete
     suspend fun delete(task: DailyTaskEntity)
+
+    @Query("SELECT * FROM daily_tasks WHERE pendingFirestoreSync = 1")
+    suspend fun getPendingFirestoreSync(): List<DailyTaskEntity>
+
+    @Query("UPDATE daily_tasks SET pendingFirestoreSync = 0, firestoreId = :firestoreId WHERE id = :id")
+    suspend fun markFirestoreSynced(id: Long, firestoreId: String)
 }

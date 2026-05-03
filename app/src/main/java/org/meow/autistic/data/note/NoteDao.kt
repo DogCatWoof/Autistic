@@ -32,4 +32,13 @@ interface NoteDao {
 
     @Delete
     suspend fun delete(note: NoteEntity)
+
+    @Query("SELECT * FROM notes WHERE pendingFirestoreSync = 1 AND isDeleted = 0")
+    suspend fun getPendingFirestoreSync(): List<NoteEntity>
+
+    @Query("SELECT * FROM notes WHERE pendingFirestoreSync = 1 AND isDeleted = 1")
+    suspend fun getPendingFirestoreDelete(): List<NoteEntity>
+
+    @Query("UPDATE notes SET pendingFirestoreSync = 0, firestoreId = :firestoreId WHERE id = :id")
+    suspend fun markFirestoreSynced(id: Int, firestoreId: String)
 }

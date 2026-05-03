@@ -17,4 +17,6 @@ data class NoteEntity(
     val createdAt: Instant,
     val updatedAt: Instant,
     val isDeleted: Boolean = false,
+    val firestoreId: String? = null,
+    val pendingFirestoreSync: Boolean = true,
 )

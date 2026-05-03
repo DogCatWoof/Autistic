@@ -65,4 +65,28 @@ interface SequenceDao {
 
     @Query("SELECT * FROM sequence_step_progress WHERE runId = :runId")
     suspend fun getProgressOnce(runId: Long): List<SequenceStepProgressEntity>
+
+    @Query("SELECT * FROM sequences WHERE pendingFirestoreSync = 1 AND isDeleted = 0")
+    suspend fun getPendingFirestoreSync(): List<SequenceEntity>
+
+    @Query("SELECT * FROM sequences WHERE pendingFirestoreSync = 1 AND isDeleted = 1")
+    suspend fun getPendingFirestoreDelete(): List<SequenceEntity>
+
+    @Query("UPDATE sequences SET pendingFirestoreSync = 0, firestoreId = :firestoreId WHERE id = :id")
+    suspend fun markSequenceFirestoreSynced(id: Long, firestoreId: String)
+
+    @Query("SELECT * FROM sequence_steps WHERE pendingFirestoreSync = 1 AND isDeleted = 0")
+    suspend fun getPendingFirestoreStepSync(): List<SequenceStepEntity>
+
+    @Query("SELECT * FROM sequence_steps WHERE pendingFirestoreSync = 1 AND isDeleted = 1")
+    suspend fun getPendingFirestoreStepDelete(): List<SequenceStepEntity>
+
+    @Query("UPDATE sequence_steps SET pendingFirestoreSync = 0, firestoreId = :firestoreId WHERE id = :id")
+    suspend fun markStepFirestoreSynced(id: Long, firestoreId: String)
+
+    @Query("SELECT * FROM sequence_runs WHERE pendingFirestoreSync = 1")
+    suspend fun getPendingFirestoreRunSync(): List<SequenceRunEntity>
+
+    @Query("UPDATE sequence_runs SET pendingFirestoreSync = 0, firestoreId = :firestoreId WHERE id = :id")
+    suspend fun markRunFirestoreSynced(id: Long, firestoreId: String)
 }

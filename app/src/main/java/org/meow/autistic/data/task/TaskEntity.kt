@@ -32,6 +32,9 @@ data class TaskEntity(
     val isImportant: Boolean = false,
     /** Set when the task is marked complete; used for 7-day retention before deletion. */
     val completedAt: Instant? = null,
+    val firestoreId: String? = null,
+    val lastModifiedAt: Instant = Instant.now(),
+    val pendingFirestoreSync: Boolean = true,
 ) {
     val isCompleted: Boolean get() = completedAt != null
     val reminderSet: Boolean get() = reminderMinutesBefore != null

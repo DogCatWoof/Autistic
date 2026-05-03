@@ -45,4 +45,13 @@ interface TaskDao {
 
     @Query("SELECT * FROM tasks WHERE completedAt IS NOT NULL ORDER BY completedAt DESC")
     fun getCompletedTasks(): Flow<List<TaskEntity>>
+
+    @Query("SELECT * FROM tasks WHERE pendingFirestoreSync = 1 AND syncStatus != 'pending_delete'")
+    suspend fun getPendingFirestoreSync(): List<TaskEntity>
+
+    @Query("SELECT * FROM tasks WHERE pendingFirestoreSync = 1 AND syncStatus = 'pending_delete'")
+    suspend fun getPendingFirestoreDelete(): List<TaskEntity>
+
+    @Query("UPDATE tasks SET pendingFirestoreSync = 0, firestoreId = :firestoreId WHERE id = :id")
+    suspend fun markFirestoreSynced(id: Long, firestoreId: String)
 }

@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.After
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -50,5 +51,16 @@ class TaskDatabaseTest {
         val first = TaskDatabase.getDatabase(context)
         val second = TaskDatabase.getDatabase(context)
         assertSame(first, second)
+    }
+
+    @Test
+    fun migration_firestoreColumnsPresent() {
+        val dao = db.taskDao()
+        val cursor = db.openHelper.readableDatabase.query(
+            "SELECT firestoreId, lastModifiedAt, pendingFirestoreSync FROM tasks LIMIT 0",
+            emptyArray()
+        )
+        assertTrue(cursor.columnCount == 3)
+        cursor.close()
     }
 }

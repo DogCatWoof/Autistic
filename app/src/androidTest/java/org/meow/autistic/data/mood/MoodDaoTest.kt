@@ -72,11 +72,38 @@ class MoodDaoTest {
         dao.insert(MoodEntity(level = 1, createdAt = base))
         dao.insert(MoodEntity(level = 3, createdAt = base.plusSeconds(300)))
         dao.insert(MoodEntity(level = 2, createdAt = base.plusSeconds(150)))
-        
+
         val result = dao.getAll().first()
         assertEquals(3, result.size)
         assertEquals(3, result[0].level)
         assertEquals(2, result[1].level)
         assertEquals(1, result[2].level)
+    }
+
+    @Test
+    fun getPendingFirestoreSync_excludesDeleted() = runTest {
+        dao.insert(MoodEntity(level = 1, createdAt = Instant.now(), pendingFirestoreSync = true))
+        dao.insert(MoodEntity(level = 2, createdAt = Instant.now(), pendingFirestoreSync = true, isDeleted = true))
+        val result = dao.getPendingFirestoreSync()
+        assertEquals(1, result.size)
+        assertEquals(1, result[0].level)
+    }
+
+    @Test
+    fun getPendingFirestoreDelete_returnsOnlyDeleted() = runTest {
+        dao.insert(MoodEntity(level = 1, createdAt = Instant.now(), pendingFirestoreSync = true))
+        dao.insert(MoodEntity(level = 2, createdAt = Instant.now(), pendingFirestoreSync = true, isDeleted = true))
+        val result = dao.getPendingFirestoreDelete()
+        assertEquals(1, result.size)
+        assertEquals(2, result[0].level)
+    }
+
+    @Test
+    fun markFirestoreSynced_clearsFlagAndSetsId() = runTest {
+        dao.insert(MoodEntity(id = 1, level = 3, createdAt = Instant.now(), pendingFirestoreSync = true))
+        dao.markFirestoreSynced(1, "fs-mood-1")
+        val result = dao.getAll().first().first()
+        assertEquals("fs-mood-1", result.firestoreId)
+        assertEquals(false, result.pendingFirestoreSync)
     }
 }
