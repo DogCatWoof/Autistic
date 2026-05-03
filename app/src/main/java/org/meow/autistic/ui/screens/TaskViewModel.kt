@@ -149,7 +149,7 @@ class TaskViewModel(
 
     fun handleSignInResult(data: Intent?) {
         if (authManager.handleSignInResult(data)) {
-            updateAuthStatus()
+            _isAuthenticated.value = true
             triggerSync()
         }
     }

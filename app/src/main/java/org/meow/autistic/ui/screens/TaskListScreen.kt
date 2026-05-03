@@ -355,7 +355,7 @@ fun GoogleAuthBanner(onConnectClick: () -> Unit) {
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text(
-                    "Connect Google Tasks",
+                    "Connect to Google",
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
