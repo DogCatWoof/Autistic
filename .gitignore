@@ -17,6 +17,7 @@ gradle-wrapper.jar
 local.properties
 *.keystore
 *.jks
+app/google-services.json
 
 # Android Studio / IntelliJ
 /.idea/caches
