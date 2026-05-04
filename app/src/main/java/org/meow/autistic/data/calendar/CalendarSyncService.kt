@@ -63,4 +63,7 @@ private fun RemoteEvent.toEntity(now: Instant) = CalendarEventEntity(
     isAllDay = isAllDay,
     calendarId = "primary",
     lastSyncedAt = now,
+    location = location,
+    description = description,
+    reminderMinutes = reminderMinutes,
 )

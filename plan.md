@@ -79,13 +79,14 @@ users/{uid}/sequenceRuns/{firestoreId}
 users/{uid}/dailyTasks/{firestoreId}
 ```
 
-- [ ] `data/firestore/FirestoreSource.kt`
+- [x] `data/firestore/FirestoreSource.kt`
   - Root user ref: `firestore.collection("users").document(uid)`
   - Methods: `upsert(collection, docId, data)`, `delete(collection, docId)`, `fetchAll(collection)`, `fetchSince(collection, since: Instant)`
   - All operations on `Dispatchers.IO`
 
-- [ ] `data/firestore/FirestoreDocuments.kt`
+- [x] `data/firestore/FirestoreDocuments.kt`
   - One `data class` per entity (e.g. `TaskDocument`, `NoteDocument`, …)
+  - Split across `FirestoreDocuments.kt`, `FirestoreHealthDocuments.kt`, `FirestoreSequenceDocuments.kt` (file-size rule)
   - Conversion functions: `TaskEntity.toDocument()`, `TaskDocument.toEntity()`
   - Fields as Firestore-native types; `lastModifiedAt` as Firestore `Timestamp`
 

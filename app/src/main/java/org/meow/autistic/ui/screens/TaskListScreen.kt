@@ -864,7 +864,7 @@ fun CalendarEventDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
         title = { Text(event.title) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (event.isAllDay) {
                     Text("All day", style = MaterialTheme.typography.bodyMedium)
                 } else {
@@ -875,6 +875,27 @@ fun CalendarEventDialog(
                     Text(
                         "– ${dateFormatter.format(Date.from(event.endAt))}",
                         style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+                if (!event.location.isNullOrBlank()) {
+                    Text(
+                        "Location: ${event.location}",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+                event.reminderMinutes?.let { mins ->
+                    Text(
+                        "Reminder: $mins min before",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (!event.description.isNullOrBlank()) {
+                    HorizontalDivider()
+                    Text(
+                        event.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -902,6 +923,7 @@ fun EditTaskDialog(
     onComplete: () -> Unit,
     onDelete: () -> Unit,
 ) {
+    val dueDateFormatter = remember { SimpleDateFormat("EEE, MMM dd · HH:mm", Locale.getDefault()) }
     var taskText by remember { mutableStateOf(task.task) }
     var notesText by remember { mutableStateOf(task.notes ?: "") }
     var expectedTimeText by remember { mutableStateOf(task.expectedTimeMinutes?.toString() ?: "") }
@@ -916,6 +938,25 @@ fun EditTaskDialog(
         title = { Text("Edit Task") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (task.dueAt != null || task.category != "General") {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        task.dueAt?.let { due ->
+                            Text(
+                                "Due: ${dueDateFormatter.format(Date.from(due))}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        if (task.category != "General") {
+                            Text(
+                                "Category: ${task.category}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    HorizontalDivider()
+                }
                 OutlinedTextField(
                     value = taskText,
                     onValueChange = { taskText = it },

@@ -72,9 +72,17 @@ internal val MIGRATION_17_18 = object : Migration(17, 18) {
     }
 }
 
+internal val MIGRATION_18_19 = object : Migration(18, 19) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE calendar_events ADD COLUMN location TEXT")
+        db.execSQL("ALTER TABLE calendar_events ADD COLUMN description TEXT")
+        db.execSQL("ALTER TABLE calendar_events ADD COLUMN reminderMinutes INTEGER")
+    }
+}
+
 @Database(
     entities = [TaskEntity::class, CalendarEventEntity::class, DailyTaskEntity::class, NoteEntity::class, MoodEntity::class, FoodLogEntry::class, FoodLogItemEntry::class, HealthSnapshotEntity::class, FoodCacheEntity::class, SequenceEntity::class, SequenceStepEntity::class, SequenceRunEntity::class, SequenceStepProgressEntity::class],
-    version = 18,
+    version = 19,
     exportSchema = false,
 )
 @TypeConverters(InstantConverter::class)
@@ -102,7 +110,7 @@ abstract class TaskDatabase : RoomDatabase() {
         fun getDatabase(context: Context): TaskDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, TaskDatabase::class.java, "autistic_database")
-                    .addMigrations(MIGRATION_17_18)
+                    .addMigrations(MIGRATION_17_18, MIGRATION_18_19)
                     .fallbackToDestructiveMigration(true)
                     .build()
                     .also { Instance = it }

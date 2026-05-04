@@ -31,6 +31,9 @@ data class RemoteEvent(
     val endMs: Long,
     val isAllDay: Boolean,
     val status: String,
+    val location: String? = null,
+    val description: String? = null,
+    val reminderMinutes: Int? = null,
 )
 
 /**
@@ -113,6 +116,9 @@ private fun com.google.api.services.calendar.model.Event.toRemoteEvent() = Remot
     endMs = end.toEpochMs(),
     isAllDay = start?.date != null,
     status = status ?: "confirmed",
+    location = location,
+    description = description,
+    reminderMinutes = reminders?.overrides?.firstOrNull { it.method == "popup" }?.minutes,
 )
 
 private fun EventDateTime?.toEpochMs(): Long = (this?.dateTime ?: this?.date)?.value ?: 0L

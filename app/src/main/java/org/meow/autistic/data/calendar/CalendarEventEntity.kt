@@ -23,4 +23,7 @@ data class CalendarEventEntity(
     val lastSyncedAt: Instant,
     val isHidden: Boolean = false,
     val syncStatus: String = "synced",
+    val location: String? = null,
+    val description: String? = null,
+    val reminderMinutes: Int? = null,
 )
