@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
+import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 /** Data-access object for [DailyTaskEntity]. */
@@ -31,4 +32,10 @@ interface DailyTaskDao {
 
     @Query("UPDATE daily_tasks SET pendingFirestoreSync = 0, firestoreId = :firestoreId WHERE id = :id")
     suspend fun markFirestoreSynced(id: Long, firestoreId: String)
+
+    @Query("SELECT * FROM daily_tasks WHERE firestoreId = :firestoreId LIMIT 1")
+    suspend fun getByFirestoreId(firestoreId: String): DailyTaskEntity?
+
+    @Upsert
+    suspend fun upsert(task: DailyTaskEntity)
 }

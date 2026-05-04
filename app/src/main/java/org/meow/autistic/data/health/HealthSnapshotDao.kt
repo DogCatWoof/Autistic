@@ -25,4 +25,7 @@ interface HealthSnapshotDao {
 
     @Query("UPDATE health_snapshots SET pendingFirestoreSync = 0, firestoreId = :firestoreId WHERE date = :date")
     suspend fun markFirestoreSynced(date: String, firestoreId: String)
+
+    @Query("SELECT * FROM health_snapshots WHERE date = :date")
+    suspend fun getByDateOnce(date: String): HealthSnapshotEntity?
 }

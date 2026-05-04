@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 /** Data access for sequences, steps, runs, and step-completion progress. */
@@ -89,4 +90,22 @@ interface SequenceDao {
 
     @Query("UPDATE sequence_runs SET pendingFirestoreSync = 0, firestoreId = :firestoreId WHERE id = :id")
     suspend fun markRunFirestoreSynced(id: Long, firestoreId: String)
+
+    @Query("SELECT * FROM sequences WHERE firestoreId = :firestoreId LIMIT 1")
+    suspend fun getByFirestoreId(firestoreId: String): SequenceEntity?
+
+    @Query("SELECT * FROM sequence_steps WHERE firestoreId = :firestoreId LIMIT 1")
+    suspend fun getStepByFirestoreId(firestoreId: String): SequenceStepEntity?
+
+    @Query("SELECT * FROM sequence_runs WHERE firestoreId = :firestoreId LIMIT 1")
+    suspend fun getRunByFirestoreId(firestoreId: String): SequenceRunEntity?
+
+    @Upsert
+    suspend fun upsertSequence(sequence: SequenceEntity)
+
+    @Upsert
+    suspend fun upsertStep(step: SequenceStepEntity)
+
+    @Upsert
+    suspend fun upsertRun(run: SequenceRunEntity)
 }

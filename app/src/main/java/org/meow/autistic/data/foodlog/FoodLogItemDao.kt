@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
+import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -38,4 +39,10 @@ interface FoodLogItemDao {
 
     @Query("UPDATE food_log_items SET pendingFirestoreSync = 0, firestoreId = :firestoreId WHERE id = :id")
     suspend fun markFirestoreSynced(id: Long, firestoreId: String)
+
+    @Query("SELECT * FROM food_log_items WHERE firestoreId = :firestoreId LIMIT 1")
+    suspend fun getByFirestoreId(firestoreId: String): FoodLogItemEntry?
+
+    @Upsert
+    suspend fun upsert(entry: FoodLogItemEntry)
 }

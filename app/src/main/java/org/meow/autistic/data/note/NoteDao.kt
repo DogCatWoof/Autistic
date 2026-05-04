@@ -41,4 +41,7 @@ interface NoteDao {
 
     @Query("UPDATE notes SET pendingFirestoreSync = 0, firestoreId = :firestoreId WHERE id = :id")
     suspend fun markFirestoreSynced(id: Int, firestoreId: String)
+
+    @Query("SELECT * FROM notes WHERE firestoreId = :firestoreId LIMIT 1")
+    suspend fun getByFirestoreId(firestoreId: String): NoteEntity?
 }

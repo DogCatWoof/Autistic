@@ -96,21 +96,21 @@ users/{uid}/dailyTasks/{firestoreId}
 
 **Direction: Room is the source of truth. All writes go to Room first; Firestore is the sync target.**
 
-- [ ] `data/firestore/FirestoreSyncService.kt` — `pushPending(uid: String)`:
+- [x] `data/firestore/FirestoreSyncService.kt` — `pushPending(uid: String)`:
   - For each entity type: load `getPendingFirestoreSync()`, upsert each to Firestore, call `markFirestoreSynced()` on success.
   - Load `getPendingFirestoreDelete()`, delete each from Firestore, then hard-delete from Room.
-- [ ] `data/firestore/FirestoreModule.kt` — Koin bindings for `FirestoreSource`, `FirestoreSyncService`.
+- [x] `di/FirestoreModule.kt` — Koin bindings for `FirestoreSource`, `FirestoreSyncService`.
 - [ ] Verify: create a task → trigger sync → document appears in Firebase Console under `users/{uid}/tasks/`.
 
 ---
 
 ## Phase 4b — FirestoreSyncService: Pull (Firestore → Room)
 
-- [ ] `data/firestore/FirestoreSyncService.kt` — `pullAndMerge(uid: String, since: Instant?)`:
+- [x] `data/firestore/FirestoreSyncService.kt` — `pullAndMerge(uid: String, since: Instant?)`:
   - For each collection: `fetchSince(collection, since)`.
   - For each remote doc: upsert into Room only if remote `lastModifiedAt` > local (local wins offline edits).
-- [ ] `data/firestore/FirestoreSyncPrefs.kt` — DataStore key `lastFirestorePullAt: Instant?` for incremental pulls.
-- [ ] **Conflict resolution:** local wins if newer; remote wins if newer; ties → local wins.
+- [x] `data/firestore/FirestoreSyncPrefs.kt` — DataStore key `lastFirestorePullAt: Instant?` for incremental pulls.
+- [x] **Conflict resolution:** local wins if newer; remote wins if newer; ties → local wins.
 - [ ] Verify: write a doc in Firestore Console → trigger sync → appears in Room.
 
 ---

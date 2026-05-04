@@ -54,4 +54,7 @@ interface TaskDao {
 
     @Query("UPDATE tasks SET pendingFirestoreSync = 0, firestoreId = :firestoreId WHERE id = :id")
     suspend fun markFirestoreSynced(id: Long, firestoreId: String)
+
+    @Query("SELECT * FROM tasks WHERE firestoreId = :firestoreId LIMIT 1")
+    suspend fun getByFirestoreId(firestoreId: String): TaskEntity?
 }

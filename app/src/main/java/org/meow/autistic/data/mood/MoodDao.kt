@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 /** DAO for mood readings. */
@@ -26,4 +27,10 @@ interface MoodDao {
 
     @Query("UPDATE moods SET pendingFirestoreSync = 0, firestoreId = :firestoreId WHERE id = :id")
     suspend fun markFirestoreSynced(id: Int, firestoreId: String)
+
+    @Query("SELECT * FROM moods WHERE firestoreId = :firestoreId LIMIT 1")
+    suspend fun getByFirestoreId(firestoreId: String): MoodEntity?
+
+    @Upsert
+    suspend fun upsert(mood: MoodEntity)
 }
