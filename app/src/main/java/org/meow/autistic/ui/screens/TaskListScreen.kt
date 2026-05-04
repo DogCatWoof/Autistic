@@ -174,15 +174,22 @@ fun TaskListScreen(
                     grouped.later.forEach { (dateLabel, date, sectionItems) ->
                         val weekEnd = LocalDate.now(ZoneId.systemDefault()).with(DayOfWeek.SUNDAY)
                         val isAfterThisWeek = date == null || date.isAfter(weekEnd)
-                        val isTomorrow = date == LocalDate.now(ZoneId.systemDefault()).plusDays(1)
+                        val isTomorrow = dateLabel == "Tomorrow"
+                        val isThisWeek = dateLabel == "This Week"
                         val bg = if (isAfterThisWeek) ColorFuture else ColorThisWeek
                         val trailingDate = date?.format(java.time.format.DateTimeFormatter.ofPattern("MMM d"))
                         stickyHeader(key = "header_later_${date?.toString() ?: dateLabel}") {
                             when {
                                 isTomorrow -> SectionHeader(
                                     title = "Tomorrow",
-                                    centerText = date.format(java.time.format.DateTimeFormatter.ofPattern("EEEE")),
+                                    centerText = date?.format(java.time.format.DateTimeFormatter.ofPattern("EEEE")),
                                     trailingText = trailingDate,
+                                    background = bg,
+                                    contentColor = Color.White,
+                                )
+                                isThisWeek -> SectionHeader(
+                                    title = "Rest of the Week",
+                                    centerTitle = true,
                                     background = bg,
                                     contentColor = Color.White,
                                 )

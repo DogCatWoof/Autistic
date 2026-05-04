@@ -259,7 +259,7 @@ class TaskViewModel(
         val thisWeekEnd = todayDate.with(DayOfWeek.SUNDAY)
         return when {
             date == todayDate.plusDays(1) -> "Tomorrow" to date
-            !date.isAfter(thisWeekEnd) -> date.format(DateTimeFormatter.ofPattern("EEEE")) to date
+            !date.isAfter(thisWeekEnd) -> "This Week" to thisWeekEnd
             else -> {
                 val weekStart = date.with(DayOfWeek.MONDAY)
                 val weekEnd = weekStart.plusDays(6)

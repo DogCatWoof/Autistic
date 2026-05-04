@@ -184,5 +184,46 @@ class TaskViewModelTest {
         assertTrue(grouped.today.isEmpty() && grouped.later.isEmpty())
     }
 
+    @Test
+    fun `groupedItems labels tomorrow task as Tomorrow section`() = runTest {
+        val tomorrow = java.time.LocalDate.now().plusDays(1)
+            .atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().plusSeconds(3600)
+        val task = TaskEntity(id = 1L, task = "Tomorrow task", createdAt = Instant.EPOCH, dueAt = tomorrow)
+        val vm = makeViewModel(listOf(task))
+        val grouped = vm.groupedItems.first()
+        val tomorrowSection = grouped.later.find { it.first == "Tomorrow" }
+        assertNotNull(tomorrowSection)
+        assertTrue(tomorrowSection!!.third.any { it is TaskListItem.Task && it.entity.id == 1L })
+    }
+
+    @Test
+    fun `groupedItems labels rest-of-week tasks as This Week section`() = runTest {
+        val today = java.time.LocalDate.now()
+        val thisWeekEnd = today.with(java.time.DayOfWeek.SUNDAY)
+        val dayAfterTomorrow = today.plusDays(2)
+        if (dayAfterTomorrow.isAfter(thisWeekEnd)) return@runTest // skip if week ends before day-after-tomorrow
+        val dueAt = dayAfterTomorrow.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().plusSeconds(3600)
+        val task = TaskEntity(id = 2L, task = "This week task", createdAt = Instant.EPOCH, dueAt = dueAt)
+        val vm = makeViewModel(listOf(task))
+        val grouped = vm.groupedItems.first()
+        val thisWeekSection = grouped.later.find { it.first == "This Week" }
+        assertNotNull(thisWeekSection)
+        assertTrue(thisWeekSection!!.third.any { it is TaskListItem.Task && it.entity.id == 2L })
+    }
+
+    @Test
+    fun `groupedItems does not include rest-of-week tasks in Tomorrow section`() = runTest {
+        val today = java.time.LocalDate.now()
+        val thisWeekEnd = today.with(java.time.DayOfWeek.SUNDAY)
+        val dayAfterTomorrow = today.plusDays(2)
+        if (dayAfterTomorrow.isAfter(thisWeekEnd)) return@runTest
+        val dueAt = dayAfterTomorrow.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().plusSeconds(3600)
+        val task = TaskEntity(id = 3L, task = "Not tomorrow", createdAt = Instant.EPOCH, dueAt = dueAt)
+        val vm = makeViewModel(listOf(task))
+        val grouped = vm.groupedItems.first()
+        val tomorrowSection = grouped.later.find { it.first == "Tomorrow" }
+        assertTrue(tomorrowSection == null || tomorrowSection.third.none { it is TaskListItem.Task && it.entity.id == 3L })
+    }
+
     // endregion
 }
