@@ -195,8 +195,8 @@ fun TaskListScreen(
                                     contentColor = ColorFutureContent,
                                 )
                                 else -> SectionHeader(
-                                    title = formattedDate ?: dateLabel,
-                                    trailingText = formattedDay,
+                                    title = formattedDay ?: dateLabel,
+                                    trailingText = formattedDate,
                                     background = bg,
                                     contentColor = Color.White,
                                 )
