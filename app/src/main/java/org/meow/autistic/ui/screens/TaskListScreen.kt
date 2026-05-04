@@ -39,6 +39,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import kotlin.math.abs
+import kotlin.math.sqrt
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -484,6 +490,7 @@ fun CalendarEventItem(
 
     SwipeToDismissBox(
         state = dismissState,
+        modifier = Modifier.requireHorizontalSwipe(),
         backgroundContent = {
             val isDelete by remember {
                 derivedStateOf {
@@ -569,6 +576,7 @@ fun TaskItem(
 
     SwipeToDismissBox(
         state = dismissState,
+        modifier = Modifier.requireHorizontalSwipe(),
         backgroundContent = {
             val isDelete by remember {
                 derivedStateOf {
@@ -979,3 +987,30 @@ fun EditTaskDialog(
         },
     )
 }
+
+/** Blocks [SwipeToDismissBox] from starting unless the gesture is predominantly horizontal. */
+private fun Modifier.requireHorizontalSwipe(slopeRatio: Float = 3f): Modifier =
+    pointerInput(slopeRatio) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false)
+            var cumX = 0f
+            var cumY = 0f
+            var isVertical: Boolean? = null
+            while (true) {
+                val event = awaitPointerEvent(PointerEventPass.Initial)
+                val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                if (!change.pressed) break
+                cumX += change.position.x - change.previousPosition.x
+                cumY += change.position.y - change.previousPosition.y
+                if (isVertical == null) {
+                    val dist = sqrt(cumX * cumX + cumY * cumY)
+                    if (dist > viewConfiguration.touchSlop) {
+                        isVertical = abs(cumY) * slopeRatio > abs(cumX)
+                    }
+                }
+                if (isVertical == true) {
+                    change.consume()
+                }
+            }
+        }
+    }
