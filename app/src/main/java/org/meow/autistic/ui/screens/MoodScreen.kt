@@ -90,6 +90,7 @@ private fun MoodListItem(mood: MoodEntity, onDelete: () -> Unit) {
 
     SwipeToDismissBox(
         state = dismissState,
+        modifier = Modifier.requireHorizontalSwipe(),
         enableDismissFromStartToEnd = false,
         backgroundContent = { DeleteSwipeBackground() },
     ) {

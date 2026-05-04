@@ -196,6 +196,7 @@ private fun ActiveNoteListItem(note: NoteEntity, onClick: () -> Unit, onSoftDele
 
     SwipeToDismissBox(
         state = dismissState,
+        modifier = Modifier.requireHorizontalSwipe(),
         enableDismissFromStartToEnd = false,
         backgroundContent = { DeleteSwipeBackground() },
     ) {
@@ -213,6 +214,7 @@ private fun DeletedNoteListItem(note: NoteEntity, onRestore: () -> Unit, onHardD
 
     SwipeToDismissBox(
         state = dismissState,
+        modifier = Modifier.requireHorizontalSwipe(),
         enableDismissFromStartToEnd = false,
         backgroundContent = { DeleteSwipeBackground(contentDescription = "Delete permanently") },
     ) {

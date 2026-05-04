@@ -64,6 +64,7 @@ private fun SwipeableQueueItem(
     }
     SwipeToDismissBox(
         state = dismissState,
+        modifier = Modifier.requireHorizontalSwipe(),
         backgroundContent = { DeleteSwipeBackground(contentDescription = "Remove") },
     ) {
         val containerColor = if (isSelected) {
