@@ -197,24 +197,25 @@ class TaskViewModelTest {
     }
 
     @Test
-    fun `groupedItems labels rest-of-week tasks as This Week section`() = runTest {
+    fun `groupedItems labels rest-of-week tasks by day name`() = runTest {
         val today = java.time.LocalDate.now()
-        val thisWeekEnd = today.with(java.time.DayOfWeek.SUNDAY)
+        val thisWeekEnd = today.with(java.time.temporal.TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SATURDAY))
         val dayAfterTomorrow = today.plusDays(2)
-        if (dayAfterTomorrow.isAfter(thisWeekEnd)) return@runTest // skip if week ends before day-after-tomorrow
+        if (dayAfterTomorrow.isAfter(thisWeekEnd)) return@runTest
         val dueAt = dayAfterTomorrow.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().plusSeconds(3600)
         val task = TaskEntity(id = 2L, task = "This week task", createdAt = Instant.EPOCH, dueAt = dueAt)
         val vm = makeViewModel(listOf(task))
         val grouped = vm.groupedItems.first()
-        val thisWeekSection = grouped.later.find { it.first == "This Week" }
-        assertNotNull(thisWeekSection)
-        assertTrue(thisWeekSection!!.third.any { it is TaskListItem.Task && it.entity.id == 2L })
+        val expectedLabel = dayAfterTomorrow.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.getDefault())
+        val daySection = grouped.later.find { it.first == expectedLabel }
+        assertNotNull(daySection)
+        assertTrue(daySection!!.third.any { it is TaskListItem.Task && it.entity.id == 2L })
     }
 
     @Test
     fun `groupedItems does not include rest-of-week tasks in Tomorrow section`() = runTest {
         val today = java.time.LocalDate.now()
-        val thisWeekEnd = today.with(java.time.DayOfWeek.SUNDAY)
+        val thisWeekEnd = today.with(java.time.temporal.TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SATURDAY))
         val dayAfterTomorrow = today.plusDays(2)
         if (dayAfterTomorrow.isAfter(thisWeekEnd)) return@runTest
         val dueAt = dayAfterTomorrow.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().plusSeconds(3600)

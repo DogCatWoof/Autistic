@@ -172,24 +172,19 @@ fun TaskListScreen(
                         TaskListItemRow(item, viewModel, onTaskClick = { selectedTask = it }, onEventClick = { selectedEvent = it })
                     }
                     grouped.later.forEach { (dateLabel, date, sectionItems) ->
-                        val weekEnd = LocalDate.now(ZoneId.systemDefault()).with(DayOfWeek.SUNDAY)
+                        val weekEnd = LocalDate.now(ZoneId.systemDefault())
+                            .with(java.time.temporal.TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY))
                         val isAfterThisWeek = date == null || date.isAfter(weekEnd)
                         val isTomorrow = dateLabel == "Tomorrow"
-                        val isThisWeek = dateLabel == "This Week"
                         val bg = if (isAfterThisWeek) ColorFuture else ColorThisWeek
-                        val trailingDate = date?.format(java.time.format.DateTimeFormatter.ofPattern("MMM d"))
+                        val formattedDate = date?.format(java.time.format.DateTimeFormatter.ofPattern("MMM d"))
+                        val formattedDay = date?.format(java.time.format.DateTimeFormatter.ofPattern("EEEE"))
                         stickyHeader(key = "header_later_${date?.toString() ?: dateLabel}") {
                             when {
                                 isTomorrow -> SectionHeader(
                                     title = "Tomorrow",
-                                    centerText = date?.format(java.time.format.DateTimeFormatter.ofPattern("EEEE")),
-                                    trailingText = trailingDate,
-                                    background = bg,
-                                    contentColor = Color.White,
-                                )
-                                isThisWeek -> SectionHeader(
-                                    title = "Rest of the Week",
-                                    centerTitle = true,
+                                    centerText = formattedDay,
+                                    trailingText = formattedDate,
                                     background = bg,
                                     contentColor = Color.White,
                                 )
@@ -200,8 +195,10 @@ fun TaskListScreen(
                                     contentColor = ColorFutureContent,
                                 )
                                 else -> SectionHeader(
-                                    dateLabel, trailingText = trailingDate, centerTitle = true,
-                                    background = bg, contentColor = Color.White,
+                                    title = formattedDate ?: dateLabel,
+                                    trailingText = formattedDay,
+                                    background = bg,
+                                    contentColor = Color.White,
                                 )
                             }
                         }

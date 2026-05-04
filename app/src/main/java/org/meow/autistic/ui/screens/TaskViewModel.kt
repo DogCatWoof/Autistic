@@ -28,6 +28,7 @@ import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.temporal.TemporalAdjusters
 import java.time.format.DateTimeFormatter
 
 sealed class UndoableAction {
@@ -256,10 +257,10 @@ class TaskViewModel(
             is TaskListItem.Event -> item.entity.startAt
         } ?: return "Later" to null
         val date = instant.atZone(ZoneId.systemDefault()).toLocalDate()
-        val thisWeekEnd = todayDate.with(DayOfWeek.SUNDAY)
+        val thisWeekEnd = todayDate.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY))
         return when {
             date == todayDate.plusDays(1) -> "Tomorrow" to date
-            !date.isAfter(thisWeekEnd) -> "This Week" to thisWeekEnd
+            !date.isAfter(thisWeekEnd) -> date.format(DateTimeFormatter.ofPattern("EEEE")) to date
             else -> {
                 val weekStart = date.with(DayOfWeek.MONDAY)
                 val weekEnd = weekStart.plusDays(6)
