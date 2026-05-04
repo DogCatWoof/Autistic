@@ -6,7 +6,7 @@ The app is a 154-file, single-`:app` Gradle module. The goal is to partition cod
 
 ---
 
-## Proposed Module Structure (16 modules)
+## Proposed Module Structure (15 modules)
 
 ```
 :core:common         diagnostics, debug, ExceptionReporter, GlobalErrorHandler
@@ -19,7 +19,6 @@ The app is a 154-file, single-`:app` Gradle module. The goal is to partition cod
 :data:sync           SyncOrchestrator, SyncWorker, SyncScheduler, GoogleTasksRemoteSource,
                      GoogleTasksSyncService, CalendarRemoteSource, CalendarSyncService
 :data:firestore      FirestoreSource, FirestoreDocuments*, FirestoreSyncService, FirestoreSyncPrefs
-:data:backup         DriveBackupService, BackupEncryptor
 :feature:task        TaskRepository, DailyTaskRepository, CalendarRepository,
                      DailyResetWorker, TaskReminderWorker, TaskViewModel, DailyTasksViewModel,
                      TaskListScreen, TaskListItem, TaskListDialogs, DailyTasksSettingsScreen,
@@ -49,7 +48,7 @@ The app is a 154-file, single-`:app` Gradle module. The goal is to partition cod
 
 ```
 :app → all :feature:*, all :data:*, :core:*
-:feature:task → :core:database, :core:auth, :core:common, :core:ui, :core:notifications, :data:sync, :data:backup
+:feature:task → :core:database, :core:auth, :core:common, :core:ui, :core:notifications, :data:sync
 :feature:note → :core:database, :core:ui
 :feature:mood → :core:database, :core:ui, :core:notifications
 :feature:health → :core:database, :core:ui
@@ -58,7 +57,6 @@ The app is a 154-file, single-`:app` Gradle module. The goal is to partition cod
 :feature:conversation → :core:ui
 :data:sync → :core:database, :core:auth
 :data:firestore → :core:database, :core:auth
-:data:backup → :core:database, :core:auth
 :core:database → (Room only)
 :core:auth → :core:common
 :core:notifications → :core:common
@@ -142,7 +140,7 @@ In `settings.gradle.kts` (root): `includeBuild("build-logic")`.
 
 Each library module's `build.gradle.kts` then becomes 5–15 lines. `:app` keeps its full hand-written build file (applicationId, BuildConfig fields, google-services plugin).
 
-`settings.gradle.kts` adds all 15 new module paths to `include(...)`.
+`settings.gradle.kts` adds all 14 new module paths to `include(...)`.
 
 ---
 
@@ -161,18 +159,17 @@ Each library module's `build.gradle.kts` then becomes 5–15 lines. `:app` keeps
 8. `:core:notifications` — extract channel ID constants and channel registration from MainActivity/workers; no feature-specific content
 
 ### Phase 3 — Data modules
-9. `:data:backup` — move backup files (depends on `:core:database` which is now stable)
-10. `:data:sync` — move sync orchestration and Google API sync classes
-11. `:data:firestore` — move firestore files
+9. `:data:sync` — move sync orchestration and Google API sync classes
+10. `:data:firestore` — move firestore files
 
 ### Phase 4 — Feature modules (simplest first)
-12. `:feature:conversation` — zero DB, zero auth; pure move
-13. `:feature:note` — move NoteRepository + UI; trivial
-14. `:feature:health` — move health files; update AndroidManifest for HealthPermissionsRationaleActivity
-15. `:feature:mood` — apply fixes #2 and #5 first, then move; move `notification_mood_picker.xml` resource
-16. `:feature:sequence` — apply fixes #3 and #4, then move
-17. `:feature:food` — apply BuildConfig fixes, move ProductDatabase + product entities/DAOs, then move repositories/ViewModels/UI (largest batch)
-18. `:feature:task` — last; most dependencies; move repositories, workers, all task UI
+11. `:feature:conversation` — zero DB, zero auth; pure move
+12. `:feature:note` — move NoteRepository + UI; trivial
+13. `:feature:health` — move health files; update AndroidManifest for HealthPermissionsRationaleActivity
+14. `:feature:mood` — apply fixes #2 and #5 first, then move; move `notification_mood_picker.xml` resource
+15. `:feature:sequence` — apply fixes #3 and #4, then move
+16. `:feature:food` — apply BuildConfig fixes, move ProductDatabase + product entities/DAOs, then move repositories/ViewModels/UI (largest batch)
+17. `:feature:task` — last; most dependencies; move repositories, workers, all task UI
 
 ---
 
@@ -186,7 +183,7 @@ Each library module's `build.gradle.kts` then becomes 5–15 lines. `:app` keeps
 - `app/src/main/java/org/meow/autistic/data/auth/GoogleAuthManager.kt` — fix #1 before moving
 - `app/src/main/java/org/meow/autistic/data/photo/ClaudeVisionClient.kt` — fix #1 before moving
 - `app/build.gradle.kts` — source of BuildConfig fields that move to constructor injection
-- `settings.gradle.kts` — add all 15 new `include()` paths
+- `settings.gradle.kts` — add all 14 new `include()` paths
 - `gradle/libs.versions.toml` — add `android-library` plugin alias for use in build-logic
 
 ---
@@ -205,4 +202,4 @@ Final check: `./gradlew :app:assembleDebug` with a clean build cache to confirm 
 
 ## Scope Note
 
-This is a large structural refactoring: ~18 new `build.gradle.kts` files, updates to `settings.gradle.kts`, and moving ~142 Kotlin files across module directories. The Kotlin code itself changes minimally (only the 7 changes listed above). Execute one phase at a time with a passing test suite before proceeding.
+This is a large structural refactoring: ~16 new `build.gradle.kts` files, updates to `settings.gradle.kts`, and moving ~142 Kotlin files across module directories. The Kotlin code itself changes minimally (only the 7 changes listed above). Execute one phase at a time with a passing test suite before proceeding.
