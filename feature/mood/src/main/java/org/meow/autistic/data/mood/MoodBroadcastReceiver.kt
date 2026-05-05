@@ -8,7 +8,9 @@ import androidx.core.app.RemoteInput
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.meow.autistic.data.task.TaskDatabase
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import org.meow.autistic.feature.mood.R
 import java.time.Instant
 
 const val MOOD_NOTIFICATION_ID = 1
@@ -18,27 +20,29 @@ const val EXTRA_EMOJI = "extra_emoji"
 const val REMOTE_INPUT_NOTE_KEY = "mood_note_input"
 
 val MOOD_BUTTON_VIEW_IDS = intArrayOf(
-    org.meow.autistic.R.id.mood_btn_0,
-    org.meow.autistic.R.id.mood_btn_1,
-    org.meow.autistic.R.id.mood_btn_2,
-    org.meow.autistic.R.id.mood_btn_3,
-    org.meow.autistic.R.id.mood_btn_4,
-    org.meow.autistic.R.id.mood_btn_5,
-    org.meow.autistic.R.id.mood_btn_6,
-    org.meow.autistic.R.id.mood_btn_7,
-    org.meow.autistic.R.id.mood_btn_8,
-    org.meow.autistic.R.id.mood_btn_9,
-    org.meow.autistic.R.id.mood_btn_10,
-    org.meow.autistic.R.id.mood_btn_11,
-    org.meow.autistic.R.id.mood_btn_12,
-    org.meow.autistic.R.id.mood_btn_13,
+    R.id.mood_btn_0,
+    R.id.mood_btn_1,
+    R.id.mood_btn_2,
+    R.id.mood_btn_3,
+    R.id.mood_btn_4,
+    R.id.mood_btn_5,
+    R.id.mood_btn_6,
+    R.id.mood_btn_7,
+    R.id.mood_btn_8,
+    R.id.mood_btn_9,
+    R.id.mood_btn_10,
+    R.id.mood_btn_11,
+    R.id.mood_btn_12,
+    R.id.mood_btn_13,
 )
 
 /**
  * Receives mood selection intents fired from notification buttons.
  * Saves the chosen emoji to the database and cancels the notification.
  */
-class MoodBroadcastReceiver : BroadcastReceiver() {
+class MoodBroadcastReceiver : BroadcastReceiver(), KoinComponent {
+
+    private val moodDao: MoodDao by inject()
 
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
@@ -63,8 +67,7 @@ class MoodBroadcastReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                TaskDatabase.getDatabase(context).moodDao()
-                    .insert(MoodEntity(emoji = emoji, activity = note, createdAt = Instant.now()))
+                moodDao.insert(MoodEntity(emoji = emoji, activity = note, createdAt = Instant.now()))
             } finally {
                 (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
                     .cancel(MOOD_NOTIFICATION_ID)

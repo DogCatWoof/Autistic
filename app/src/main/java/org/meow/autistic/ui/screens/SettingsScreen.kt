@@ -56,7 +56,7 @@ import org.meow.autistic.data.conversation.TONE_NEUTRAL
 import org.meow.autistic.data.conversation.TONES
 import org.meow.autistic.data.conversation.TonePreferencesStore
 import org.meow.autistic.data.debug.DebugSettings
-import org.meow.autistic.showNotification
+import org.meow.autistic.data.mood.showMoodCheckInNotification
 
 /**
  * Settings screen — Android-style list of settings categories.
@@ -196,7 +196,7 @@ private fun SettingsMainList(
     val notificationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        if (isGranted) { showNotification(context) }
+        if (isGranted) { showMoodCheckInNotification(context) }
     }
 
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
@@ -233,12 +233,12 @@ private fun SettingsMainList(
                             context, Manifest.permission.POST_NOTIFICATIONS
                         ) == PackageManager.PERMISSION_GRANTED
                     ) {
-                        showNotification(context)
+                        showMoodCheckInNotification(context)
                     } else {
                         notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                     }
                 } else {
-                    showNotification(context)
+                    showMoodCheckInNotification(context)
                 }
             },
         )

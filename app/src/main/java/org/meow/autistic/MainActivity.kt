@@ -1,6 +1,5 @@
 package org.meow.autistic
 
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -62,7 +61,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
-import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -294,42 +292,4 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-}
-
-fun showNotification(context: Context) {
-    val views = android.widget.RemoteViews(context.packageName, R.layout.notification_mood_picker)
-    org.meow.autistic.data.mood.MOOD_EMOJIS.forEachIndexed { i, (emoji, label) ->
-        views.setTextViewText(org.meow.autistic.data.mood.MOOD_BUTTON_VIEW_IDS[i], "$emoji\n$label")
-        val intent = Intent(context, org.meow.autistic.data.mood.MoodBroadcastReceiver::class.java).apply {
-            action = org.meow.autistic.data.mood.ACTION_LOG_MOOD
-            putExtra(org.meow.autistic.data.mood.EXTRA_EMOJI, emoji)
-        }
-        val pi = PendingIntent.getBroadcast(
-            context, i, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-        views.setOnClickPendingIntent(org.meow.autistic.data.mood.MOOD_BUTTON_VIEW_IDS[i], pi)
-    }
-    val remoteInput = androidx.core.app.RemoteInput.Builder(org.meow.autistic.data.mood.REMOTE_INPUT_NOTE_KEY)
-        .setLabel("Describe your activity…")
-        .build()
-    val noteIntent = Intent(context, org.meow.autistic.data.mood.MoodBroadcastReceiver::class.java).apply {
-        action = org.meow.autistic.data.mood.ACTION_LOG_MOOD_WITH_NOTE
-    }
-    val notePi = PendingIntent.getBroadcast(
-        context, 200, noteIntent,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
-    )
-    val noteAction = NotificationCompat.Action.Builder(0, "Add note…", notePi)
-        .addRemoteInput(remoteInput)
-        .build()
-    val builder = NotificationCompat.Builder(context, org.meow.autistic.core.notifications.MOOD_CHANNEL_ID)
-        .setSmallIcon(R.drawable.ic_launcher_foreground)
-        .setContentTitle("How are you feeling?")
-        .setStyle(NotificationCompat.DecoratedCustomViewStyle())
-        .setCustomBigContentView(views)
-        .addAction(noteAction)
-        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-    (context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager)
-        .notify(org.meow.autistic.data.mood.MOOD_NOTIFICATION_ID, builder.build())
 }

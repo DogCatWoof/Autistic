@@ -6,7 +6,6 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import org.meow.autistic.showNotification
 import java.util.concurrent.TimeUnit
 
 const val MOOD_CHECK_IN_WORK_NAME = "mood_check_in"
@@ -21,7 +20,7 @@ class MoodCheckInWorker(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        showNotification(applicationContext)
+        showMoodCheckInNotification(applicationContext)
         return Result.success()
     }
 

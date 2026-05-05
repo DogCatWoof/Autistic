@@ -88,6 +88,7 @@ dependencies {
     implementation(project(":data:sync"))
     implementation(project(":data:firestore"))
     implementation(project(":feature:conversation"))
+    implementation(project(":feature:mood"))
     implementation(project(":feature:note"))
     implementation(project(":feature:health"))
     implementation(libs.androidx.core.ktx)
