@@ -20,7 +20,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.meow.autistic.BuildConfig
 import java.util.concurrent.TimeUnit
 
 /**
@@ -36,6 +35,7 @@ import java.util.concurrent.TimeUnit
 class GoogleAuthManager(
     private val context: Context,
     private val tokenStore: TokenStore,
+    private val firebaseWebClientId: String = "",
     private val authScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) {
 
@@ -49,8 +49,8 @@ class GoogleAuthManager(
         val builder = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
             .requestScopes(Scope(TasksScopes.TASKS), Scope(CalendarScopes.CALENDAR), Scope(DriveScopes.DRIVE_FILE))
-        if (BuildConfig.FIREBASE_WEB_CLIENT_ID.isNotEmpty()) {
-            builder.requestIdToken(BuildConfig.FIREBASE_WEB_CLIENT_ID)
+        if (firebaseWebClientId.isNotEmpty()) {
+            builder.requestIdToken(firebaseWebClientId)
         }
         GoogleSignIn.getClient(context, builder.build())
     }

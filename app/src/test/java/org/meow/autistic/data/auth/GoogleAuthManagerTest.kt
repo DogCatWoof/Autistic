@@ -46,7 +46,7 @@ class GoogleAuthManagerTest {
         mockkStatic(GoogleSignIn::class)
         mockkStatic(FirebaseAuth::class)
         every { FirebaseAuth.getInstance() } returns firebaseAuth
-        manager = GoogleAuthManager(context, tokenStore, testScope)
+        manager = GoogleAuthManager(context, tokenStore, "", testScope)
     }
 
     @After
