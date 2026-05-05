@@ -42,7 +42,7 @@ fun DeleteSwipeBackground(contentDescription: String = "Delete") {
 }
 
 /** Blocks [SwipeToDismissBox] from starting unless the gesture is predominantly horizontal. */
-internal fun Modifier.requireHorizontalSwipe(slopeRatio: Float = 5f): Modifier =
+fun Modifier.requireHorizontalSwipe(slopeRatio: Float = 5f): Modifier =
     pointerInput(slopeRatio) {
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false)
