@@ -623,17 +623,19 @@ fun TaskItem(
                             color = dimColor
                         )
                     }
-                    if (!task.notes.isNullOrEmpty()) {
+                    val taskNotes = task.notes
+                    if (!taskNotes.isNullOrEmpty()) {
                         Text(
-                            text = task.notes,
+                            text = taskNotes,
                             style = MaterialTheme.typography.bodySmall,
                             color = dimColor
                         )
                     }
                 }
-                if (task.expectedTimeMinutes != null) {
-                    val h = task.expectedTimeMinutes / 60
-                    val m = task.expectedTimeMinutes % 60
+                val expectedTimeMinutes = task.expectedTimeMinutes
+                if (expectedTimeMinutes != null) {
+                    val h = expectedTimeMinutes / 60
+                    val m = expectedTimeMinutes % 60
                     val timeLabel = when {
                         h == 0 -> "~${m} min"
                         m == 0 -> "~${h}h"

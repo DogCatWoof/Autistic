@@ -238,12 +238,16 @@ class TaskViewModel(
         calendarRepository.markPendingDelete(event.googleEventId)
     }
 
-    private fun taskSortKey(entity: TaskEntity, todayEndMs: Long): Long = when {
-        entity.expectedTimeMinutes != null && entity.dueAt != null ->
-            entity.dueAt.toEpochMilli() + entity.expectedTimeMinutes * 60_000L
-        entity.dailyTaskId != null -> todayEndMs
-        entity.dueAt != null -> entity.dueAt.toEpochMilli()
-        else -> todayEndMs
+    private fun taskSortKey(entity: TaskEntity, todayEndMs: Long): Long {
+        val dueAt = entity.dueAt
+        val expectedTimeMinutes = entity.expectedTimeMinutes
+        return when {
+            expectedTimeMinutes != null && dueAt != null ->
+                dueAt.toEpochMilli() + expectedTimeMinutes * 60_000L
+            entity.dailyTaskId != null -> todayEndMs
+            dueAt != null -> dueAt.toEpochMilli()
+            else -> todayEndMs
+        }
     }
 
     private fun isToday(item: TaskListItem, todayStart: Long, todayEnd: Long): Boolean = when (item) {

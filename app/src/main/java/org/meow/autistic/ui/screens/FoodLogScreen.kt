@@ -449,8 +449,8 @@ private fun FoodLogEntryListItem(
                     )
                     null -> {}
                 }
-                if (item.description != null && !isPending) {
-                    Text(item.description, style = MaterialTheme.typography.bodySmall)
+                if (!isPending) {
+                    item.description?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                 }
                 if (!isPending) {
                     Text(
@@ -459,9 +459,9 @@ private fun FoodLogEntryListItem(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                if (item.aiAnalysisResult != null) {
+                item.aiAnalysisResult?.let {
                     Text(
-                        text = item.aiAnalysisResult,
+                        text = it,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 5,

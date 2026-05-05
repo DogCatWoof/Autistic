@@ -211,10 +211,11 @@ fun CalendarEventDialog(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                if (!event.description.isNullOrBlank()) {
+                val eventDescription = event.description
+                if (!eventDescription.isNullOrBlank()) {
                     HorizontalDivider()
                     Text(
-                        event.description,
+                        eventDescription,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

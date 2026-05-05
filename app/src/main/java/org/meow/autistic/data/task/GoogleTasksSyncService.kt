@@ -64,9 +64,7 @@ class GoogleTasksSyncService(
 
     private suspend fun pushDeletes(token: String) {
         repository.getPendingDelete().forEach { local ->
-            if (local.googleTaskId != null) {
-                remoteSource.deleteTask(token, local.googleTaskId)
-            }
+            local.googleTaskId?.let { remoteSource.deleteTask(token, it) }
             repository.delete(local)
         }
     }

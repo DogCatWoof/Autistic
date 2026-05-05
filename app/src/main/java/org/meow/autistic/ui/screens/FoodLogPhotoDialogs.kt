@@ -360,12 +360,8 @@ internal fun FoodLogItemDetailDialog(item: FoodLogItemEntry, onDismiss: () -> Un
                         contentScale = ContentScale.Crop,
                     )
                 }
-                if (item.description != null) {
-                    Text(item.description, style = MaterialTheme.typography.bodyMedium)
-                }
-                if (item.aiAnalysisResult != null) {
-                    Text(item.aiAnalysisResult, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                item.description?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                item.aiAnalysisResult?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 HorizontalDivider()
                 NutrientDetailRow("Calories", item.calories, " Cal", highlight = true)
                 NutrientDetailRow("Protein", item.protein, "g")

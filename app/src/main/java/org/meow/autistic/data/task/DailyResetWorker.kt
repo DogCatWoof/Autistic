@@ -71,8 +71,9 @@ class DailyResetWorker(
 
         val now = Instant.now()
         dailyTaskRepository.getAllOnce().forEach { dailyTask ->
-            val dueAtMs = if (dailyTask.timeMinutes != null) {
-                todayStartMs + dailyTask.timeMinutes * 60_000L
+            val timeMinutes = dailyTask.timeMinutes
+            val dueAtMs = if (timeMinutes != null) {
+                todayStartMs + timeMinutes * 60_000L
             } else {
                 todayStartMs
             }
