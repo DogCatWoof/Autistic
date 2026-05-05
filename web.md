@@ -6,6 +6,29 @@ Firebase (same account as the app).
 
 ---
 
+## Tech Stack
+
+### Core
+- **Vite + React + TypeScript** — client-side SPA (no SSR needed; everything behind Firebase Auth)
+- **Firebase JS SDK v9** (modular) — Firestore + Auth; same collections as the Android app
+- **Tailwind CSS + shadcn/ui** — table, collapsible, dialog, form components
+- **Firebase Hosting** — deploy target; free tier sufficient for personal use
+
+### Supporting libraries
+- **React Router v7** — client-side routing for the 7 sections
+- **TanStack Query** — caching and loading states for Firestore reads (or `onSnapshot` listeners directly)
+- **date-fns** — timestamp formatting (`loggedAt`, `dueAt`, `createdAt`, `completedAt`, etc.)
+- **Recharts** — mood summary chart (section 3.2)
+- **dnd-kit** — drag-to-reorder sequence steps (section 5.3)
+- **react-hook-form + zod** — food log and sequence forms
+
+### Tooling
+- **ESLint + Prettier** — linting and formatting
+- **Vitest + React Testing Library** — unit and component tests
+- **vite-plugin-pwa** — installable PWA (natural fit as a mobile companion)
+
+---
+
 ## Access levels
 
 | Section              | Web access  |
