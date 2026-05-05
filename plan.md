@@ -119,13 +119,13 @@ users/{uid}/dailyTasks/{firestoreId}
 
 **Goal:** Every local write sets `lastModifiedAt = Instant.now()` and `pendingFirestoreSync = true` automatically.
 
-- [ ] `TaskRepository` — `insertTask()`, `updateTask()`, `deleteTask()`
-- [ ] `NoteRepository` — `insertNote()`, `updateNote()`, `deleteNote()`
-- [ ] `MoodRepository` — all writes
-- [ ] `FoodLogRepository` — `FoodLogItemEntry` writes only (not `FoodLogEntry` aggregate)
-- [ ] `HealthSnapshotRepository` — all writes
-- [ ] `SequenceRepository` — all entity writes
-- [ ] `DailyTaskRepository` — all writes
+- [x] `TaskRepository` — `insertTask()`, `updateTask()`, `deleteTask()`
+- [x] `NoteRepository` — `insertNote()`, `updateNote()`, `deleteNote()`
+- [x] `MoodRepository` — all writes
+- [x] `FoodLogRepository` — `FoodLogItemEntry` writes only (not `FoodLogEntry` aggregate)
+- [x] `HealthSnapshotRepository` — all writes (entities always constructed with defaults)
+- [x] `SequenceRepository` — all entity writes
+- [x] `DailyTaskRepository` — all writes
 
 Note: `TaskEntity.syncStatus` (Google Tasks sync) is unchanged.
 

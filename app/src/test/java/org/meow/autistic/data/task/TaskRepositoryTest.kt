@@ -40,17 +40,17 @@ class TaskRepositoryTest {
     }
 
     @Test
-    fun `insert delegates to dao`() = runTest {
-        coEvery { dao.insertTask(task) } returns 1L
+    fun `insert stamps pendingFirestoreSync and lastModifiedAt`() = runTest {
+        coEvery { dao.insertTask(any()) } returns 1L
         repository.insert(task)
-        coVerify(exactly = 1) { dao.insertTask(task) }
+        coVerify { dao.insertTask(match { it.pendingFirestoreSync && it.task == task.task }) }
     }
 
     @Test
-    fun `update delegates to dao`() = runTest {
-        coEvery { dao.updateTask(task) } returns 1
+    fun `update stamps pendingFirestoreSync and lastModifiedAt`() = runTest {
+        coEvery { dao.updateTask(any()) } returns 1
         repository.update(task)
-        coVerify(exactly = 1) { dao.updateTask(task) }
+        coVerify { dao.updateTask(match { it.pendingFirestoreSync && it.task == task.task }) }
     }
 
     @Test
@@ -89,10 +89,10 @@ class TaskRepositoryTest {
     }
 
     @Test
-    fun `markPendingDelete calls updateSyncStatus with pending_delete`() = runTest {
-        coEvery { dao.updateSyncStatus(1L, "pending_delete") } returns 1
+    fun `markPendingDelete sets syncStatus and pendingFirestoreSync`() = runTest {
+        coEvery { dao.markPendingDeleteSync(1L, any()) } returns Unit
         repository.markPendingDelete(1L)
-        coVerify { dao.updateSyncStatus(1L, "pending_delete") }
+        coVerify { dao.markPendingDeleteSync(1L, any()) }
     }
 
     @Test
@@ -127,13 +127,13 @@ class TaskRepositoryTest {
 
     @Test(expected = RuntimeException::class)
     fun `insert propagates dao exception`() = runTest {
-        coEvery { dao.insertTask(task) } throws RuntimeException("DB error")
+        coEvery { dao.insertTask(any()) } throws RuntimeException("DB error")
         repository.insert(task)
     }
 
     @Test(expected = RuntimeException::class)
     fun `update propagates dao exception`() = runTest {
-        coEvery { dao.updateTask(task) } throws RuntimeException("DB error")
+        coEvery { dao.updateTask(any()) } throws RuntimeException("DB error")
         repository.update(task)
     }
 

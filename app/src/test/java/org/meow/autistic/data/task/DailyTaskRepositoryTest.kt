@@ -15,15 +15,15 @@ class DailyTaskRepositoryTest {
         DailyTaskEntity(id = 1, title = "Morning run", category = "Health", timeMinutes = 420)
 
     @Test
-    fun `insert delegates to dao`() = runTest {
+    fun `insert stamps pendingFirestoreSync and lastModifiedAt`() = runTest {
         repository.insert(sample)
-        coVerify { dao.insert(sample) }
+        coVerify { dao.insert(match { it.pendingFirestoreSync && it.title == sample.title }) }
     }
 
     @Test
-    fun `update delegates to dao`() = runTest {
+    fun `update stamps pendingFirestoreSync and lastModifiedAt`() = runTest {
         repository.update(sample)
-        coVerify { dao.update(sample) }
+        coVerify { dao.update(match { it.pendingFirestoreSync && it.title == sample.title }) }
     }
 
     @Test

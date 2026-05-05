@@ -39,33 +39,34 @@ class SequenceRepositoryTest {
     }
 
     @Test
-    fun `insertSequence delegates to dao`() = runTest {
-        coEvery { dao.insertSequence(sequence) } returns 1L
+    fun `insertSequence stamps pendingFirestoreSync and lastModifiedAt`() = runTest {
+        coEvery { dao.insertSequence(any()) } returns 1L
         repository.insertSequence(sequence)
-        coVerify(exactly = 1) { dao.insertSequence(sequence) }
+        coVerify { dao.insertSequence(match { it.pendingFirestoreSync && it.name == sequence.name }) }
     }
 
     @Test
-    fun `deleteSequence deletes steps then sequence`() = runTest {
-        coEvery { dao.deleteStepsForSequence(sequence.id) } returns Unit
-        coEvery { dao.deleteSequence(sequence) } returns Unit
+    fun `deleteSequence soft-deletes steps then sequence`() = runTest {
+        coEvery { dao.getStepsOnce(sequence.id) } returns listOf(step)
+        coEvery { dao.upsertStep(any()) } returns Unit
+        coEvery { dao.upsertSequence(any()) } returns Unit
         repository.deleteSequence(sequence)
-        coVerify(exactly = 1) { dao.deleteStepsForSequence(sequence.id) }
-        coVerify(exactly = 1) { dao.deleteSequence(sequence) }
+        coVerify { dao.upsertStep(match { it.isDeleted && it.pendingFirestoreSync }) }
+        coVerify { dao.upsertSequence(match { it.isDeleted && it.pendingFirestoreSync }) }
     }
 
     @Test
-    fun `insertStep delegates to dao`() = runTest {
-        coEvery { dao.insertStep(step) } returns 10L
+    fun `insertStep stamps pendingFirestoreSync and lastModifiedAt`() = runTest {
+        coEvery { dao.insertStep(any()) } returns 10L
         repository.insertStep(step)
-        coVerify(exactly = 1) { dao.insertStep(step) }
+        coVerify { dao.insertStep(match { it.pendingFirestoreSync && it.instruction == step.instruction }) }
     }
 
     @Test
-    fun `deleteStep delegates to dao`() = runTest {
-        coEvery { dao.deleteStep(step) } returns Unit
+    fun `deleteStep soft-deletes via upsert`() = runTest {
+        coEvery { dao.upsertStep(any()) } returns Unit
         repository.deleteStep(step)
-        coVerify(exactly = 1) { dao.deleteStep(step) }
+        coVerify { dao.upsertStep(match { it.isDeleted && it.pendingFirestoreSync && it.id == step.id }) }
     }
 
     @Test
@@ -77,12 +78,12 @@ class SequenceRepositoryTest {
     }
 
     @Test
-    fun `completeRun updates run with completedAt timestamp`() = runTest {
+    fun `completeRun stamps completedAt, lastModifiedAt, and pendingFirestoreSync`() = runTest {
         val run = SequenceRunEntity(id = 5L, sequenceId = 1L, startedAt = Instant.EPOCH)
         coEvery { dao.getRunById(5L) } returns run
         coEvery { dao.updateRun(any()) } returns Unit
         repository.completeRun(5L)
-        coVerify { dao.updateRun(match { it.id == 5L && it.completedAt != null }) }
+        coVerify { dao.updateRun(match { it.id == 5L && it.completedAt != null && it.pendingFirestoreSync }) }
     }
 
     @Test(expected = IllegalStateException::class)

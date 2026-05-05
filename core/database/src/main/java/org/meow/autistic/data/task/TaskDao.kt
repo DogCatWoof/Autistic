@@ -30,6 +30,9 @@ interface TaskDao {
     @Query("UPDATE tasks SET syncStatus = :status WHERE id = :id")
     suspend fun updateSyncStatus(id: Long, status: String): Int
 
+    @Query("UPDATE tasks SET syncStatus = 'pending_delete', pendingFirestoreSync = 1, lastModifiedAt = :modifiedAt WHERE id = :id")
+    suspend fun markPendingDeleteSync(id: Long, modifiedAt: Instant)
+
     @Query("UPDATE tasks SET syncStatus = 'synced', googleTaskId = :googleTaskId, lastSyncedAt = :lastSyncedAt WHERE id = :id")
     suspend fun markSynced(id: Long, googleTaskId: String, lastSyncedAt: Instant): Int
 

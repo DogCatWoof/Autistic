@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 /** DAO for mood readings. */
 @Dao
 interface MoodDao {
-    @Query("SELECT * FROM moods ORDER BY createdAt DESC")
+    @Query("SELECT * FROM moods WHERE isDeleted = 0 ORDER BY createdAt DESC")
     fun getAll(): Flow<List<MoodEntity>>
 
     @Insert

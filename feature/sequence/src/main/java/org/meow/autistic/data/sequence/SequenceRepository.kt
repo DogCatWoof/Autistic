@@ -19,19 +19,28 @@ class SequenceRepository(
         timed("SequenceRepository.getById") { dao.getById(id) }
 
     suspend fun insertSequence(sequence: SequenceEntity): Long =
-        timed("SequenceRepository.insertSequence") { dao.insertSequence(sequence) }
+        timed("SequenceRepository.insertSequence") {
+            dao.insertSequence(sequence.copy(lastModifiedAt = Instant.now(), pendingFirestoreSync = true))
+        }
 
     suspend fun deleteSequence(sequence: SequenceEntity) =
         timed("SequenceRepository.deleteSequence") {
-            dao.deleteStepsForSequence(sequence.id)
-            dao.deleteSequence(sequence)
+            val now = Instant.now()
+            for (step in dao.getStepsOnce(sequence.id)) {
+                dao.upsertStep(step.copy(isDeleted = true, lastModifiedAt = now, pendingFirestoreSync = true))
+            }
+            dao.upsertSequence(sequence.copy(isDeleted = true, lastModifiedAt = now, pendingFirestoreSync = true))
         }
 
     suspend fun insertStep(step: SequenceStepEntity): Long =
-        timed("SequenceRepository.insertStep") { dao.insertStep(step) }
+        timed("SequenceRepository.insertStep") {
+            dao.insertStep(step.copy(lastModifiedAt = Instant.now(), pendingFirestoreSync = true))
+        }
 
     suspend fun deleteStep(step: SequenceStepEntity) =
-        timed("SequenceRepository.deleteStep") { dao.deleteStep(step) }
+        timed("SequenceRepository.deleteStep") {
+            dao.upsertStep(step.copy(isDeleted = true, lastModifiedAt = Instant.now(), pendingFirestoreSync = true))
+        }
 
     suspend fun getStepsOnce(sequenceId: Long): List<SequenceStepEntity> =
         timed("SequenceRepository.getStepsOnce") { dao.getStepsOnce(sequenceId) }
@@ -45,7 +54,8 @@ class SequenceRepository(
         timed("SequenceRepository.completeRun") {
             val run = dao.getRunById(runId)
                 ?: throw IllegalStateException("Run $runId not found")
-            dao.updateRun(run.copy(completedAt = Instant.now()))
+            val now = Instant.now()
+            dao.updateRun(run.copy(completedAt = now, lastModifiedAt = now, pendingFirestoreSync = true))
         }
 
     suspend fun completeStep(runId: Long, stepId: Long) =

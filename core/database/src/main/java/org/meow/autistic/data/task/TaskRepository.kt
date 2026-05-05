@@ -17,10 +17,14 @@ class TaskRepository(
     val completedTasks: Flow<List<TaskEntity>> = taskDao.getCompletedTasks()
 
     suspend fun insert(task: TaskEntity) =
-        timed("TaskRepository.insert") { taskDao.insertTask(task) }
+        timed("TaskRepository.insert") {
+            taskDao.insertTask(task.copy(lastModifiedAt = Instant.now(), pendingFirestoreSync = true))
+        }
 
     suspend fun update(task: TaskEntity) =
-        timed("TaskRepository.update") { taskDao.updateTask(task) }
+        timed("TaskRepository.update") {
+            taskDao.updateTask(task.copy(lastModifiedAt = Instant.now(), pendingFirestoreSync = true))
+        }
 
     suspend fun delete(task: TaskEntity) =
         timed("TaskRepository.delete") { taskDao.deleteTask(task) }
@@ -38,7 +42,7 @@ class TaskRepository(
         timed("TaskRepository.markPendingPush") { taskDao.updateSyncStatus(id, "pending_push") }
 
     suspend fun markPendingDelete(id: Long) =
-        timed("TaskRepository.markPendingDelete") { taskDao.updateSyncStatus(id, "pending_delete") }
+        timed("TaskRepository.markPendingDelete") { taskDao.markPendingDeleteSync(id, Instant.now()) }
 
     suspend fun markSynced(id: Long, googleTaskId: String, lastSyncedAt: Instant) =
         timed("TaskRepository.markSynced") { taskDao.markSynced(id, googleTaskId, lastSyncedAt) }

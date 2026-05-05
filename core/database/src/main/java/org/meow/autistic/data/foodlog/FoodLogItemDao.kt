@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface FoodLogItemDao {
-    @Query("SELECT * FROM food_log_items WHERE date = :date ORDER BY loggedAt ASC")
+    @Query("SELECT * FROM food_log_items WHERE date = :date AND isDeleted = 0 ORDER BY loggedAt ASC")
     fun getByDate(date: String): Flow<List<FoodLogItemEntry>>
 
     @Insert
@@ -25,7 +25,7 @@ interface FoodLogItemDao {
     @Query("SELECT * FROM food_log_items WHERE id = :id")
     suspend fun getById(id: Long): FoodLogItemEntry?
 
-    @Query("SELECT * FROM food_log_items WHERE isAiPending = 1 ORDER BY loggedAt ASC")
+    @Query("SELECT * FROM food_log_items WHERE isAiPending = 1 AND isDeleted = 0 ORDER BY loggedAt ASC")
     suspend fun getPendingAnalysis(): List<FoodLogItemEntry>
 
     @Query("DELETE FROM food_log_items WHERE date < :cutoffDate")

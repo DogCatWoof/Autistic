@@ -3,6 +3,7 @@ package org.meow.autistic.data.task
 import android.os.SystemClock
 import kotlinx.coroutines.flow.Flow
 import org.meow.autistic.data.diagnostics.QueryLogger
+import java.time.Instant
 
 /**
  * Persistence layer for [DailyTaskEntity].
@@ -18,10 +19,14 @@ class DailyTaskRepository(
         timed("DailyTaskRepository.getAllOnce") { dao.getAllOnce() }
 
     suspend fun insert(task: DailyTaskEntity): Long =
-        timed("DailyTaskRepository.insert") { dao.insert(task) }
+        timed("DailyTaskRepository.insert") {
+            dao.insert(task.copy(lastModifiedAt = Instant.now(), pendingFirestoreSync = true))
+        }
 
     suspend fun update(task: DailyTaskEntity) =
-        timed("DailyTaskRepository.update") { dao.update(task) }
+        timed("DailyTaskRepository.update") {
+            dao.update(task.copy(lastModifiedAt = Instant.now(), pendingFirestoreSync = true))
+        }
 
     suspend fun delete(task: DailyTaskEntity) =
         timed("DailyTaskRepository.delete") { dao.delete(task) }

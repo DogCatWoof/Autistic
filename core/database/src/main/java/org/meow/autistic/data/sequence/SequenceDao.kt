@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface SequenceDao {
 
-    @Query("SELECT * FROM sequences ORDER BY name ASC")
+    @Query("SELECT * FROM sequences WHERE isDeleted = 0 ORDER BY name ASC")
     fun getAll(): Flow<List<SequenceEntity>>
 
     @Query("SELECT * FROM sequences WHERE id = :id")
@@ -25,10 +25,10 @@ interface SequenceDao {
     @Delete
     suspend fun deleteSequence(sequence: SequenceEntity)
 
-    @Query("SELECT * FROM sequence_steps WHERE sequenceId = :sequenceId ORDER BY position ASC")
+    @Query("SELECT * FROM sequence_steps WHERE sequenceId = :sequenceId AND isDeleted = 0 ORDER BY position ASC")
     fun getSteps(sequenceId: Long): Flow<List<SequenceStepEntity>>
 
-    @Query("SELECT * FROM sequence_steps WHERE sequenceId = :sequenceId ORDER BY position ASC")
+    @Query("SELECT * FROM sequence_steps WHERE sequenceId = :sequenceId AND isDeleted = 0 ORDER BY position ASC")
     suspend fun getStepsOnce(sequenceId: Long): List<SequenceStepEntity>
 
     @Query("SELECT * FROM sequence_steps WHERE id = :id")

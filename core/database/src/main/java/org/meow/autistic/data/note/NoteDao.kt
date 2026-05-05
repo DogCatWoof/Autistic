@@ -24,10 +24,10 @@ interface NoteDao {
     @Update
     suspend fun update(note: NoteEntity)
 
-    @Query("UPDATE notes SET isDeleted = 1, updatedAt = :updatedAt WHERE id = :id")
+    @Query("UPDATE notes SET isDeleted = 1, updatedAt = :updatedAt, pendingFirestoreSync = 1 WHERE id = :id")
     suspend fun softDelete(id: Int, updatedAt: Instant)
 
-    @Query("UPDATE notes SET isDeleted = 0, updatedAt = :updatedAt WHERE id = :id")
+    @Query("UPDATE notes SET isDeleted = 0, updatedAt = :updatedAt, pendingFirestoreSync = 1 WHERE id = :id")
     suspend fun restore(id: Int, updatedAt: Instant)
 
     @Delete
