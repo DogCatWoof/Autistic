@@ -86,6 +86,7 @@ dependencies {
     implementation(project(":core:auth"))
     implementation(project(":core:notifications"))
     implementation(project(":data:sync"))
+    implementation(project(":data:firestore"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

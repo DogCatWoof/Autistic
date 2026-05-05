@@ -9,8 +9,8 @@ import java.time.Instant
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
-internal fun Instant.toFirestoreTimestamp() = Timestamp(epochSecond, nano)
-internal fun Timestamp.toInstant(): Instant = Instant.ofEpochSecond(seconds, nanoseconds.toLong())
+fun Instant.toFirestoreTimestamp() = Timestamp(epochSecond, nano)
+fun Timestamp.toInstant(): Instant = Instant.ofEpochSecond(seconds, nanoseconds.toLong())
 
 // ── Task ─────────────────────────────────────────────────────────────────────
 
