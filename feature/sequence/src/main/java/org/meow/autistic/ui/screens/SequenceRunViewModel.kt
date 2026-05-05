@@ -57,7 +57,7 @@ class SequenceRunViewModel(
 
     fun startRun(sequenceId: Long) = viewModelScope.launch {
         val runId = repository.startRun(sequenceId)
-        SequenceRunNotificationManager.update(getApplication(), runId)
+        SequenceRunNotificationManager.update(getApplication(), runId, repository)
     }
 
     fun completeStep(runId: Long, stepId: Long) = viewModelScope.launch {
@@ -69,7 +69,7 @@ class SequenceRunViewModel(
             repository.completeRun(runId)
             SequenceRunNotificationManager.cancel(getApplication())
         } else {
-            SequenceRunNotificationManager.update(getApplication(), runId)
+            SequenceRunNotificationManager.update(getApplication(), runId, repository)
         }
     }
 

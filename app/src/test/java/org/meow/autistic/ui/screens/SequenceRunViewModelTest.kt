@@ -47,7 +47,7 @@ class SequenceRunViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         mockkObject(SequenceRunNotificationManager)
-        coEvery { SequenceRunNotificationManager.update(any(), any()) } returns Unit
+        coEvery { SequenceRunNotificationManager.update(any(), any(), any()) } returns Unit
         every { SequenceRunNotificationManager.cancel(any()) } returns Unit
         every { repository.getActiveRun() } returns flowOf(null)
         every { repository.getProgress(any()) } returns flowOf(emptyList())
@@ -103,7 +103,7 @@ class SequenceRunViewModelTest {
         coEvery { repository.startRun(1L) } returns 5L
         viewModel.startRun(1L)
         coVerify { repository.startRun(1L) }
-        coVerify { SequenceRunNotificationManager.update(application, 5L) }
+        coVerify { SequenceRunNotificationManager.update(application, 5L, repository) }
     }
 
     @Test
@@ -115,7 +115,7 @@ class SequenceRunViewModelTest {
         )
         viewModel.completeStep(run.id, 10L)
         coVerify { repository.completeStep(run.id, 10L) }
-        coVerify { SequenceRunNotificationManager.update(application, run.id) }
+        coVerify { SequenceRunNotificationManager.update(application, run.id, repository) }
     }
 
     @Test

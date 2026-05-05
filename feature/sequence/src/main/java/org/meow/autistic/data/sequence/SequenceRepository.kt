@@ -53,6 +53,9 @@ class SequenceRepository(
             dao.upsertProgress(SequenceStepProgressEntity(runId, stepId, Instant.now()))
         }
 
+    suspend fun getRunById(runId: Long): SequenceRunEntity? =
+        timed("SequenceRepository.getRunById") { dao.getRunById(runId) }
+
     suspend fun getActiveRunOnce(): SequenceRunEntity? =
         timed("SequenceRepository.getActiveRunOnce") { dao.getActiveRunOnce() }
 

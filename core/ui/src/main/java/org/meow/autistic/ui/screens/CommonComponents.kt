@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,6 +68,17 @@ fun Modifier.requireHorizontalSwipe(slopeRatio: Float = 5f): Modifier =
             }
         }
     }
+
+/** Section header label used in settings-style list screens. */
+@Composable
+fun SettingsSectionLabel(title: String, modifier: Modifier = Modifier) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
+    )
+}
 
 /**
  * Formats [instant] as a short display string.

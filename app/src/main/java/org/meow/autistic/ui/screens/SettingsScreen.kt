@@ -402,15 +402,3 @@ private fun ConversationToneItem() {
     )
 }
 
-/**
- * Section header label styled to match Android settings convention.
- */
-@Composable
-internal fun SettingsSectionLabel(title: String, modifier: Modifier = Modifier) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
-    )
-}

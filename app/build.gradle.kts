@@ -91,6 +91,7 @@ dependencies {
     implementation(project(":feature:mood"))
     implementation(project(":feature:note"))
     implementation(project(":feature:health"))
+    implementation(project(":feature:sequence"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
