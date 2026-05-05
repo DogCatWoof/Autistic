@@ -9,9 +9,9 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
 
-internal const val WIFI_WORK_NAME = "sync_wifi"
-internal const val CELLULAR_WORK_NAME = "sync_cellular"
-internal const val IMMEDIATE_WORK_NAME = "sync_immediate"
+const val WIFI_WORK_NAME = "sync_wifi"
+const val CELLULAR_WORK_NAME = "sync_cellular"
+const val IMMEDIATE_WORK_NAME = "sync_immediate"
 
 private const val WIFI_INTERVAL_MINUTES = 15L
 private const val CELLULAR_INTERVAL_HOURS = 1L
