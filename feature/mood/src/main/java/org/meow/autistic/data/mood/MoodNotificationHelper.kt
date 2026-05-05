@@ -1,15 +1,18 @@
 package org.meow.autistic.data.mood
 
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
+import androidx.core.app.RemoteInput
 import org.meow.autistic.core.notifications.MOOD_CHANNEL_ID
 import org.meow.autistic.feature.mood.R
 
 /** Displays the mood check-in notification with emoji buttons. */
 fun showMoodCheckInNotification(context: Context) {
-    val views = android.widget.RemoteViews(context.packageName, R.layout.notification_mood_picker)
+    val views = RemoteViews(context.packageName, R.layout.notification_mood_picker)
     MOOD_EMOJIS.forEachIndexed { i, (emoji, label) ->
         views.setTextViewText(MOOD_BUTTON_VIEW_IDS[i], "$emoji\n$label")
         val intent = Intent(context, MoodBroadcastReceiver::class.java).apply {
@@ -22,7 +25,7 @@ fun showMoodCheckInNotification(context: Context) {
         )
         views.setOnClickPendingIntent(MOOD_BUTTON_VIEW_IDS[i], pi)
     }
-    val remoteInput = androidx.core.app.RemoteInput.Builder(REMOTE_INPUT_NOTE_KEY)
+    val remoteInput = RemoteInput.Builder(REMOTE_INPUT_NOTE_KEY)
         .setLabel("Describe your activity…")
         .build()
     val noteIntent = Intent(context, MoodBroadcastReceiver::class.java).apply {
@@ -42,6 +45,6 @@ fun showMoodCheckInNotification(context: Context) {
         .setCustomBigContentView(views)
         .addAction(noteAction)
         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-    (context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager)
+    (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
         .notify(MOOD_NOTIFICATION_ID, builder.build())
 }

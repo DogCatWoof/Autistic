@@ -51,20 +51,20 @@ class DailyResetWorker(
     private val foodLogDao: FoodLogDao by inject()
 
     override suspend fun doWork(): Result {
-        val today = LocalDate.now().toString()
+        val today = LocalDate.now()
+        val todayStr = today.toString()
         val prefs = context.dailyResetDataStore.data.first()
-        if (prefs[LAST_RESET_DATE_KEY] == today) return Result.success()
+        if (prefs[LAST_RESET_DATE_KEY] == todayStr) return Result.success()
 
         if (authManager.isAuthenticated()) {
             driveBackupService.backupDatabase()
         }
 
-        val foodLogRetentionCutoff = LocalDate.now().minusDays(14).toString()
-        foodLogDao.deleteOlderThan(foodLogRetentionCutoff)
+        foodLogDao.deleteOlderThan(today.minusDays(14).toString())
 
         taskDao.deleteUnfinishedDailyTasks()
 
-        val todayStartMs = LocalDate.now()
+        val todayStartMs = today
             .atStartOfDay(ZoneId.systemDefault())
             .toInstant()
             .toEpochMilli()
@@ -91,7 +91,7 @@ class DailyResetWorker(
             )
         }
 
-        context.dailyResetDataStore.edit { it[LAST_RESET_DATE_KEY] = today }
+        context.dailyResetDataStore.edit { it[LAST_RESET_DATE_KEY] = todayStr }
         return Result.success()
     }
 
