@@ -99,14 +99,19 @@ Reduces three loads in real-time social situations: decoding intent, deciding wh
 ### Authentication & Token Storage
 - OAuth 2.0 via Google Sign-In with scopes: Tasks (read+write), Calendar (read-only), Drive File (read+write for backup)
 - Tokens (access token, expiry) stored in `EncryptedSharedPreferences`; auto-refreshed before expiry
-- Sign-out clears all stored tokens
+- Firebase Auth linked via Google ID token after successful sign-in; `FirebaseAuth.getInstance().currentUser.uid` used for Firestore security rules
+- Sign-out clears all stored tokens and Firebase session
 
 ### Sync Pipeline
-Runs as a 4-step sequence (abort with retry if no valid token):
+Runs as a 6-step sequence (abort with retry if no valid token):
 1. Validate authentication token
 2. Push local pending changes to Google Tasks (`pending_push` → create/update; `pending_delete` → delete)
 3. Pull and merge remote tasks into local Room database
 4. Pull and merge Google Calendar events (read-only)
+5. Push pending local changes to Firestore (non-fatal; skipped if no Firebase user)
+6. Pull incremental Firestore changes into Room (non-fatal; skipped if no Firebase user)
+
+Firestore failures are caught and logged — they never abort steps 1–4.
 
 ### Sync Scheduling
 - Wi-Fi (unmetered): periodic background sync every 15 minutes via WorkManager
@@ -114,7 +119,8 @@ Runs as a 4-step sequence (abort with retry if no valid token):
 - Manual: one-time immediate sync via `triggerImmediate()`
 
 ### Local Database
-- Room database (SQLite), `TaskDatabase`, currently version 1
+- Room database (SQLite), `TaskDatabase`, currently version 18
+- Entities include Firestore sync metadata: `firestoreId` (String?), `lastModifiedAt` (Instant), `pendingFirestoreSync` (Boolean), `isDeleted` (Boolean)
 - `TaskEntity`: title, completion, `Instant` timestamps, reminder flag, Google Task mapping fields (`googleTaskId`, `googleTaskListId`), `syncStatus`, `lastSyncedAt`, `extraPropertiesJson`, `dailyTaskId`, `expectedTimeMinutes`, `reminderMinutesBefore`
 - `syncStatus` values: `local` | `synced` | `pending_push` | `pending_delete`
 - `CalendarEventEntity`: Google event ID, title, start/end times, all-day flag, calendar ID, last synced timestamp, `isHidden`
@@ -125,6 +131,15 @@ Runs as a 4-step sequence (abort with retry if no valid token):
 ### Data Integrity
 - `extraPropertiesJson` is an internal metadata field embedded in Google Tasks notes; never displayed in any UI element
 - Google Tasks notes field content must never be shown in the UI
+
+### Firestore Sync
+- Room is the source of truth; all writes go to Room first, Firestore is sync target
+- Push: records with `pendingFirestoreSync = true` are upserted/deleted in Firestore, then flag cleared
+- Pull: documents modified since last pull are merged into Room using last-write-wins (local wins ties)
+- Conflict resolution: local wins if newer; remote wins if newer; ties → local wins
+- Soft-deleted records (`isDeleted = true`) are propagated to Firestore then hard-deleted from Room
+- Collection structure: `users/{uid}/{tasks|notes|moods|foodLogItems|healthSnapshots|sequences|sequenceSteps|sequenceRuns|dailyTasks}`
+- Firestore security rules restrict access to `request.auth.uid == userId`
 
 ### Incremental Calendar Sync
 - After the initial full fetch, subsequent pulls use Google's `syncToken` for incremental updates

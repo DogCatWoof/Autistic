@@ -21,6 +21,7 @@ Bidirectional sync with Google Tasks and Google Calendar. Orchestrates all sync 
 ## Dependencies
 - `:core:database`
 - `:core:auth`
+- `:data:firestore`
 
 ## Not In This Module
 - Firestore sync logic (`:data:firestore`)
