@@ -9,8 +9,8 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import org.meow.autistic.R
 import org.meow.autistic.core.notifications.REMINDER_CHANNEL_ID
+import org.meow.autistic.feature.task.R
 import java.util.concurrent.TimeUnit
 
 /**
@@ -26,7 +26,7 @@ class TaskReminderWorker(
         val taskTitle = inputData.getString(KEY_TASK_TITLE) ?: return Result.success()
         val taskId = inputData.getLong(KEY_TASK_ID, -1L)
         val notification = NotificationCompat.Builder(applicationContext, REMINDER_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_task_notification)
             .setContentTitle("Task reminder")
             .setContentText(taskTitle)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
