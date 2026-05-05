@@ -6,10 +6,10 @@ import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import org.meow.autistic.R
+import org.meow.autistic.core.notifications.SEQUENCES_CHANNEL_ID
 import org.meow.autistic.data.task.TaskDatabase
 
 const val SEQUENCE_NOTIFICATION_ID = 100
-const val SEQUENCES_CHANNEL_ID = "sequences_channel"
 
 /**
  * Builds and posts the persistent sequence-run notification.

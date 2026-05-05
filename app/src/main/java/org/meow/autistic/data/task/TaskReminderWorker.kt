@@ -10,10 +10,8 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import org.meow.autistic.R
+import org.meow.autistic.core.notifications.REMINDER_CHANNEL_ID
 import java.util.concurrent.TimeUnit
-
-
-const val REMINDER_CHANNEL_ID = "reminders_channel"
 
 /**
  * One-time worker that fires a task reminder notification at [TaskEntity.dueAt] minus

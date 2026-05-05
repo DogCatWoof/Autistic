@@ -1,7 +1,5 @@
 package org.meow.autistic
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -74,9 +72,8 @@ import org.meow.autistic.data.mood.MoodCheckInWorker
 import org.meow.autistic.data.navigation.NavPreferencesStore
 import org.meow.autistic.data.navigation.NavStateStore
 import org.meow.autistic.data.task.DailyResetWorker
-import org.meow.autistic.data.sequence.SEQUENCES_CHANNEL_ID
+import org.meow.autistic.core.notifications.registerNotificationChannels
 import org.meow.autistic.data.sync.SyncScheduler
-import org.meow.autistic.data.task.REMINDER_CHANNEL_ID
 import org.meow.autistic.ui.screens.filterNavItems
 import org.meow.autistic.ui.screens.navTitlesFrom
 import org.meow.autistic.ui.screens.AppDrawerSheet
@@ -124,7 +121,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        createNotificationChannel()
+        registerNotificationChannels(this)
         DailyResetWorker.enqueue(this)
         MoodCheckInWorker.enqueue(this)
         HealthConnectSyncWorker.enqueue(this)
@@ -297,23 +294,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(
-                NotificationChannel("mood_channel", "Mood Check-In", NotificationManager.IMPORTANCE_DEFAULT)
-                    .apply { description = "Hourly mood check-in prompts" }
-            )
-            notificationManager.createNotificationChannel(
-                NotificationChannel(REMINDER_CHANNEL_ID, "Task Reminders", NotificationManager.IMPORTANCE_HIGH)
-                    .apply { description = "Reminders for upcoming tasks" }
-            )
-            notificationManager.createNotificationChannel(
-                NotificationChannel(SEQUENCES_CHANNEL_ID, "Sequences", NotificationManager.IMPORTANCE_DEFAULT)
-                    .apply { description = "Active sequence run progress" }
-            )
-        }
-    }
 }
 
 fun showNotification(context: Context) {
@@ -343,7 +323,7 @@ fun showNotification(context: Context) {
     val noteAction = NotificationCompat.Action.Builder(0, "Add note…", notePi)
         .addRemoteInput(remoteInput)
         .build()
-    val builder = NotificationCompat.Builder(context, "mood_channel")
+    val builder = NotificationCompat.Builder(context, org.meow.autistic.core.notifications.MOOD_CHANNEL_ID)
         .setSmallIcon(R.drawable.ic_launcher_foreground)
         .setContentTitle("How are you feeling?")
         .setStyle(NotificationCompat.DecoratedCustomViewStyle())
