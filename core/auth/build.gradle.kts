@@ -4,6 +4,7 @@ plugins {
 
 android {
     namespace = "org.meow.autistic.core.auth"
+
 }
 
 dependencies {
