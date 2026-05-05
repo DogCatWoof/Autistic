@@ -22,4 +22,5 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
+    testImplementation(libs.junit)
 }

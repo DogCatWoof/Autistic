@@ -3,9 +3,6 @@ package org.meow.autistic.data.firestore
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import org.meow.autistic.data.foodlog.FoodLogItemEntry
-import org.meow.autistic.data.health.HealthSnapshotEntity
-
-// ── FoodLogItem ───────────────────────────────────────────────────────────────
 
 /**
  * Firestore document model for [FoodLogItemEntry].
@@ -68,55 +65,4 @@ fun FoodLogItemDocument.toEntry(firestoreId: String, localId: Long = 0) = FoodLo
     fiber = fiber, totalSugars = totalSugars, addedSugars = addedSugars,
     sugarAlcohols = sugarAlcohols, isDeleted = isDeleted,
     lastModifiedAt = lastModifiedAt.toInstant(), pendingFirestoreSync = false,
-)
-
-// ── HealthSnapshot ────────────────────────────────────────────────────────────
-
-/**
- * Firestore document model for [HealthSnapshotEntity].
- * Document ID = [HealthSnapshotEntity.date] (e.g. "2026-05-03").
- */
-data class HealthSnapshotDocument(
-    val date: String,
-    val steps: Long?,
-    val sleepMinutes: Long?,
-    val avgHeartRateBpm: Double?,
-    val weightKg: Double?,
-    val caloriesBurned: Double?,
-    val bloodGlucoseMmol: Double?,
-    val lastModifiedAt: Timestamp,
-) {
-    fun toMap(): Map<String, Any?> = mapOf(
-        "date" to date, "steps" to steps, "sleepMinutes" to sleepMinutes,
-        "avgHeartRateBpm" to avgHeartRateBpm, "weightKg" to weightKg,
-        "caloriesBurned" to caloriesBurned, "bloodGlucoseMmol" to bloodGlucoseMmol,
-        "lastModifiedAt" to lastModifiedAt,
-    )
-
-    companion object {
-        fun fromSnapshot(s: DocumentSnapshot) = HealthSnapshotDocument(
-            date = s.getString("date") ?: "",
-            steps = s.getLong("steps"),
-            sleepMinutes = s.getLong("sleepMinutes"),
-            avgHeartRateBpm = s.getDouble("avgHeartRateBpm"),
-            weightKg = s.getDouble("weightKg"),
-            caloriesBurned = s.getDouble("caloriesBurned"),
-            bloodGlucoseMmol = s.getDouble("bloodGlucoseMmol"),
-            lastModifiedAt = s.getTimestamp("lastModifiedAt") ?: Timestamp.now(),
-        )
-    }
-}
-
-fun HealthSnapshotEntity.toDocument() = HealthSnapshotDocument(
-    date = date, steps = steps, sleepMinutes = sleepMinutes,
-    avgHeartRateBpm = avgHeartRateBpm, weightKg = weightKg,
-    caloriesBurned = caloriesBurned, bloodGlucoseMmol = bloodGlucoseMmol,
-    lastModifiedAt = lastUpdatedAt.toFirestoreTimestamp(),
-)
-
-fun HealthSnapshotDocument.toEntity() = HealthSnapshotEntity(
-    date = date, steps = steps, sleepMinutes = sleepMinutes,
-    avgHeartRateBpm = avgHeartRateBpm, weightKg = weightKg,
-    caloriesBurned = caloriesBurned, bloodGlucoseMmol = bloodGlucoseMmol,
-    lastUpdatedAt = lastModifiedAt.toInstant(), pendingFirestoreSync = false,
 )

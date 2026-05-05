@@ -1,7 +1,6 @@
 package org.meow.autistic.data.firestore
 
 import org.meow.autistic.data.foodlog.FoodLogItemDao
-import org.meow.autistic.data.health.HealthSnapshotDao
 import org.meow.autistic.data.mood.MoodDao
 import org.meow.autistic.data.note.NoteDao
 import org.meow.autistic.data.sequence.SequenceDao
@@ -16,7 +15,6 @@ data class FirestoreDaos(
     val note: NoteDao,
     val mood: MoodDao,
     val foodLogItem: FoodLogItemDao,
-    val healthSnapshot: HealthSnapshotDao,
     val sequence: SequenceDao,
     val dailyTask: DailyTaskDao,
 )
@@ -40,7 +38,6 @@ class FirestoreSyncService(
         pushNotes(uid)
         pushMoods(uid)
         pushFoodLogItems(uid)
-        pushHealthSnapshots(uid)
         pushSequences(uid)       // must run before steps and runs
         pushSequenceSteps(uid)
         pushSequenceRuns(uid)
@@ -52,7 +49,6 @@ class FirestoreSyncService(
         pullNotes(uid, since)
         pullMoods(uid, since)
         pullFoodLogItems(uid, since)
-        pullHealthSnapshots(uid, since)
         pullSequences(uid, since)
         pullSequenceSteps(uid, since)
         pullSequenceRuns(uid, since)
@@ -94,13 +90,6 @@ class FirestoreSyncService(
             val id = f.firestoreId ?: newId()
             source.upsert(uid, "foodLogItems", id, f.toDocument().toMap())
             daos.foodLogItem.markFirestoreSynced(f.id, id)
-        }
-    }
-
-    private suspend fun pushHealthSnapshots(uid: String) {
-        for (h in daos.healthSnapshot.getPendingFirestoreSync()) {
-            source.upsert(uid, "healthSnapshots", h.date, h.toDocument().toMap())
-            daos.healthSnapshot.markFirestoreSynced(h.date, h.date)
         }
     }
 
@@ -178,16 +167,6 @@ class FirestoreSyncService(
             val local = daos.foodLogItem.getByFirestoreId(doc.id)
             if (local == null || remote.lastModifiedAt.toInstant() > local.lastModifiedAt) {
                 daos.foodLogItem.upsert(remote.toEntry(firestoreId = doc.id, localId = local?.id ?: 0L))
-            }
-        }
-    }
-
-    private suspend fun pullHealthSnapshots(uid: String, since: Instant?) {
-        for (doc in fetchDocs(uid, "healthSnapshots", since)) {
-            val remote = HealthSnapshotDocument.fromSnapshot(doc)
-            val local = daos.healthSnapshot.getByDateOnce(doc.id)
-            if (local == null || remote.lastModifiedAt.toInstant() > local.lastUpdatedAt) {
-                daos.healthSnapshot.upsert(remote.toEntity().copy(firestoreId = doc.id))
             }
         }
     }

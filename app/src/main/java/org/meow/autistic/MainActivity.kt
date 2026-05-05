@@ -14,8 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Mood
@@ -65,7 +63,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import com.google.android.gms.auth.api.signin.GoogleSignIn
-import org.meow.autistic.data.health.HealthConnectSyncWorker
 import org.meow.autistic.data.mood.MoodCheckInWorker
 import org.meow.autistic.data.navigation.NavPreferencesStore
 import org.meow.autistic.data.navigation.NavStateStore
@@ -78,8 +75,6 @@ import org.meow.autistic.ui.screens.AppDrawerSheet
 import org.meow.autistic.ui.screens.NavBottomSheet
 import org.meow.autistic.ui.screens.ConversationScreen
 import org.meow.autistic.ui.screens.FoodLogScreen
-import org.meow.autistic.ui.screens.HealthConnectScreen
-import org.meow.autistic.ui.screens.IntegratedHealthScreen
 import org.meow.autistic.ui.screens.MoodScreen
 import org.meow.autistic.ui.screens.NotesScreen
 import org.meow.autistic.ui.screens.ScanScreen
@@ -109,8 +104,6 @@ class MainActivity : ComponentActivity() {
             NavigationItem("Notes", Icons.Filled.Create, Icons.Outlined.Create),
             NavigationItem("Mood", Icons.Filled.Mood, Icons.Outlined.Mood),
             NavigationItem("Food Log", Icons.Filled.Restaurant, Icons.Outlined.Restaurant),
-            NavigationItem("Health", Icons.Filled.MonitorHeart, Icons.Filled.MonitorHeart),
-            NavigationItem("Vitals", Icons.Filled.FavoriteBorder, Icons.Filled.FavoriteBorder),
             NavigationItem("Talk", Icons.Filled.Chat, Icons.Filled.Chat),
             NavigationItem("Sequences", Icons.Filled.PlaylistPlay, Icons.Filled.PlaylistPlay),
         )
@@ -122,7 +115,6 @@ class MainActivity : ComponentActivity() {
         registerNotificationChannels(this)
         DailyResetWorker.enqueue(this)
         MoodCheckInWorker.enqueue(this)
-        HealthConnectSyncWorker.enqueue(this)
         val syncScheduler = SyncScheduler(androidx.work.WorkManager.getInstance(this))
         syncScheduler.schedulePeriodicSync()
         if (GoogleSignIn.getLastSignedInAccount(this) != null) {
@@ -267,8 +259,6 @@ class MainActivity : ComponentActivity() {
                                     "Notes" -> NotesScreen()
                                     "Mood" -> MoodScreen()
                                     "Food Log" -> FoodLogScreen()
-                                    "Health" -> HealthConnectScreen()
-                                    "Vitals" -> IntegratedHealthScreen()
                                     "Talk" -> ConversationScreen()
                                     "Sequences" -> SequenceListScreen()
                                 }

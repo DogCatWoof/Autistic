@@ -8,7 +8,6 @@ import org.meow.autistic.ui.screens.ConversationViewModel
 import org.meow.autistic.ui.screens.SequenceRunViewModel
 import org.meow.autistic.ui.screens.SequenceViewModel
 import org.meow.autistic.ui.screens.FoodLogViewModel
-import org.meow.autistic.ui.screens.HealthConnectViewModel
 import org.meow.autistic.ui.screens.MoodViewModel
 import org.meow.autistic.ui.screens.NotesViewModel
 import org.meow.autistic.ui.screens.ScanViewModel
@@ -21,7 +20,6 @@ val viewModelModule = module {
     viewModel { NotesViewModel(get()) }
     viewModel { MoodViewModel(get()) }
     viewModel { FoodLogViewModel(get(), get(), get(), get(), get(), androidApplication()) }
-    viewModel { HealthConnectViewModel(get(), get()) }
     viewModel { SequenceViewModel(get()) }
     viewModel { SequenceRunViewModel(get(), androidApplication()) }
     viewModel { ConversationViewModel(get(), androidApplication()) }

@@ -4,7 +4,6 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 import org.meow.autistic.BuildConfig
 import org.meow.autistic.data.calendar.CalendarRepository
-import org.meow.autistic.data.health.HealthConnectRepository
 import org.meow.autistic.data.photo.ClaudeVisionClient
 import org.meow.autistic.data.photo.FoodProductLookupService
 import org.meow.autistic.data.product.OpenFoodFactsApiClient
@@ -24,7 +23,6 @@ val repositoryModule = module {
     single { DailyTaskRepository(get(), get()) }
     single { ClaudeVisionClient(apiKey = BuildConfig.ANTHROPIC_API_KEY) }
     single { FoodProductLookupService(get(), get()) }
-    single { HealthConnectRepository(androidContext(), get()) }
     single { SequenceRepository(get(), get()) }
     single { ResponseTemplateRepository(androidContext()) }
 }

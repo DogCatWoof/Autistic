@@ -91,7 +91,6 @@ dependencies {
     implementation(project(":feature:conversation"))
     implementation(project(":feature:mood"))
     implementation(project(":feature:note"))
-    implementation(project(":feature:health"))
     implementation(project(":feature:task"))
     implementation(project(":feature:sequence"))
     implementation(project(":feature:food"))
@@ -141,9 +140,6 @@ dependencies {
 
     // JSON serialisation for product data
     implementation(libs.gson)
-
-    // Health Connect
-    implementation(libs.health.connect.client)
 
     // DataStore for sync timestamps
     implementation(libs.androidx.datastore.preferences)
