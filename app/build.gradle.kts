@@ -92,6 +92,7 @@ dependencies {
     implementation(project(":feature:note"))
     implementation(project(":feature:health"))
     implementation(project(":feature:sequence"))
+    implementation(project(":feature:food"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

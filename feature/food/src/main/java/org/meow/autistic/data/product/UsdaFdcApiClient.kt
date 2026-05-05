@@ -6,8 +6,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.meow.autistic.BuildConfig
-
 private const val USDA_SEARCH_URL =
     "https://api.nal.usda.gov/fdc/v1/foods/search?query={barcode}&dataType=Branded&api_key={key}"
 
@@ -16,7 +14,7 @@ private const val USDA_SEARCH_URL =
  */
 class UsdaFdcApiClient(
     private val httpClient: OkHttpClient = OkHttpClient(),
-    private val apiKey: String = BuildConfig.USDA_API_KEY,
+    private val apiKey: String = "",
 ) {
     /**
      * Looks up a product by [barcode] (UPC/EAN). Matches on the `gtinUpc` field so only
