@@ -1,4 +1,5 @@
 pluginManagement {
+    includeBuild("build-logic")
     repositories {
         google {
             content {
@@ -24,3 +25,17 @@ dependencyResolutionManagement {
 
 rootProject.name = "Autistic"
 include(":app")
+include(":core:common")
+include(":core:auth")
+include(":core:database")
+include(":core:ui")
+include(":core:notifications")
+include(":data:sync")
+include(":data:firestore")
+include(":feature:task")
+include(":feature:note")
+include(":feature:mood")
+include(":feature:health")
+include(":feature:sequence")
+include(":feature:food")
+include(":feature:conversation")
