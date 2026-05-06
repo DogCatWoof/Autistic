@@ -55,7 +55,7 @@ class GoogleAuthManager(
 
     init {
         firebaseAuth.addAuthStateListener { auth ->
-            cachedFirebaseUser = auth.currentUser
+            auth.currentUser?.let { cachedFirebaseUser = it }
         }
     }
 
@@ -143,7 +143,7 @@ class GoogleAuthManager(
      * @throws IllegalStateException if not signed into Firebase Auth.
      */
     fun getFirebaseUid(): String =
-        cachedFirebaseUser?.uid
+      cachedFirebaseUser?.uid
             ?: throw IllegalStateException("Not signed in to Firebase Auth")
 
     /**
@@ -154,6 +154,7 @@ class GoogleAuthManager(
             GmsTasks.await(signInClient.signOut(), SIGN_OUT_TIMEOUT_SEC, TimeUnit.SECONDS)
         }.onFailure { Log.w(TAG, "Sign-out task failed", it) }
         FirebaseAuth.getInstance().signOut()
+        cachedFirebaseUser = null
         tokenStore.clear()
     }
 }
