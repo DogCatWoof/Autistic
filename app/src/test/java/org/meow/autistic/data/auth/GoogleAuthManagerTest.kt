@@ -243,22 +243,12 @@ class GoogleAuthManagerTest {
         manager.getFirebaseUid()
     }
 
-    @Test
-    fun `auth state listener with null does not overwrite cached user`() {
-        val mockUser = mockk<FirebaseUser> { every { uid } returns "firebase-uid-123" }
-        every { firebaseAuth.currentUser } returns mockUser
-        val listenerSlot = mutableListOf<FirebaseAuth.AuthStateListener>()
-        every { firebaseAuth.addAuthStateListener(capture(listenerSlot)) } returns Unit
-        manager = GoogleAuthManager(context, tokenStore, "", testScope)
-        // Simulate Firebase firing the listener with null (startup race)
-        listenerSlot.forEach { it.onAuthStateChanged(mockk { every { currentUser } returns null }) }
-        assertEquals("firebase-uid-123", manager.getFirebaseUid())
-    }
-
     @Test(expected = IllegalStateException::class)
     fun `signOut clears cached Firebase user`() = runTest {
         val mockUser = mockk<FirebaseUser> { every { uid } returns "firebase-uid-123" }
-        every { firebaseAuth.currentUser } returns mockUser
+        var currentUserValue: FirebaseUser? = mockUser
+        every { firebaseAuth.currentUser } answers { currentUserValue }
+        every { firebaseAuth.signOut() } answers { currentUserValue = null }
         val mockSignInClient = mockk<GoogleSignInClient>(relaxed = true)
         val mockTask = mockk<Task<Void>> {
             every { isComplete } returns true

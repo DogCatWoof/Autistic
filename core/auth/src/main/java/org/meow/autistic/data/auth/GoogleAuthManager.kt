@@ -14,7 +14,6 @@ import com.google.api.services.calendar.CalendarScopes
 import com.google.api.services.drive.DriveScopes
 import com.google.api.services.tasks.TasksScopes
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -48,15 +47,6 @@ class GoogleAuthManager(
         private const val TAG = "GoogleAuthManager"
         private const val SIGN_OUT_TIMEOUT_SEC = 10L
         private val SCOPES = listOf(TasksScopes.TASKS, CalendarScopes.CALENDAR, DriveScopes.DRIVE_FILE)
-    }
-
-    private val firebaseAuth = FirebaseAuth.getInstance()
-    private var cachedFirebaseUser: FirebaseUser? = firebaseAuth.currentUser
-
-    init {
-        firebaseAuth.addAuthStateListener { auth ->
-            auth.currentUser?.let { cachedFirebaseUser = it }
-        }
     }
 
     private val signInClient: GoogleSignInClient by lazy {
@@ -138,12 +128,11 @@ class GoogleAuthManager(
 
     /**
      * Returns the Firebase UID of the currently signed-in user.
-     * Uses a cached value from AuthStateListener to avoid race conditions after app restart.
      *
      * @throws IllegalStateException if not signed into Firebase Auth.
      */
     fun getFirebaseUid(): String =
-      cachedFirebaseUser?.uid
+        FirebaseAuth.getInstance().currentUser?.uid
             ?: throw IllegalStateException("Not signed in to Firebase Auth")
 
     /**
@@ -154,7 +143,6 @@ class GoogleAuthManager(
             GmsTasks.await(signInClient.signOut(), SIGN_OUT_TIMEOUT_SEC, TimeUnit.SECONDS)
         }.onFailure { Log.w(TAG, "Sign-out task failed", it) }
         FirebaseAuth.getInstance().signOut()
-        cachedFirebaseUser = null
         tokenStore.clear()
     }
 }
