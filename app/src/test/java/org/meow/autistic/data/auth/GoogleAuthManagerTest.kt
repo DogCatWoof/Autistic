@@ -104,7 +104,13 @@ class GoogleAuthManagerTest {
         val googleTask = mockk<com.google.android.gms.tasks.Task<GoogleSignInAccount>> {
             every { getResult(ApiException::class.java) } returns account
         }
-        val credentialTask = mockk<Task<AuthResult>>(relaxed = true)
+        val credentialTask = mockk<Task<AuthResult>>(relaxed = true) {
+            every { isComplete } returns true
+            every { isSuccessful } returns true
+            every { isCanceled } returns false
+            every { exception } returns null
+            every { result } returns mockk(relaxed = true)
+        }
         every { GoogleSignIn.getSignedInAccountFromIntent(any()) } returns googleTask
         every { firebaseAuth.signInWithCredential(any()) } returns credentialTask
 
