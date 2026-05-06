@@ -38,11 +38,28 @@ class FirestoreSyncService(
         pushNotes(uid)
         pushMoods(uid)
         pushFoodLogItems(uid)
-        pushSequences(uid)       // must run before steps and runs
+        pushSequences(uid)
         pushSequenceSteps(uid)
         pushSequenceRuns(uid)
         pushDailyTasks(uid)
     }
+
+    /** Returns true if any local records are pending Firestore sync or delete. */
+    suspend fun hasPendingItems(): Boolean =
+        daos.task.getPendingFirestoreSync().isNotEmpty() ||
+            daos.task.getPendingFirestoreDelete().isNotEmpty() ||
+            daos.note.getPendingFirestoreSync().isNotEmpty() ||
+            daos.note.getPendingFirestoreDelete().isNotEmpty() ||
+            daos.mood.getPendingFirestoreSync().isNotEmpty() ||
+            daos.mood.getPendingFirestoreDelete().isNotEmpty() ||
+            daos.foodLogItem.getPendingFirestoreSync().isNotEmpty() ||
+            daos.foodLogItem.getPendingFirestoreDelete().isNotEmpty() ||
+            daos.sequence.getPendingFirestoreSync().isNotEmpty() ||
+            daos.sequence.getPendingFirestoreDelete().isNotEmpty() ||
+            daos.sequence.getPendingFirestoreStepSync().isNotEmpty() ||
+            daos.sequence.getPendingFirestoreStepDelete().isNotEmpty() ||
+            daos.sequence.getPendingFirestoreRunSync().isNotEmpty() ||
+            daos.dailyTask.getPendingFirestoreSync().isNotEmpty()
 
     suspend fun pullAndMerge(uid: String, since: Instant?) {
         pullTasks(uid, since)

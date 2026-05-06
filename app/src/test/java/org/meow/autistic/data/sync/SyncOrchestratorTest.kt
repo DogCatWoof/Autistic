@@ -114,15 +114,11 @@ class SyncOrchestratorTest {
 
     // region Firestore — step 5-6
 
-    @Test
-    fun `sync skips Firestore when no Firebase user`() = runTest {
+    @Test(expected = IllegalStateException::class)
+    fun `sync throws when no Firebase user`() = runTest {
         firebaseUid = null
 
-        val result = orchestrator.sync()
-
-        assertEquals(SyncOutcome.Success, result)
-        coVerify(exactly = 0) { firestoreSyncService.pushPending(any()) }
-        coVerify(exactly = 0) { firestoreSyncService.pullAndMerge(any(), any()) }
+        orchestrator.sync()
     }
 
     @Test
@@ -142,18 +138,18 @@ class SyncOrchestratorTest {
         assert(recordedPullAt != null)
     }
 
-    @Test
-    fun `sync still succeeds when Firestore push throws`() = runTest {
+    @Test(expected = RuntimeException::class)
+    fun `sync throws when Firestore push throws`() = runTest {
         coEvery { firestoreSyncService.pushPending(any()) } throws RuntimeException("firestore error")
 
-        assertEquals(SyncOutcome.Success, orchestrator.sync())
+        orchestrator.sync()
     }
 
-    @Test
-    fun `sync still succeeds when Firestore pull throws`() = runTest {
+    @Test(expected = RuntimeException::class)
+    fun `sync throws when Firestore pull throws`() = runTest {
         coEvery { firestoreSyncService.pullAndMerge(any(), any()) } throws RuntimeException("firestore error")
 
-        assertEquals(SyncOutcome.Success, orchestrator.sync())
+        orchestrator.sync()
     }
 
     // endregion

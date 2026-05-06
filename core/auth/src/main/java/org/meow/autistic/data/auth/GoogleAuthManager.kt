@@ -19,7 +19,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.tasks.await
+import org.meow.autistic.data.debug.DebugSettings
+import org.meow.autistic.data.debug.ExceptionReporter
 import java.util.concurrent.TimeUnit
 
 /**
@@ -61,32 +65,34 @@ class GoogleAuthManager(
         return GoogleSignIn.hasPermissions(account, *SCOPES.map { Scope(it) }.toTypedArray())
     }
 
-    /** Returns the [Intent] to launch via an [ActivityResultLauncher] to start sign-in. */
+    /** Returns the [Intent] to launch via an [androidx.activity.result.ActivityResultLauncher] to start sign-in. */
     fun getSignInIntent(): Intent = signInClient.signInIntent
 
     /**
      * Processes the result delivered back from the sign-in Activity.
-     * On success also signs into Firebase Auth using the Google ID token (async, non-blocking).
-     *
-     * @return true if the account was saved successfully, false on failure or cancellation.
+     * On success also signs into Firebase Auth synchronously so firebaseUidProvider() works immediately.
      */
     fun handleSignInResult(data: Intent?): Boolean {
         return try {
             val account = GoogleSignIn.getSignedInAccountFromIntent(data)
                 .getResult(ApiException::class.java)
-            tokenStore.saveAccount(account.email ?: return false)
+            tokenStore.saveAccount(account.email ?: throw IllegalStateException("Google account missing email"))
             account.idToken?.let { idToken ->
-                authScope.launch {
+                runBlocking {
                     val credential = GoogleAuthProvider.getCredential(idToken, null)
-                    FirebaseAuth.getInstance()
+                    val authResult = FirebaseAuth.getInstance()
                         .signInWithCredential(credential)
-                        .addOnFailureListener { Log.w(TAG, "Firebase credential sign-in failed", it) }
+                        .await()
+                    if (authResult.user?.uid.isNullOrBlank()) {
+                        ExceptionReporter(context, DebugSettings(context)).report(
+                            RuntimeException("Firebase sign-in returned no user/uid")
+                        )
+                    }
                 }
             }
             true
         } catch (e: ApiException) {
-            Log.w(TAG, "Sign-in failed with status: ${e.statusCode}")
-            false
+            throw RuntimeException("Sign-in failed with status: ${e.statusCode}", e)
         }
     }
 

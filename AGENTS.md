@@ -17,7 +17,7 @@ Android app with Room local storage, Google Tasks/Calendar/Drive sync, and Fires
 ./gradlew :app:testDebugUnitTest --tests "*ClassName*"  # single unit test class
 ./gradlew connectedAndroidTest                          # all instrumented tests
 ./gradlew :app:compileDebugKotlin                       # fast compile check
-./gradlew installDebug                                  # build + install on device
+./gradlew run                                          # build + install on device
 ```
 
 Configuration cache has known issues with `google-services` plugin — safe to ignore those warnings.

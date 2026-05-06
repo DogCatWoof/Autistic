@@ -59,39 +59,35 @@ class SyncOrchestrator(
         if (!authManager.isAuthenticated()) {
             return SyncOutcome.Retry
         }
-        return try {
+        try {
             tasksSyncService.pushPending()
             tasksSyncService.pullAndMerge()
             calendarSyncService.pullAndMerge()
-            runFirestoreSync()
-            SyncOutcome.Success
         } catch (e: GoogleJsonResponseException) {
             Log.e(TAG, "Sync HTTP ${e.statusCode}: ${e.message}")
             if (e.statusCode == HTTP_FORBIDDEN) {
                 authManager.invalidateTokenCache()
-                SyncOutcome.Error("Calendar access denied (403) — please re-authenticate")
+                return SyncOutcome.Error("Calendar access denied (403) — please re-authenticate")
             } else {
-                SyncOutcome.Retry
+                return SyncOutcome.Retry
             }
         } catch (e: Exception) {
             Log.e(TAG, "Sync failed: ${e.message}", e)
-            SyncOutcome.Error(e.message ?: "Sync failed")
+            return SyncOutcome.Error(e.message ?: "Sync failed")
         }
+        runFirestoreSync()
+        return SyncOutcome.Success
     }
 
     private suspend fun runFirestoreSync() {
-        val uid = firebaseUidProvider()
-        if (uid == null) {
-            Log.d(TAG, "Firestore sync skipped: no Firebase user")
-            return
-        }
+        val uid = firebaseUidProvider() ?: throw IllegalStateException("Firestore sync requires an authenticated Firebase user")
         try {
             firestoreSyncService.pushPending(uid)
             val since = lastFirestorePullAt()
             firestoreSyncService.pullAndMerge(uid, since)
             recordFirestorePullAt(Instant.now())
         } catch (e: Exception) {
-            Log.w(TAG, "Firestore sync failed (non-fatal): ${e.message}", e)
+            throw RuntimeException("Firestore sync failed: ${e.message}", e)
         }
     }
 }

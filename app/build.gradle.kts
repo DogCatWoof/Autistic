@@ -20,13 +20,10 @@ if (localPropsFile.exists()) {
     localPropsFile.inputStream().use { stream -> localProps.load(stream) }
 }
 
-tasks.matching { it.name.startsWith("process") && it.name.endsWith("GoogleServices") }.configureEach {
-    doFirst {
-        copy {
-            from(rootProject.file("local-only/google-services.json"))
-            into(layout.projectDirectory)
-        }
-    }
+val googleServicesSource = rootProject.file("local-only/google-services.json")
+val googleServicesTarget = layout.projectDirectory.file("google-services.json").asFile
+if (googleServicesSource.exists() && (!googleServicesTarget.exists() || googleServicesSource.lastModified() > googleServicesTarget.lastModified())) {
+    googleServicesSource.copyTo(googleServicesTarget, overwrite = true)
 }
 
 android {
@@ -77,6 +74,16 @@ android {
 
 kotlin {
     jvmToolchain(21)
+}
+
+tasks.register("run") {
+    dependsOn("installDebug")
+    group = "install"
+    description = "Builds, installs, and launches the debug APK on a connected device"
+    doLast {
+        val process = ProcessBuilder("adb", "shell", "am", "start", "-n", "org.meow.autistic/.MainActivity").start()
+        process.waitFor()
+    }
 }
 
 dependencies {

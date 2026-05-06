@@ -79,15 +79,10 @@ class DriveBackupService(
      * file inside the "Autism Backups" Drive folder. Prunes backups beyond [MAX_BACKUPS].
      * Logs and swallows errors so a backup failure never blocks the daily reset.
      */
-    suspend fun backupDatabase() {
-        try {
-            backupDatabaseInternal()
-        } catch (e: Exception) {
-            Log.e(TAG, "Backup failed — proceeding anyway", e)
-        }
+     suspend fun backupDatabase() {
+        backupDatabaseInternal()
     }
 
-    /** Returns true if any encrypted (or legacy) backup exists on Drive. */
     suspend fun hasRemoteBackup(): Boolean = withContext(Dispatchers.IO) {
         try {
             val drive = buildDrive()
@@ -95,8 +90,7 @@ class DriveBackupService(
             if (folderId != null && findLatestBackup(drive, folderId) != null) return@withContext true
             findRootFileId(drive, LEGACY_BACKUP_NAME) != null
         } catch (e: Exception) {
-            Log.w(TAG, "Could not check for remote backup", e)
-            false
+            throw e
         }
     }
 

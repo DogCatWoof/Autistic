@@ -83,8 +83,7 @@ class TokenStore(private val prefs: SharedPreferences) {
     fun getAccountEmail(): String? = try {
         prefs.getString(KEY_ACCOUNT_EMAIL, null)
     } catch (e: Exception) {
-        Log.e(TAG, "Error reading account email", e)
-        null
+        throw RuntimeException("Error reading account email", e)
     }
 
     fun saveAccessToken(token: String, expiryMs: Long) {
@@ -97,15 +96,13 @@ class TokenStore(private val prefs: SharedPreferences) {
     fun getAccessToken(): String? = try {
         prefs.getString(KEY_ACCESS_TOKEN, null)
     } catch (e: Exception) {
-        Log.e(TAG, "Error reading access token", e)
-        null
+        throw RuntimeException("Error reading access token", e)
     }
 
     fun getExpiryMs(): Long = try {
         prefs.getLong(KEY_TOKEN_EXPIRY_MS, 0L)
     } catch (e: Exception) {
-        Log.e(TAG, "Error reading expiry", e)
-        0L
+        throw RuntimeException("Error reading expiry", e)
     }
 
     /** Returns true if a cached token exists and won't expire within [REFRESH_BUFFER_MS]. */

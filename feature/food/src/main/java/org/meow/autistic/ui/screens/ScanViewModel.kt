@@ -17,6 +17,7 @@ import org.meow.autistic.data.product.ProductEntity
 import org.meow.autistic.data.product.ProductRepository
 import java.io.IOException
 import kotlin.coroutines.resume
+import kotlinx.coroutines.CancellationException
 
 data class ScanQueueItem(
     val barcode: String,
@@ -86,11 +87,11 @@ class ScanViewModel(
             updateStatus(barcode, ScanStatus.Loading)
             try {
                 val product = repository.getByBarcode(barcode)
-                if (_queue.value.none { it.barcode == barcode }) return
+                if (_queue.value.none { it.barcode == barcode }) throw CancellationException("Scan cancelled")
                 updateStatus(barcode, if (product != null) ScanStatus.Found(product) else ScanStatus.NotFound)
                 return
             } catch (e: IOException) {
-                if (_queue.value.none { it.barcode == barcode }) return
+                if (_queue.value.none { it.barcode == barcode }) throw CancellationException("Scan cancelled")
                 updateStatus(barcode, ScanStatus.NetworkError)
                 awaitNetwork()
             }

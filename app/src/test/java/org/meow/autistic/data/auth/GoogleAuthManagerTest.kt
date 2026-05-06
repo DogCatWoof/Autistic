@@ -130,18 +130,18 @@ class GoogleAuthManagerTest {
         verify(exactly = 0) { firebaseAuth.signInWithCredential(any()) }
     }
 
-    @Test
-    fun `handleSignInResult returns false on ApiException`() {
+    @Test(expected = RuntimeException::class)
+    fun `handleSignInResult throws on ApiException`() {
         val task = mockk<com.google.android.gms.tasks.Task<GoogleSignInAccount>> {
             every { getResult(ApiException::class.java) } throws ApiException(Status(7))
         }
         every { GoogleSignIn.getSignedInAccountFromIntent(any()) } returns task
 
-        assertFalse(manager.handleSignInResult(mockk<Intent>()))
+        manager.handleSignInResult(mockk<Intent>())
     }
 
-    @Test
-    fun `handleSignInResult returns false when account email is null`() {
+    @Test(expected = IllegalStateException::class)
+    fun `handleSignInResult throws when account email is null`() {
         val account = mockk<GoogleSignInAccount> {
             every { email } returns null
             every { idToken } returns null
@@ -150,7 +150,7 @@ class GoogleAuthManagerTest {
             every { getResult(ApiException::class.java) } returns account
         }
         every { GoogleSignIn.getSignedInAccountFromIntent(any()) } returns task
-        assertFalse(manager.handleSignInResult(mockk<Intent>()))
+        manager.handleSignInResult(mockk<Intent>())
     }
 
     @Test

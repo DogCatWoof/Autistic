@@ -50,8 +50,6 @@ import org.koin.compose.koinInject
 import org.meow.autistic.NavigationItem
 import org.meow.autistic.data.auth.GoogleAuthManager
 import org.meow.autistic.data.auth.TokenStore
-import org.meow.autistic.data.backup.DriveBackupService
-import org.meow.autistic.data.backup.RestoreResult
 import org.meow.autistic.data.conversation.TONE_NEUTRAL
 import org.meow.autistic.data.conversation.TONES
 import org.meow.autistic.data.conversation.TonePreferencesStore
@@ -65,6 +63,7 @@ import org.meow.autistic.data.mood.showMoodCheckInNotification
 @Composable
 fun SettingsScreen(
     allNavItems: List<NavigationItem>,
+    onSignedOut: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var showQueryLog by remember { mutableStateOf(false) }
@@ -91,6 +90,7 @@ fun SettingsScreen(
             onNavPrefsClick = { showNavPrefs = true },
             onDailyTasksClick = { showDailyTasks = true },
             onSequencesClick = { showSequences = true },
+            onSignedOut = onSignedOut,
             modifier = modifier,
         )
     }
@@ -102,96 +102,17 @@ private fun SettingsMainList(
     onNavPrefsClick: () -> Unit,
     onDailyTasksClick: () -> Unit,
     onSequencesClick: () -> Unit,
+    onSignedOut: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showLogcat by remember { mutableStateOf(false) }
+    var backupExpanded by remember { mutableStateOf(false) }
     if (showLogcat) LogcatDialog(onDismiss = { showLogcat = false })
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val tokenStore = remember { TokenStore.create(context) }
-    val authManager = remember { GoogleAuthManager(context, tokenStore) }
-    val backupService: DriveBackupService = koinInject()
-    var isAuthenticated by remember { mutableStateOf(authManager.isAuthenticated()) }
+    val authManager: GoogleAuthManager = koinInject()
+    val tokenStore: TokenStore = koinInject()
     var accountEmail by remember { mutableStateOf(tokenStore.getAccountEmail()) }
-    var syncExpanded by remember { mutableStateOf(false) }
-    var showRestorePrompt by remember { mutableStateOf(false) }
-    var showRestartPrompt by remember { mutableStateOf(false) }
-    var restoreError by remember { mutableStateOf("") }
-    var showRestoreError by remember { mutableStateOf(false) }
-    var isRestoring by remember { mutableStateOf(false) }
-
-    val signInLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (authManager.handleSignInResult(result.data)) {
-            isAuthenticated = true
-            accountEmail = tokenStore.getAccountEmail()
-            // Check for a Drive backup and prompt restore on fresh install.
-            scope.launch {
-                if (backupService.hasRemoteBackup()) {
-                    showRestorePrompt = true
-                }
-            }
-        }
-    }
-
-    if (showRestorePrompt) {
-        AlertDialog(
-            onDismissRequest = { showRestorePrompt = false },
-            title = { Text("Restore backup?") },
-            text = { Text("A backup was found on Google Drive. Would you like to restore your data now?") },
-            confirmButton = {
-                TextButton(
-                    enabled = !isRestoring,
-                    onClick = {
-                        showRestorePrompt = false
-                        scope.launch {
-                            isRestoring = true
-                            when (val result = backupService.restoreDatabase()) {
-                                RestoreResult.Success -> showRestartPrompt = true
-                                RestoreResult.NotFound -> { /* dismissed race condition */ }
-                                RestoreResult.DecryptionFailed -> {
-                                    restoreError = "Backup was created on a different device and cannot be decrypted here."
-                                    showRestoreError = true
-                                }
-                                is RestoreResult.Error -> {
-                                    restoreError = result.message
-                                    showRestoreError = true
-                                }
-                            }
-                            isRestoring = false
-                        }
-                    },
-                ) { Text(if (isRestoring) "Restoring…" else "Restore") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showRestorePrompt = false }) { Text("Skip") }
-            },
-        )
-    }
-
-    if (showRestartPrompt) {
-        AlertDialog(
-            onDismissRequest = {},
-            title = { Text("Restore complete") },
-            text = { Text("Your data has been restored. Tap Restart to reload the app.") },
-            confirmButton = {
-                TextButton(onClick = { android.os.Process.killProcess(android.os.Process.myPid()) }) {
-                    Text("Restart")
-                }
-            },
-            dismissButton = {},
-        )
-    }
-
-    if (showRestoreError) {
-        AlertDialog(
-            onDismissRequest = { showRestoreError = false },
-            title = { Text("Restore failed") },
-            text = { Text(restoreError) },
-            confirmButton = { TextButton(onClick = { showRestoreError = false }) { Text("OK") } },
-        )
-    }
 
     val notificationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -203,23 +124,15 @@ private fun SettingsMainList(
         SettingsSectionLabel("Account")
         ListItem(
             headlineContent = { Text("Google Account") },
-            supportingContent = {
-                Text(if (isAuthenticated) accountEmail ?: "Connected" else "Not connected")
-            },
+            supportingContent = { Text(accountEmail ?: "Connected") },
             trailingContent = {
-                if (isAuthenticated) {
-                    TextButton(onClick = {
-                        scope.launch {
-                            authManager.signOut()
-                            isAuthenticated = false
-                            accountEmail = null
-                        }
-                    }) { Text("Disconnect Google") }
-                } else {
-                    TextButton(
-                        onClick = { signInLauncher.launch(authManager.getSignInIntent()) }
-                    ) { Text("Connect Google Account") }
-                }
+                TextButton(onClick = {
+                    scope.launch {
+                        authManager.signOut()
+                        accountEmail = null
+                        onSignedOut()
+                    }
+                }) { Text("Disconnect") }
             },
         )
         HorizontalDivider()
@@ -284,21 +197,16 @@ private fun SettingsMainList(
         HorizontalDivider()
         SettingsSectionLabel("Data")
         ListItem(
-            headlineContent = { Text("Sync") },
-            supportingContent = { if (!syncExpanded) Text("Daily reset, task list, backup") },
+            headlineContent = { Text("Backup & Restore") },
+            supportingContent = { Text("Google Drive") },
             trailingContent = {
-                Icon(
-                    if (syncExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (syncExpanded) "Collapse sync" else "Expand sync",
-                )
+                Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = "Open")
             },
-            modifier = Modifier.clickable { syncExpanded = !syncExpanded },
+            modifier = Modifier.clickable { backupExpanded = !backupExpanded },
         )
-        AnimatedVisibility(visible = syncExpanded) {
+        AnimatedVisibility(visible = backupExpanded) {
             Column {
-                DailySyncItem()
-                TaskListSyncItem(isAuthenticated = isAuthenticated)
-                DriveBackupSyncItem(isAuthenticated = isAuthenticated)
+                DriveBackupSyncItem(isAuthenticated = true)
             }
         }
         HorizontalDivider()
