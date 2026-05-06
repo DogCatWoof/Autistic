@@ -40,9 +40,9 @@ val syncModule = module {
             tasksSyncService = get(),
             calendarSyncService = get(),
             firestoreSyncService = get(),
-            firebaseUidProvider = {
-                runCatching { FirebaseAuth.getInstance().currentUser?.uid }.getOrNull()
-            },
+                firebaseUidProvider = {
+                    runCatching { authManager.getFirebaseUid() }.getOrNull()
+                },
             lastFirestorePullAt = { FirestoreSyncPrefs.getLastPullAt(androidContext()) },
             recordFirestorePullAt = { instant ->
                 FirestoreSyncPrefs.setLastPullAt(androidContext(), instant)

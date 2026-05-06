@@ -29,7 +29,6 @@
             <option value="$PROJECT_DIR$/core/notifications" />
             <option value="$PROJECT_DIR$/core/ui" />
             <option value="$PROJECT_DIR$/data" />
-            <option value="$PROJECT_DIR$/data/backup" />
             <option value="$PROJECT_DIR$/data/firestore" />
             <option value="$PROJECT_DIR$/data/sync" />
             <option value="$PROJECT_DIR$/feature" />

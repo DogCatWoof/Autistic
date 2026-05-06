@@ -230,13 +230,16 @@ class GoogleAuthManagerTest {
 
     @Test
     fun `getFirebaseUid returns uid when Firebase user is present`() {
-        every { firebaseAuth.currentUser } returns mockk { every { uid } returns "firebase-uid-123" }
+        val mockUser = mockk<FirebaseUser> { every { uid } returns "firebase-uid-123" }
+        every { firebaseAuth.currentUser } returns mockUser
+        manager = GoogleAuthManager(context, tokenStore, "", testScope)
         assertEquals("firebase-uid-123", manager.getFirebaseUid())
     }
 
     @Test(expected = IllegalStateException::class)
     fun `getFirebaseUid throws when not signed in to Firebase`() {
         every { firebaseAuth.currentUser } returns null
+        manager = GoogleAuthManager(context, tokenStore, "", testScope)
         manager.getFirebaseUid()
     }
 
