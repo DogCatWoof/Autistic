@@ -62,7 +62,10 @@ class GoogleAuthManager(
      */
     suspend fun signIn(activity: Activity): Boolean {
         if (firebaseWebClientId.isEmpty()) {
-            throw IllegalStateException("Firebase web client ID is not configured")
+            throw IllegalStateException(
+                "Firebase web client ID is not configured. " +
+                "Enable Google Sign-In in Firebase Console and add firebase.web.client.id to local.properties."
+            )
         }
         val googleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)
