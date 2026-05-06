@@ -1,15 +1,18 @@
 package org.meow.autistic.data.auth
 
+import android.accounts.Account
+import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.util.Log
+import androidx.credentials.ClearCredentialStateRequest
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialException
 import com.google.android.gms.auth.GoogleAuthUtil
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.common.api.Scope
-import com.google.android.gms.tasks.Tasks as GmsTasks
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.api.services.calendar.CalendarScopes
 import com.google.api.services.drive.DriveScopes
 import com.google.api.services.tasks.TasksScopes
@@ -18,16 +21,11 @@ import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.tasks.await
-import org.meow.autistic.data.debug.DebugSettings
-import org.meow.autistic.data.debug.ExceptionReporter
-import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.withContext
 
 /**
- * Manages Google OAuth sign-in, access-token retrieval, and sign-out.
+ * Manages Google OAuth sign-in, access-token retrieval, and sign-out via the Credential Manager API.
  * Also signs users into Firebase Auth using their Google credential so that
  * Firestore Security Rules can reference request.auth.uid.
  *
@@ -41,58 +39,58 @@ class GoogleAuthManager(
     private val tokenStore: TokenStore,
     private val firebaseWebClientId: String = "",
     private val authScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+    private val credentialManager: CredentialManager = CredentialManager.create(context),
+    private val androidAccountOf: (String) -> Account = { email -> Account(email, "com.google") },
+    private val googleIdTokenOf: (android.os.Bundle) -> GoogleIdTokenCredential = GoogleIdTokenCredential::createFrom,
 ) {
 
     companion object {
         private const val TAG = "GoogleAuthManager"
-        private const val SIGN_OUT_TIMEOUT_SEC = 10L
         private val SCOPES = listOf(TasksScopes.TASKS, CalendarScopes.CALENDAR, DriveScopes.DRIVE_FILE)
     }
 
-    private val signInClient: GoogleSignInClient by lazy {
-        val builder = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestEmail()
-            .requestScopes(Scope(TasksScopes.TASKS), Scope(CalendarScopes.CALENDAR), Scope(DriveScopes.DRIVE_FILE))
-        if (firebaseWebClientId.isNotEmpty()) {
-            builder.requestIdToken(firebaseWebClientId)
-        }
-        GoogleSignIn.getClient(context, builder.build())
-    }
-
-    /** Returns true if signed in via Google with all required scopes. */
-    fun isAuthenticated(): Boolean {
-        val account = GoogleSignIn.getLastSignedInAccount(context) ?: return false
-        return GoogleSignIn.hasPermissions(account, *SCOPES.map { Scope(it) }.toTypedArray())
-    }
-
-    /** Returns the [Intent] to launch via an [androidx.activity.result.ActivityResultLauncher] to start sign-in. */
-    fun getSignInIntent(): Intent = signInClient.signInIntent
+    /** Returns true if a Google account is stored and a Firebase session is active. */
+    fun isAuthenticated(): Boolean =
+        tokenStore.getAccountEmail() != null && FirebaseAuth.getInstance().currentUser != null
 
     /**
-     * Processes the result delivered back from the sign-in Activity.
-     * On success also signs into Firebase Auth synchronously so firebaseUidProvider() works immediately.
+     * Launches the Credential Manager sign-in flow and signs the user into Firebase Auth.
+     * Returns true on success, false if the user cancelled.
+     *
+     * @throws IllegalStateException if [firebaseWebClientId] is not configured, or Firebase returns no uid.
+     * @throws RuntimeException on sign-in failure.
      */
-    fun handleSignInResult(data: Intent?): Boolean {
+    suspend fun signIn(activity: Activity): Boolean {
+        if (firebaseWebClientId.isEmpty()) {
+            throw IllegalStateException("Firebase web client ID is not configured")
+        }
+        val googleIdOption = GetGoogleIdOption.Builder()
+            .setFilterByAuthorizedAccounts(false)
+            .setServerClientId(firebaseWebClientId)
+            .build()
+        val request = GetCredentialRequest.Builder()
+            .addCredentialOption(googleIdOption)
+            .build()
         return try {
-            val account = GoogleSignIn.getSignedInAccountFromIntent(data)
-                .getResult(ApiException::class.java)
-            tokenStore.saveAccount(account.email ?: throw IllegalStateException("Google account missing email"))
-            account.idToken?.let { idToken ->
-                runBlocking {
-                    val credential = GoogleAuthProvider.getCredential(idToken, null)
-                    val authResult = FirebaseAuth.getInstance()
-                        .signInWithCredential(credential)
-                        .await()
-                    if (authResult.user?.uid.isNullOrBlank()) {
-                        ExceptionReporter(context, DebugSettings(context)).report(
-                            RuntimeException("Firebase sign-in returned no user/uid")
-                        )
-                    }
-                }
+            val response = credentialManager.getCredential(activity, request)
+            val credential = response.credential
+            if (credential !is CustomCredential || credential.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                throw IllegalStateException("Unexpected credential type: ${credential.type}")
+            }
+            val googleIdToken = googleIdTokenOf(credential.data)
+            tokenStore.saveAccount(googleIdToken.id)
+            val firebaseCredential = GoogleAuthProvider.getCredential(googleIdToken.idToken, null)
+            val authResult = FirebaseAuth.getInstance()
+                .signInWithCredential(firebaseCredential)
+                .await()
+            if (authResult.user?.uid.isNullOrBlank()) {
+                throw IllegalStateException("Firebase sign-in returned no user/uid")
             }
             true
-        } catch (e: ApiException) {
-            throw RuntimeException("Sign-in failed with status: ${e.statusCode}", e)
+        } catch (e: GetCredentialCancellationException) {
+            false
+        } catch (e: GetCredentialException) {
+            throw RuntimeException("Sign-in failed: ${e.message}", e)
         }
     }
 
@@ -108,12 +106,10 @@ class GoogleAuthManager(
         if (tokenStore.isTokenValid()) {
             return@withContext tokenStore.getAccessToken()!!
         }
-        val account = GoogleSignIn.getLastSignedInAccount(context)
+        val email = tokenStore.getAccountEmail()
             ?: throw IllegalStateException("Not authenticated — no signed-in account")
         val scope = "oauth2:${SCOPES.joinToString(" ")}"
-        val androidAccount = account.account
-            ?: throw IllegalStateException("Sign-in account has no associated Android account")
-        val token = GoogleAuthUtil.getToken(context, androidAccount, scope)
+        val token = GoogleAuthUtil.getToken(context, androidAccountOf(email), scope)
         tokenStore.saveAccessToken(token, System.currentTimeMillis() + 3_600_000L)
         token
     }
@@ -140,8 +136,8 @@ class GoogleAuthManager(
      */
     suspend fun signOut(): Unit = withContext(Dispatchers.IO) {
         runCatching {
-            GmsTasks.await(signInClient.signOut(), SIGN_OUT_TIMEOUT_SEC, TimeUnit.SECONDS)
-        }.onFailure { Log.w(TAG, "Sign-out task failed", it) }
+            credentialManager.clearCredentialState(ClearCredentialStateRequest())
+        }.onFailure { Log.w(TAG, "Clear credential state failed", it) }
         FirebaseAuth.getInstance().signOut()
         tokenStore.clear()
     }

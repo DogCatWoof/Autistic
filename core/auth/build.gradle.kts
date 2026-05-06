@@ -12,10 +12,17 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.google.play.services.auth)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.google.identity.googleid)
     implementation(libs.google.api.services.tasks)
     implementation(libs.google.api.services.calendar)
     implementation(libs.google.api.services.drive)
     implementation(libs.androidx.security.crypto)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth.ktx)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

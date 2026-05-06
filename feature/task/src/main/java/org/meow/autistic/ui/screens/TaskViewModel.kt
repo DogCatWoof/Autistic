@@ -1,6 +1,5 @@
 package org.meow.autistic.ui.screens
 
-import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkInfo
@@ -149,15 +148,6 @@ class TaskViewModel(
     fun signOut() = viewModelScope.launch(exceptionHandler) {
         authManager.signOut()
         updateAuthStatus()
-    }
-
-    fun getSignInIntent() = authManager.getSignInIntent()
-
-    fun handleSignInResult(data: Intent?) {
-        if (authManager.handleSignInResult(data)) {
-            _isAuthenticated.value = true
-            triggerSync()
-        }
     }
 
     fun insert(task: TaskEntity) = viewModelScope.launch(exceptionHandler) {

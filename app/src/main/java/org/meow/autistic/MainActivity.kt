@@ -1,15 +1,17 @@
 package org.meow.autistic
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.koin.android.ext.android.inject
 import org.meow.autistic.data.auth.GoogleAuthManager
@@ -35,14 +37,6 @@ class MainActivity : ComponentActivity() {
 
     private var isAuthenticated by mutableStateOf(false)
 
-    private val signInLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (authManager.handleSignInResult(result.data)) {
-            isAuthenticated = true
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -67,7 +61,18 @@ class MainActivity : ComponentActivity() {
         setContent {
             AutisticTheme {
                 if (!isAuthenticated) {
-                    AuthScreen(onSignInClick = { signInLauncher.launch(authManager.getSignInIntent()) })
+                    AuthScreen(onSignInClick = {
+                        lifecycleScope.launch {
+                            try {
+                                if (authManager.signIn(this@MainActivity)) {
+                                    isAuthenticated = true
+                                    syncScheduler.triggerImmediate()
+                                }
+                            } catch (e: Exception) {
+                                Log.e("MainActivity", "Sign-in failed", e)
+                            }
+                        }
+                    })
                     return@AutisticTheme
                 }
 
