@@ -80,14 +80,17 @@ class SyncOrchestrator(
     }
 
     private suspend fun runFirestoreSync() {
-        val uid = firebaseUidProvider() ?: throw IllegalStateException("Firestore sync requires an authenticated Firebase user")
+        val uid = firebaseUidProvider() ?: run {
+            Log.w(TAG, "Skipping Firestore sync — no authenticated Firebase user")
+            return
+        }
         try {
             firestoreSyncService.pushPending(uid)
             val since = lastFirestorePullAt()
             firestoreSyncService.pullAndMerge(uid, since)
             recordFirestorePullAt(Instant.now())
         } catch (e: Exception) {
-            throw RuntimeException("Firestore sync failed: ${e.message}", e)
+            Log.e(TAG, "Firestore sync failed (non-fatal): ${e.message}", e)
         }
     }
 }
