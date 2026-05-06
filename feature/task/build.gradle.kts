@@ -13,7 +13,6 @@ dependencies {
     implementation(project(":core:ui"))
     implementation(project(":core:notifications"))
     implementation(project(":data:sync"))
-    implementation(project(":data:backup"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

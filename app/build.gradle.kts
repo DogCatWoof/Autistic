@@ -94,7 +94,6 @@ dependencies {
     implementation(project(":core:notifications"))
     implementation(project(":data:sync"))
     implementation(project(":data:firestore"))
-    implementation(project(":data:backup"))
     implementation(project(":feature:conversation"))
     implementation(project(":feature:mood"))
     implementation(project(":feature:note"))

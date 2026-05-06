@@ -153,15 +153,6 @@ Firestore failures are caught and logged — they never abort steps 1–4.
 - Separate `ProductDatabase` with a `ProductEntity` table: `barcode` (PK, text), `productJson` (text)
 - Lookups by exact barcode string; no full-text search required
 
-### Backup & Restore
-- Backup: WAL checkpoint → AES-256-GCM encrypt (Android Keystore key) → upload SQLite file to Google Drive as `autistic_db_backup.enc`; timestamp stored in DataStore
-- Drive location: folder named "Autism Backups" in the user's My Drive; retain the last 7 daily backups
-- Restore: download → decrypt → close Room singleton → overwrite DB file → delete stale WAL/SHM → process restart
-- Legacy unencrypted backups (`autistic_db_backup.sqlite`) supported as a restore fallback
-- Encryption key is device-specific (Android Keystore); cross-device restore is not supported
-- Automatic backup runs daily (WorkManager, Wi-Fi only); manual backup and restore available in Settings
-- On first sign-in after reinstall, app checks Drive for a backup and offers a restore prompt
-
 ### Diagnostics
 - `QueryLogger` records execution time of every database repository call
 - Displayed in the "Query Log" settings screen

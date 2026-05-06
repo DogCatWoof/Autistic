@@ -1,29 +1,17 @@
 package org.meow.autistic.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
-import org.meow.autistic.data.backup.DriveBackupService
-import org.meow.autistic.data.backup.RestoreResult
 import org.meow.autistic.data.sync.IMMEDIATE_WORK_NAME
 import org.meow.autistic.data.sync.SyncScheduler
 import org.meow.autistic.data.sync.SyncWorker
@@ -95,118 +83,6 @@ internal fun TaskListSyncItem(isAuthenticated: Boolean) {
             }
         },
     )
-}
-
-private enum class BackupUiState { Idle, BackingUp, Restoring }
-private enum class RestoreDialog { None, Confirm, Restarting, Failed }
-
-/** Sync list item for Google Drive backup and restore. */
-@Composable
-internal fun DriveBackupSyncItem(isAuthenticated: Boolean) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val backupService: DriveBackupService = koinInject()
-
-    var uiState by remember { mutableStateOf(BackupUiState.Idle) }
-    var dialog by remember { mutableStateOf(RestoreDialog.None) }
-    var errorMessage by remember { mutableStateOf("") }
-
-    val lastBackup by DriveBackupService.getLastBackupFlow(context)
-        .collectAsState(initial = null)
-
-    val statusText = when {
-        !isAuthenticated -> "Sign in to back up"
-        uiState == BackupUiState.BackingUp -> "Backing up…"
-        uiState == BackupUiState.Restoring -> "Restoring…"
-        lastBackup != null -> "Last backup: ${formatSyncTimestamp(lastBackup!!)}"
-        else -> "Never backed up"
-    }
-
-    ListItem(
-        headlineContent = { Text("Google Drive Backup") },
-        supportingContent = { Text(statusText) },
-        trailingContent = {
-            val busy = uiState != BackupUiState.Idle
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    enabled = isAuthenticated && !busy,
-                    onClick = {
-                        scope.launch {
-                            uiState = BackupUiState.BackingUp
-                            backupService.backupDatabase()
-                            uiState = BackupUiState.Idle
-                        }
-                    },
-                ) { Text("Backup") }
-                Button(
-                    enabled = isAuthenticated && !busy,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    ),
-                    onClick = { dialog = RestoreDialog.Confirm },
-                ) { Text("Restore") }
-            }
-        },
-    )
-
-    when (dialog) {
-        RestoreDialog.Confirm -> AlertDialog(
-            onDismissRequest = { dialog = RestoreDialog.None },
-            title = { Text("Restore from backup?") },
-            text = { Text("This will replace all local data with your last Google Drive backup. The app will restart automatically.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    dialog = RestoreDialog.None
-                    scope.launch {
-                        uiState = BackupUiState.Restoring
-                        when (val result = backupService.restoreDatabase()) {
-                            RestoreResult.Success -> dialog = RestoreDialog.Restarting
-                            RestoreResult.NotFound -> {
-                                errorMessage = "No backup found on Google Drive."
-                                dialog = RestoreDialog.Failed
-                            }
-                            RestoreResult.DecryptionFailed -> {
-                                errorMessage = "Backup was created on a different device and cannot be decrypted here."
-                                dialog = RestoreDialog.Failed
-                            }
-                            is RestoreResult.Error -> {
-                                errorMessage = result.message
-                                dialog = RestoreDialog.Failed
-                            }
-                        }
-                        uiState = BackupUiState.Idle
-                    }
-                }) { Text("Restore") }
-            },
-            dismissButton = {
-                TextButton(onClick = { dialog = RestoreDialog.None }) { Text("Cancel") }
-            },
-        )
-
-        RestoreDialog.Restarting -> AlertDialog(
-            onDismissRequest = {},
-            title = { Text("Restore complete") },
-            text = { Text("Your data has been restored. Tap Restart to reload the app.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    android.os.Process.killProcess(android.os.Process.myPid())
-                }) { Text("Restart") }
-            },
-            dismissButton = {},
-        )
-
-        RestoreDialog.Failed -> AlertDialog(
-            onDismissRequest = { dialog = RestoreDialog.None },
-            title = { Text("Restore failed") },
-            text = { Text(errorMessage) },
-            confirmButton = {
-                TextButton(onClick = { dialog = RestoreDialog.None }) { Text("OK") }
-            },
-        )
-
-        RestoreDialog.None -> Unit
-    }
 }
 
 internal fun formatSyncTimestamp(ms: Long): String =

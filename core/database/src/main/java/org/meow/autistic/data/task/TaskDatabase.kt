@@ -98,11 +98,6 @@ abstract class TaskDatabase : RoomDatabase() {
     abstract fun foodCacheDao(): FoodCacheDao
     abstract fun sequenceDao(): SequenceDao
 
-    /** Flushes WAL to the main database file. Call before reading the raw file for backup. */
-    fun checkpoint() {
-        openHelper.writableDatabase.query("PRAGMA wal_checkpoint(TRUNCATE)", emptyArray<Any>()).close()
-    }
-
     companion object {
         @Volatile
         private var Instance: TaskDatabase? = null
@@ -117,15 +112,5 @@ abstract class TaskDatabase : RoomDatabase() {
             }
         }
 
-        /**
-         * Closes and clears the singleton so the next [getDatabase] call reopens it.
-         * Must be called before overwriting the database file on restore.
-         */
-        fun closeInstance() {
-            synchronized(this) {
-                Instance?.close()
-                Instance = null
-            }
-        }
     }
 }

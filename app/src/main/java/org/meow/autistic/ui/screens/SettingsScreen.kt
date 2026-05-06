@@ -6,7 +6,6 @@ import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -106,7 +105,6 @@ private fun SettingsMainList(
     modifier: Modifier = Modifier,
 ) {
     var showLogcat by remember { mutableStateOf(false) }
-    var backupExpanded by remember { mutableStateOf(false) }
     if (showLogcat) LogcatDialog(onDismiss = { showLogcat = false })
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -194,21 +192,6 @@ private fun SettingsMainList(
             },
             modifier = Modifier.clickable { onNavPrefsClick() },
         )
-        HorizontalDivider()
-        SettingsSectionLabel("Data")
-        ListItem(
-            headlineContent = { Text("Backup & Restore") },
-            supportingContent = { Text("Google Drive") },
-            trailingContent = {
-                Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = "Open")
-            },
-            modifier = Modifier.clickable { backupExpanded = !backupExpanded },
-        )
-        AnimatedVisibility(visible = backupExpanded) {
-            Column {
-                DriveBackupSyncItem(isAuthenticated = true)
-            }
-        }
         HorizontalDivider()
         SettingsSectionLabel("Diagnostics")
         DebugModeItem()

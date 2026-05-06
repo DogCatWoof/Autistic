@@ -4,7 +4,6 @@ import androidx.work.WorkManager
 import com.google.firebase.auth.FirebaseAuth
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
-import org.meow.autistic.data.backup.DriveBackupService
 import org.meow.autistic.data.calendar.CalendarRemoteSource
 import org.meow.autistic.data.calendar.CalendarSyncService
 import org.meow.autistic.data.firestore.FirestoreSyncPrefs
@@ -31,13 +30,6 @@ val syncModule = module {
         CalendarSyncService(
             remoteSource = get(),
             repository = get(),
-            tokenProvider = { authManager.getValidToken() },
-        )
-    }
-    single {
-        val authManager = get<org.meow.autistic.data.auth.GoogleAuthManager>()
-        DriveBackupService(
-            context = androidContext(),
             tokenProvider = { authManager.getValidToken() },
         )
     }

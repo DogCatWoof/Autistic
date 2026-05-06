@@ -1,14 +1,7 @@
 package org.meow.autistic.ui.screens
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,8 +11,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.outlined.CheckCircle
 import java.time.DayOfWeek
@@ -39,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.meow.autistic.data.calendar.CalendarEventEntity
@@ -60,8 +50,6 @@ fun TaskListScreen(
     val grouped by viewModel.groupedItems.collectAsState()
     val completedItems by viewModel.completedItems.collectAsState()
     val showCompleted by viewModel.showCompleted.collectAsState()
-    val isAuthenticated by viewModel.isAuthenticated.collectAsState()
-    val syncState by viewModel.syncState.collectAsState()
     val undoStack by viewModel.undoStack.collectAsState()
     var fabExpanded by remember { mutableStateOf(false) }
     var addType by remember { mutableStateOf<AddType?>(null) }
@@ -72,70 +60,29 @@ fun TaskListScreen(
     var selectedTask by remember { mutableStateOf<TaskEntity?>(null) }
     var selectedEvent by remember { mutableStateOf<CalendarEventEntity?>(null) }
 
-    val signInLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        viewModel.handleSignInResult(result.data)
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("My Tasks") },
-                actions = {
-                    if (undoStack.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.undo() }) {
-                            BadgedBox(badge = {
-                                if (undoStack.size > 1) Badge { Text("${undoStack.size}") }
-                            }) {
-                                Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo")
-                            }
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (undoStack.isNotEmpty()) {
+                    IconButton(onClick = { viewModel.undo() }) {
+                        BadgedBox(badge = {
+                            if (undoStack.size > 1) Badge { Text("${undoStack.size}") }
+                        }) {
+                            Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo")
                         }
                     }
-                    IconButton(onClick = { viewModel.toggleShowCompleted() }) {
-                        Icon(
-                            if (showCompleted) Icons.Outlined.CheckCircle else Icons.Default.CheckCircle,
-                            contentDescription = if (showCompleted) "Show active tasks" else "Show completed tasks",
-                        )
-                    }
-                    SyncStatusIcon(
-                        syncState = syncState,
-                        isAuthenticated = isAuthenticated,
-                        onSyncClick = { viewModel.triggerSync() }
-                    )
                 }
-            )
-        },
-        floatingActionButton = {
-            Column(horizontalAlignment = Alignment.End) {
-                AnimatedVisibility(visible = fabExpanded) {
-                    Column(
-                        horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.padding(bottom = 16.dp),
-                    ) {
-                        SpeedDialItem("Daily Task") { fabExpanded = false; addType = AddType.DailyTask }
-                        SpeedDialItem("Calendar Event") { fabExpanded = false; addType = AddType.Calendar }
-                        SpeedDialItem("Task") { fabExpanded = false; addType = AddType.Task }
-                    }
-                }
-                FloatingActionButton(onClick = { fabExpanded = !fabExpanded }) {
+                IconButton(onClick = { viewModel.toggleShowCompleted() }) {
                     Icon(
-                        Icons.Default.Add,
-                        contentDescription = "Add Task",
-                        modifier = Modifier.rotate(fabRotation),
+                        if (showCompleted) Icons.Outlined.CheckCircle else Icons.Default.CheckCircle,
+                        contentDescription = if (showCompleted) "Show active tasks" else "Show completed tasks",
                     )
                 }
             }
-        }
-    ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
-            if (!isAuthenticated) {
-                GoogleAuthBanner(onConnectClick = {
-                    signInLauncher.launch(viewModel.getSignInIntent())
-                })
-            }
-
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 if (showCompleted) {
                     if (completedItems.isEmpty()) {
@@ -212,6 +159,26 @@ fun TaskListScreen(
                     .background(Color.Black.copy(alpha = 0.32f))
                     .clickable { fabExpanded = false },
             )
+        }
+
+        Column(
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+            horizontalAlignment = Alignment.End,
+        ) {
+            AnimatedVisibility(visible = fabExpanded) {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.padding(bottom = 16.dp),
+                ) {
+                    SpeedDialItem("Daily Task") { fabExpanded = false; addType = AddType.DailyTask }
+                    SpeedDialItem("Calendar Event") { fabExpanded = false; addType = AddType.Calendar }
+                    SpeedDialItem("Task") { fabExpanded = false; addType = AddType.Task }
+                }
+            }
+            FloatingActionButton(onClick = { fabExpanded = !fabExpanded }) {
+                Icon(Icons.Default.Add, contentDescription = "Add Task", modifier = Modifier.rotate(fabRotation))
+            }
         }
 
         when (addType) {
@@ -300,69 +267,6 @@ fun TaskListScreen(
                     selectedTask = null
                 }
             )
-        }
-    }
-}
-
-@Composable
-fun SyncStatusIcon(
-    syncState: SyncState,
-    isAuthenticated: Boolean,
-    onSyncClick: () -> Unit
-) {
-    if (!isAuthenticated) return
-
-    val rotation = remember { Animatable(0f) }
-
-    LaunchedEffect(syncState) {
-        if (syncState is SyncState.Syncing) {
-            rotation.animateTo(
-                targetValue = 360f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(1000, easing = LinearEasing),
-                    repeatMode = RepeatMode.Restart
-                )
-            )
-        } else {
-            rotation.stop()
-            rotation.snapTo(0f)
-        }
-    }
-
-    IconButton(onClick = onSyncClick, enabled = syncState !is SyncState.Syncing) {
-        Icon(
-            imageVector = Icons.Default.Sync,
-            contentDescription = "Sync",
-            modifier = Modifier.rotate(rotation.value)
-        )
-    }
-}
-
-@Composable
-fun GoogleAuthBanner(onConnectClick: () -> Unit) {
-    Surface(
-        color = MaterialTheme.colorScheme.primaryContainer,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onConnectClick() }
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Default.Refresh, contentDescription = null)
-            Spacer(modifier = Modifier.width(16.dp))
-            Column {
-                Text(
-                    "Connect to Google",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    "Sync your tasks across devices",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
         }
     }
 }
