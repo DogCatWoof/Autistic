@@ -86,11 +86,15 @@ class TaskListScreenTest {
         composeTestRule.onNodeWithText("Task description").performTextInput("Finish report")
         composeTestRule.onNodeWithText("Save").performClick()
 
-        composeTestRule.onNodeWithText("Finish report").assertIsDisplayed()
+        composeTestRule.waitUntil(5000) {
+            try { composeTestRule.onNodeWithText("Finish report").assertIsDisplayed(); true } catch (_: AssertionError) { false }
+        }
 
         composeTestRule.onNodeWithText("Finish report").performTouchInput { swipeRight() }
 
-        composeTestRule.onNodeWithText("Finish report").assertDoesNotExist()
+        composeTestRule.waitUntil(5000) {
+            try { composeTestRule.onNodeWithText("Finish report").assertDoesNotExist(); true } catch (_: AssertionError) { false }
+        }
     }
 
     @Test
@@ -99,11 +103,15 @@ class TaskListScreenTest {
         composeTestRule.onNodeWithText("Task description").performTextInput("Buy milk")
         composeTestRule.onNodeWithText("Save").performClick()
 
-        composeTestRule.onNodeWithText("Buy milk").assertIsDisplayed()
+        composeTestRule.waitUntil(5000) {
+            try { composeTestRule.onNodeWithText("Buy milk").assertIsDisplayed(); true } catch (_: AssertionError) { false }
+        }
 
         composeTestRule.onNodeWithText("Buy milk").performTouchInput { swipeLeft() }
 
-        composeTestRule.onNodeWithText("Buy milk").assertDoesNotExist()
+        composeTestRule.waitUntil(5000) {
+            try { composeTestRule.onNodeWithText("Buy milk").assertDoesNotExist(); true } catch (_: AssertionError) { false }
+        }
     }
 
     @Test
@@ -119,6 +127,8 @@ class TaskListScreenTest {
         composeTestRule.onNodeWithText("Notes").performTextInput("Some note here")
         composeTestRule.onNodeWithText("Save").performClick()
 
-        composeTestRule.onNodeWithText("Some note here").assertIsDisplayed()
+        composeTestRule.waitUntil(5000) {
+            try { composeTestRule.onNodeWithText("Some note here").assertIsDisplayed(); true } catch (_: AssertionError) { false }
+        }
     }
 }

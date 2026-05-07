@@ -373,7 +373,9 @@ fun CalendarEventItem(
     val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM dd, HH:mm").withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault()) }
     val dimColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
 
-    val dismissState = rememberSwipeToDismissBoxState()
+    val dismissState = rememberSwipeToDismissBoxState(
+        positionalThreshold = { totalDistance -> totalDistance * 0.5f },
+    )
     LaunchedEffect(dismissState.currentValue) {
         when (dismissState.currentValue) {
             SwipeToDismissBoxValue.StartToEnd -> viewModel.deleteEvent(event)
@@ -459,7 +461,9 @@ fun TaskItem(
     val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM dd, HH:mm").withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault()) }
     val dimColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
 
-    val dismissState = rememberSwipeToDismissBoxState()
+    val dismissState = rememberSwipeToDismissBoxState(
+        positionalThreshold = { totalDistance -> totalDistance * 0.5f },
+    )
     LaunchedEffect(dismissState.currentValue) {
         when (dismissState.currentValue) {
             SwipeToDismissBoxValue.StartToEnd -> onDelete()
