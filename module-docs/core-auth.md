@@ -1,23 +1,27 @@
 # :core:auth
 
 ## Purpose
-Google OAuth and Firebase Auth sign-in flow, token lifecycle management. Shared by all modules that need an authenticated identity.
+Google Sign-In via Firebase Auth and OAuth access token management for Google APIs (Tasks, Calendar).
 
 ## Functional Scope
-- Google sign-in and sign-out
-- Firebase Auth credential bridging (so Firestore security rules can use `request.auth.uid`)
-- Access token refresh and caching
+- Google Sign-In via Credential Manager + Firebase Auth
+- Firebase Auth session management (sign-in, sign-out, uid provider)
+- OAuth access token refresh and caching for Google APIs
+- Encrypted token storage via `TokenStore`
 
 ## Key Files
-- `GoogleAuthManager` — orchestrates Google sign-in, Firebase credential, token refresh
-- `TokenStore` — persists and retrieves OAuth tokens
+- `GoogleAuthManager` — sign-in flow, token management, Firebase Auth bridging
+- `TokenStore` — encrypted SharedPreferences for OAuth tokens and account email
 
 ## Dependencies
 - `:core:common`
 - Firebase Auth SDK
-- Google Sign-In SDK
+- Credential Manager (AndroidX)
+- Google Sign-In SDK (for `GoogleIdTokenCredential`)
+- Google Auth Util (for `GoogleAuthUtil.getToken()`)
 
 ## Not In This Module
 - Firestore operations (`:data:firestore`)
 - UI for sign-in screens (`:app`)
 - Any feature-domain logic
+- Google API HTTP clients (`:data:sync`)

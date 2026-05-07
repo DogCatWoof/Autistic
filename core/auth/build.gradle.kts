@@ -17,10 +17,9 @@ dependencies {
     implementation(libs.google.identity.googleid)
     implementation(libs.google.api.services.tasks)
     implementation(libs.google.api.services.calendar)
-    implementation(libs.google.api.services.drive)
     implementation(libs.androidx.security.crypto)
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth.ktx)
+    implementation(libs.firebase.auth)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
