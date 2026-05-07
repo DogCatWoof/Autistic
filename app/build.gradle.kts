@@ -11,11 +11,11 @@ configurations.all {
     resolutionStrategy {
         force("androidx.concurrent:concurrent-futures:1.2.0")
         force("androidx.concurrent:concurrent-futures-ktx:1.2.0")
-        force("io.grpc:grpc-core:1.62.2")
-        force("io.grpc:grpc-android:1.62.2")
-        force("io.grpc:grpc-okhttp:1.62.2")
-        force("io.grpc:grpc-protobuf-lite:1.62.2")
-        force("io.grpc:grpc-stub:1.62.2")
+        force("io.grpc:grpc-core:1.68.0")
+        force("io.grpc:grpc-android:1.68.0")
+        force("io.grpc:grpc-okhttp:1.68.0")
+        force("io.grpc:grpc-protobuf-lite:1.68.0")
+        force("io.grpc:grpc-stub:1.68.0")
     }
 }
 
