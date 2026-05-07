@@ -40,6 +40,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -546,7 +547,7 @@ private fun AddFoodEntryDialog(
                         value = description,
                         onValueChange = { description = it; onSearchFoodNames(it); dropdownExpanded = true },
                         label = { Text("Description (optional)") },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(), singleLine = true,
+                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true), singleLine = true,
                     )
                     ExposedDropdownMenu(
                         expanded = dropdownExpanded && suggestions.isNotEmpty(),
@@ -677,12 +678,12 @@ private fun FoodLogDateBar(date: String, onPrev: () -> Unit, onNext: () -> Unit)
         title = { Text("Food Log · $label") },
         navigationIcon = {
             IconButton(onClick = onPrev) {
-                Icon(Icons.Default.KeyboardArrowLeft, contentDescription = "Previous day")
+                Icon(Icons.Filled.KeyboardArrowLeft, contentDescription = "Previous day")
             }
         },
         actions = {
             IconButton(onClick = onNext) {
-                Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Next day")
+                Icon(Icons.Filled.KeyboardArrowRight, contentDescription = "Next day")
             }
         },
     )

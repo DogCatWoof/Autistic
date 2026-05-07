@@ -24,8 +24,7 @@ import androidx.compose.ui.unit.dp
 import org.koin.core.context.GlobalContext
 import org.meow.autistic.data.diagnostics.QueryEntry
 import org.meow.autistic.data.diagnostics.QueryLogger
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private const val SLOW_THRESHOLD_MS = 50L
@@ -90,4 +89,4 @@ private fun QueryEntryItem(entry: QueryEntry) {
 }
 
 private fun formatTimestamp(ms: Long): String =
-    SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()).format(Date(ms))
+    DateTimeFormatter.ofPattern("HH:mm:ss.SSS").withLocale(Locale.getDefault()).withZone(java.time.ZoneId.systemDefault()).format(java.time.Instant.ofEpochMilli(ms))

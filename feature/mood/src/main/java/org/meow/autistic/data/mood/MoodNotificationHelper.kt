@@ -44,7 +44,6 @@ fun showMoodCheckInNotification(context: Context) {
         .setStyle(NotificationCompat.DecoratedCustomViewStyle())
         .setCustomBigContentView(views)
         .addAction(noteAction)
-        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
     (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
         .notify(MOOD_NOTIFICATION_ID, builder.build())
 }

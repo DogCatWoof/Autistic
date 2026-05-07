@@ -56,7 +56,7 @@ class CalendarRemoteSource(
     private val clientFactory: (token: String) -> Calendar = { token ->
         Calendar.Builder(
             NetHttpTransport(),
-            GsonFactory.getDefaultInstance(),
+            GsonFactory(),
             HttpRequestInitializer { request ->
                 request.headers.authorization = "Bearer $token"
             },

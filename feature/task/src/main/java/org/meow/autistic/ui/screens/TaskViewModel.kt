@@ -108,14 +108,14 @@ class TaskViewModel(
             today = upcoming.filter { isToday(it, todayStart, todayEnd) },
             later = laterByDate,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GroupedTaskItems.EMPTY)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, GroupedTaskItems.EMPTY)
 
     val completedItems: StateFlow<List<TaskListItem.Task>> = repository.completedTasks
         .map { tasks ->
             val todayEnd = todayEndMs()
             tasks.map { task -> TaskListItem.Task(task, taskSortKey(task, todayEnd)) }
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private val _isAuthenticated = MutableStateFlow(false)
     val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()

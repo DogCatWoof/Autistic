@@ -15,9 +15,11 @@ import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.Create
 import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material.icons.outlined.Mood
+import androidx.compose.material.icons.outlined.PlaylistPlay
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Settings

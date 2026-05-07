@@ -29,7 +29,6 @@ class TaskReminderWorker(
             .setSmallIcon(R.drawable.ic_task_notification)
             .setContentTitle("Task reminder")
             .setContentText(taskTitle)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .build()
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

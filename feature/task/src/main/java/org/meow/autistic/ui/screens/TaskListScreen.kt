@@ -14,8 +14,12 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.outlined.CheckCircle
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import java.util.*
 import androidx.compose.material3.*
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
@@ -34,9 +38,6 @@ import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.meow.autistic.data.calendar.CalendarEventEntity
 import org.meow.autistic.data.task.TaskEntity
-import java.text.SimpleDateFormat
-import java.time.Instant
-import java.util.*
 
 
 private enum class AddType { Task, Calendar, DailyTask }
@@ -369,7 +370,7 @@ fun CalendarEventItem(
     leadingIcon: ImageVector,
     onClick: () -> Unit = {},
 ) {
-    val dateFormatter = remember { SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()) }
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM dd, HH:mm").withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault()) }
     val dimColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
 
     val dismissState = rememberSwipeToDismissBoxState()
@@ -424,16 +425,16 @@ fun CalendarEventItem(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.width(12.dp))
-                Column {
+                Column(modifier = Modifier) {
                     Text(event.title, style = MaterialTheme.typography.bodyLarge)
                     if (event.isAllDay) {
                         Text("All day", style = MaterialTheme.typography.bodySmall, color = dimColor)
                     } else {
-                        Text(
-                            "${dateFormatter.format(Date.from(event.startAt))} – ${dateFormatter.format(Date.from(event.endAt))}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = dimColor,
-                        )
+                    Text(
+                        "${dateFormatter.format(event.startAt)} – ${dateFormatter.format(event.endAt)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = dimColor,
+                    )
                     }
                 }
             }
@@ -455,7 +456,7 @@ fun TaskItem(
     onDelete: () -> Unit,
     onClick: () -> Unit,
 ) {
-    val dateFormatter = remember { SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()) }
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM dd, HH:mm").withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault()) }
     val dimColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
 
     val dismissState = rememberSwipeToDismissBoxState()
@@ -502,16 +503,14 @@ fun TaskItem(
         ) {
             Row(
                 modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
                     .fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(
-                    leadingIcon,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp).padding(top = 2.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                Text(
+                    dateFormatter.format(task.dueAt ?: return@Row),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = dimColor,
                 )
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
@@ -521,11 +520,11 @@ fun TaskItem(
                         color = if (task.isCompleted) dimColor else MaterialTheme.colorScheme.onSurface
                     )
                     if (task.dueAt != null) {
-                        Text(
-                            text = "Due: ${dateFormatter.format(Date.from(task.dueAt))}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = dimColor
-                        )
+                    Text(
+                        text = "Due: ${dateFormatter.format(task.dueAt)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = dimColor
+                    )
                     }
                     val taskNotes = task.notes
                     if (!taskNotes.isNullOrEmpty()) {

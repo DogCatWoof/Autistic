@@ -47,8 +47,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -156,7 +156,7 @@ private fun PermissionDeniedContent(onOpenSettings: () -> Unit, modifier: Modifi
 @Composable
 private fun CameraPreview(onBarcodeDetected: (String) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     val executor = remember { Executors.newSingleThreadExecutor() }
     val analyzer = remember { BarcodeAnalyzer(onBarcodeDetected) }
 

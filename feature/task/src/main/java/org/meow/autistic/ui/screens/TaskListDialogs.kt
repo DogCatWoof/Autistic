@@ -14,10 +14,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import org.meow.autistic.data.calendar.CalendarEventEntity
 import org.meow.autistic.data.task.TaskEntity
-import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 @Composable
@@ -187,7 +187,7 @@ fun CalendarEventDialog(
     onDone: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val dateFormatter = remember { SimpleDateFormat("EEE, MMM dd · HH:mm", Locale.getDefault()) }
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("EEE, MMM dd · HH:mm").withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault()) }
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.fillMaxWidth(0.95f),
@@ -198,8 +198,8 @@ fun CalendarEventDialog(
                 if (event.isAllDay) {
                     Text("All day", style = MaterialTheme.typography.bodyMedium)
                 } else {
-                    Text(dateFormatter.format(Date.from(event.startAt)), style = MaterialTheme.typography.bodyMedium)
-                    Text("– ${dateFormatter.format(Date.from(event.endAt))}", style = MaterialTheme.typography.bodyMedium)
+                    Text(dateFormatter.format(event.startAt), style = MaterialTheme.typography.bodyMedium)
+                    Text("– ${dateFormatter.format(event.endAt)}", style = MaterialTheme.typography.bodyMedium)
                 }
                 if (!event.location.isNullOrBlank()) {
                     Text("Location: ${event.location}", style = MaterialTheme.typography.bodyMedium)
@@ -241,7 +241,7 @@ fun EditTaskDialog(
     onComplete: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val dueDateFormatter = remember { SimpleDateFormat("EEE, MMM dd · HH:mm", Locale.getDefault()) }
+    val dueDateFormatter = remember { DateTimeFormatter.ofPattern("EEE, MMM dd · HH:mm").withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault()) }
     var taskText by remember { mutableStateOf(task.task) }
     var notesText by remember { mutableStateOf(task.notes ?: "") }
     var expectedTimeText by remember { mutableStateOf(task.expectedTimeMinutes?.toString() ?: "") }
@@ -260,7 +260,7 @@ fun EditTaskDialog(
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         task.dueAt?.let { due ->
                             Text(
-                                "Due: ${dueDateFormatter.format(Date.from(due))}",
+                                "Due: ${dueDateFormatter.format(due)}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )

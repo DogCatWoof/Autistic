@@ -12,5 +12,5 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.datastore.preferences)
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.firestore.ktx)
+    implementation(libs.firebase.firestore)
 }

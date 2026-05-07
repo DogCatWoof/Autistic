@@ -11,6 +11,11 @@ configurations.all {
     resolutionStrategy {
         force("androidx.concurrent:concurrent-futures:1.2.0")
         force("androidx.concurrent:concurrent-futures-ktx:1.2.0")
+        force("io.grpc:grpc-core:1.62.2")
+        force("io.grpc:grpc-android:1.62.2")
+        force("io.grpc:grpc-okhttp:1.62.2")
+        force("io.grpc:grpc-protobuf-lite:1.62.2")
+        force("io.grpc:grpc-stub:1.62.2")
     }
 }
 
@@ -153,6 +158,10 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.grpc.android)
+    implementation(libs.grpc.okhttp)
+    implementation(libs.grpc.protobuf.lite)
+    implementation(libs.grpc.stub)
 
     // Koin DI
     implementation(libs.koin.android)

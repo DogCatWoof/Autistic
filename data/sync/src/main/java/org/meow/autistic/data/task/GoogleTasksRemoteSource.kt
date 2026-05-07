@@ -47,7 +47,7 @@ class GoogleTasksRemoteSource(
     private val clientFactory: (token: String) -> Tasks = { token ->
         Tasks.Builder(
             NetHttpTransport(),
-            GsonFactory.getDefaultInstance(),
+            GsonFactory(),
             HttpRequestInitializer { request ->
                 request.headers.authorization = "Bearer $token"
             },

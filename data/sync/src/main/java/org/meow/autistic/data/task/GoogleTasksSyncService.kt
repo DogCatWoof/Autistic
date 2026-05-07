@@ -1,11 +1,10 @@
 package org.meow.autistic.data.task
 
-import java.text.SimpleDateFormat
 import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import java.util.Date
 import java.util.Locale
-import java.util.TimeZone
 
 private const val DEFAULT_TASK_LIST = "@default"
 private const val RFC3339_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
@@ -152,9 +151,7 @@ private fun parseNotesField(raw: String?): Pair<String?, String?> {
 }
 
 private fun Instant.toRfc3339(): String =
-    SimpleDateFormat(RFC3339_PATTERN, Locale.US)
-        .apply { timeZone = TimeZone.getTimeZone("UTC") }
-        .format(Date.from(this))
+    DateTimeFormatter.ofPattern(RFC3339_PATTERN).withLocale(Locale.US).withZone(ZoneId.of("UTC")).format(this)
 
 private fun String.fromRfc3339(): Instant? =
     runCatching { Instant.parse(this) }.getOrNull()

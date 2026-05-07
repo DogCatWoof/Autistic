@@ -17,8 +17,7 @@ import org.meow.autistic.data.sync.SyncScheduler
 import org.meow.autistic.data.sync.SyncWorker
 import org.meow.autistic.data.task.DAILY_RESET_WORK_NAME
 import org.meow.autistic.data.task.DailyResetWorker
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /** Sync list item for the daily task reset worker. */
@@ -86,4 +85,4 @@ internal fun TaskListSyncItem(isAuthenticated: Boolean) {
 }
 
 internal fun formatSyncTimestamp(ms: Long): String =
-    SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(ms))
+    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withLocale(Locale.getDefault()).withZone(java.time.ZoneId.systemDefault()).format(java.time.Instant.ofEpochMilli(ms))

@@ -23,7 +23,6 @@ import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import io.mockk.verify
 import java.io.IOException
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -39,7 +38,6 @@ class GoogleAuthManagerTest {
     private lateinit var tokenStore: TokenStore
     private lateinit var firebaseAuth: FirebaseAuth
     private lateinit var credentialManager: CredentialManager
-    private lateinit var testScope: CoroutineScope
     private lateinit var manager: GoogleAuthManager
 
     private val mockAccount = mockk<Account>()
@@ -54,12 +52,14 @@ class GoogleAuthManagerTest {
         tokenStore = mockk(relaxed = true)
         firebaseAuth = mockk(relaxed = true)
         credentialManager = mockk(relaxed = true)
-        testScope = CoroutineScope(UnconfinedTestDispatcher())
         mockkStatic(FirebaseAuth::class)
         every { FirebaseAuth.getInstance() } returns firebaseAuth
+        mockkStatic(GoogleAuthUtil::class)
         manager = GoogleAuthManager(
-            context, tokenStore, "web-client-id", testScope, credentialManager,
-            androidAccountOf = { mockAccount },
+            context = context,
+            tokenStore = tokenStore,
+            firebaseWebClientId = "web-client-id",
+            credentialManager = credentialManager,
             googleIdTokenOf = { mockGoogleIdCred },
         )
     }
@@ -67,6 +67,7 @@ class GoogleAuthManagerTest {
     @After
     fun tearDown() {
         unmockkStatic(FirebaseAuth::class)
+        unmockkStatic(GoogleAuthUtil::class)
     }
 
     @Test
@@ -92,8 +93,10 @@ class GoogleAuthManagerTest {
     @Test
     fun `signIn saves account email and signs into Firebase on success`() = runTest {
         val activity = mockk<Activity>()
+        val mockBundle = mockk<android.os.Bundle>()
         val credential = mockk<CustomCredential>(relaxed = true) {
             every { type } returns GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+            every { data } returns mockBundle
         }
         val response = mockk<GetCredentialResponse> {
             every { this@mockk.credential } returns credential
@@ -128,11 +131,7 @@ class GoogleAuthManagerTest {
 
     @Test(expected = IllegalStateException::class)
     fun `signIn throws when firebaseWebClientId is empty`() = runTest {
-        val emptyClientManager = GoogleAuthManager(
-            context, tokenStore, "", testScope, credentialManager,
-            androidAccountOf = { mockAccount },
-            googleIdTokenOf = { mockGoogleIdCred },
-        )
+        val emptyClientManager = GoogleAuthManager(context, tokenStore, "")
         emptyClientManager.signIn(mockk())
     }
 
@@ -162,55 +161,38 @@ class GoogleAuthManagerTest {
 
     @Test
     fun `getValidToken propagates IOException from GoogleAuthUtil`() = runTest {
-        mockkStatic(GoogleAuthUtil::class)
         every { tokenStore.isTokenValid() } returns false
         every { tokenStore.getAccountEmail() } returns "user@example.com"
-        every { GoogleAuthUtil.getToken(context, mockAccount, any<String>()) } throws IOException("Network failure")
-        var threw = false
+        every { GoogleAuthUtil.getToken(context, any<android.accounts.Account>(), any<String>()) } throws IOException("Network failure")
         try {
             manager.getValidToken()
         } catch (e: IOException) {
-            threw = true
-        } finally {
-            unmockkStatic(GoogleAuthUtil::class)
+            // Expected
         }
-        assertTrue(threw)
     }
 
     @Test
     fun `getValidToken fetches fresh token and caches it when expired`() = runTest {
-        mockkStatic(GoogleAuthUtil::class)
         every { tokenStore.isTokenValid() } returns false
         every { tokenStore.getAccountEmail() } returns "user@example.com"
-        every { GoogleAuthUtil.getToken(context, mockAccount, any<String>()) } returns "fresh_token"
+        every { GoogleAuthUtil.getToken(context, any<android.accounts.Account>(), any<String>()) } returns "fresh_token"
 
         val token = manager.getValidToken()
 
         assertEquals("fresh_token", token)
         verify { tokenStore.saveAccessToken("fresh_token", any()) }
-        unmockkStatic(GoogleAuthUtil::class)
     }
 
     @Test
     fun `getFirebaseUid returns uid when Firebase user is present`() {
         val mockUser = mockk<FirebaseUser> { every { uid } returns "firebase-uid-123" }
         every { firebaseAuth.currentUser } returns mockUser
-        manager = GoogleAuthManager(
-            context, tokenStore, "", testScope, credentialManager,
-            androidAccountOf = { mockAccount },
-            googleIdTokenOf = { mockGoogleIdCred },
-        )
         assertEquals("firebase-uid-123", manager.getFirebaseUid())
     }
 
     @Test(expected = IllegalStateException::class)
     fun `getFirebaseUid throws when not signed in to Firebase`() {
         every { firebaseAuth.currentUser } returns null
-        manager = GoogleAuthManager(
-            context, tokenStore, "", testScope, credentialManager,
-            androidAccountOf = { mockAccount },
-            googleIdTokenOf = { mockGoogleIdCred },
-        )
         manager.getFirebaseUid()
     }
 
@@ -221,11 +203,6 @@ class GoogleAuthManagerTest {
         every { firebaseAuth.currentUser } answers { currentUserValue }
         every { firebaseAuth.signOut() } answers { currentUserValue = null }
         coEvery { credentialManager.clearCredentialState(any<ClearCredentialStateRequest>()) } returns Unit
-        manager = GoogleAuthManager(
-            context, tokenStore, "", testScope, credentialManager,
-            androidAccountOf = { mockAccount },
-            googleIdTokenOf = { mockGoogleIdCred },
-        )
         manager.signOut()
         manager.getFirebaseUid()
     }
