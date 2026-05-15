@@ -12,14 +12,14 @@ Bidirectional Room ↔ Firestore sync for all user data collections. Enables cro
 ## Key Files
 - `FirestoreSource` — Firestore SDK wrapper; `upsert`, `delete`, `fetchAll`, `fetchSince`
 - `FirestoreSyncService` — `pushPending(uid)` and `pullAndMerge(uid, since)` for all 9 collections
-- `FirestoreDocuments.kt` — document models and entity ↔ document conversions for tasks, notes, moods, food log items
+- `FirestoreDocuments.kt` — document models and entity ↔ document conversions for tasks, notes, moods
 - `FirestoreHealthDocuments.kt` — health snapshot document model
 - `FirestoreSequenceDocuments.kt` — sequence, step, run document models
 - `FirestoreSyncPrefs` — DataStore: persists `lastFirestorePullAt`
 
 ## Collection Structure
 ```
-users/{uid}/tasks, notes, moods, foodLogItems,
+users/{uid}/tasks, notes, moods,
             healthSnapshots, sequences, sequenceSteps,
             sequenceRuns, dailyTasks
 ```

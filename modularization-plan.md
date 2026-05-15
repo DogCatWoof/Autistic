@@ -12,7 +12,6 @@ The app is a 154-file, single-`:app` Gradle module. The goal is to partition cod
 :core:common         diagnostics, debug, ExceptionReporter, GlobalErrorHandler
 :core:auth           GoogleAuthManager, TokenStore
 :core:database       all entities, all DAOs, TaskDatabase, migrations
-                     (includes FoodLogItemEntity/FoodLogItemDao — part of TaskDatabase monolith)
 :core:ui             theme, CommonComponents, ItemColorResolver, ItemIconResolver
 :core:notifications  notification channel definitions/registration, channel ID constants,
                      notification permission helpers
@@ -30,11 +29,6 @@ The app is a 154-file, single-`:app` Gradle module. The goal is to partition cod
                      HealthConnectSettingsScreen, HealthConnectDetailDialog, IntegratedHealthScreen
 :feature:sequence    SequenceRepository, SequenceRunNotificationManager, SequenceStepReceiver,
                      SequenceViewModel, SequenceRunViewModel, SequenceListScreen
-:feature:food        ProductDatabase (+ all food product entities/DAOs),
-                     FoodLogRepository, FoodCacheRepository, ProductRepository,
-                     ClaudeVisionClient, FoodProductLookupService, ParsedNutritionData,
-                     OpenFoodFactsApiClient, UsdaFdcApiClient, FoodLogViewModel, ScanViewModel,
-                     FoodLogScreen, FoodLogPhotoDialogs, ScanScreen, ScanQueueList, CameraScreen
 :feature:conversation IntentClassifier, ResponseTemplateRepository, TonePreferencesStore,
                      ConversationViewModel, ConversationScreen
 :app                 AutisticApp, MainActivity, AppDrawer, NavBottomSheet, NavPreferencesStore,
@@ -53,7 +47,6 @@ The app is a 154-file, single-`:app` Gradle module. The goal is to partition cod
 :feature:mood → :core:database, :core:ui, :core:notifications
 :feature:health → :core:database, :core:ui
 :feature:sequence → :core:database, :core:common, :core:ui, :core:notifications
-:feature:food → :core:database, :core:common, :core:ui
 :feature:conversation → :core:ui
 :data:sync → :core:database, :core:auth
 :data:firestore → :core:database, :core:auth
@@ -72,20 +65,16 @@ Features using notifications: `:feature:task` (task reminders), `:feature:mood` 
 
 ## Key Constraint: TaskDatabase Stays Monolithic
 
-`TaskDatabase` (`data/task/TaskDatabase.kt`) is a single `@Database` class holding 13 entities from 8 packages. It moves as-is into `:core:database` along with every entity and DAO — including `FoodLogItemEntity`/`FoodLogItemDao`, which are part of this monolith. The vertical partition for features means their **repositories + ViewModels + UI** are isolated, not their entities.
-
-`ProductDatabase` is a separate, standalone Room database used only by the food feature. It is **not** part of the TaskDatabase monolith and moves entirely into `:feature:food` with its product entities and DAOs. `:feature:food` still declares a dependency on `:core:database` because `FoodLogRepository` uses `FoodLogItemDao` from TaskDatabase.
+`TaskDatabase` (`data/task/TaskDatabase.kt`) is a single `@Database` class (10 entities from 6 packages). It moves as-is into `:core:database` along with every entity and DAO. The vertical partition for features means their **repositories + ViewModels + UI** are isolated, not their entities.
 
 ---
 
 ## Required Kotlin Code Changes
 
 ### 1. BuildConfig references in library modules
-Three files import `org.meow.autistic.BuildConfig` which is only available in `:app`. Fix by injecting API keys via constructor parameters with `""` defaults; pass real values from the Koin module in `:app`:
+The file `org.meow.autistic.BuildConfig` is only available in `:app`. Fix by injecting API keys via constructor parameters with `""` defaults; pass real values from the Koin module in `:app`:
 
 - `GoogleAuthManager.kt` → add `firebaseWebClientId: String = ""` constructor param
-- `ClaudeVisionClient.kt` → add `apiKey: String = ""` constructor param
-- `UsdaFdcApiClient.kt` → add `apiKey: String = ""` constructor param
 
 ### 2. Fix `MoodBroadcastReceiver` direct DB access
 Currently calls `TaskDatabase.getDatabase(context).moodDao()` directly (line 66). Replace with `KoinComponent` injection:
@@ -168,8 +157,7 @@ Each library module's `build.gradle.kts` then becomes 5–15 lines. `:app` keeps
 13. `:feature:health` — move health files; update AndroidManifest for HealthPermissionsRationaleActivity
 14. `:feature:mood` — apply fixes #2 and #5 first, then move; move `notification_mood_picker.xml` resource
 15. `:feature:sequence` — apply fixes #3 and #4, then move
-16. `:feature:food` — apply BuildConfig fixes, move ProductDatabase + product entities/DAOs, then move repositories/ViewModels/UI (largest batch)
-17. `:feature:task` — last; most dependencies; move repositories, workers, all task UI
+16. `:feature:task` — last; most dependencies; move repositories, workers, all task UI
 
 ---
 
@@ -181,7 +169,6 @@ Each library module's `build.gradle.kts` then becomes 5–15 lines. `:app` keeps
 - `app/src/main/java/org/meow/autistic/data/sequence/SequenceRunNotificationManager.kt` — fix #4 before moving
 - `app/src/main/java/org/meow/autistic/MainActivity.kt` — extract `showNotification()` (#5)
 - `app/src/main/java/org/meow/autistic/data/auth/GoogleAuthManager.kt` — fix #1 before moving
-- `app/src/main/java/org/meow/autistic/data/photo/ClaudeVisionClient.kt` — fix #1 before moving
 - `app/build.gradle.kts` — source of BuildConfig fields that move to constructor injection
 - `settings.gradle.kts` — add all 14 new `include()` paths
 - `gradle/libs.versions.toml` — add `android-library` plugin alias for use in build-logic
@@ -202,4 +189,4 @@ Final check: `./gradlew :app:assembleDebug` with a clean build cache to confirm 
 
 ## Scope Note
 
-This is a large structural refactoring: ~16 new `build.gradle.kts` files, updates to `settings.gradle.kts`, and moving ~142 Kotlin files across module directories. The Kotlin code itself changes minimally (only the 7 changes listed above). Execute one phase at a time with a passing test suite before proceeding.
+This is a large structural refactoring: ~15 new `build.gradle.kts` files, updates to `settings.gradle.kts`, and moving Kotlin files across module directories. The Kotlin code itself changes minimally. Execute one phase at a time with a passing test suite before proceeding.

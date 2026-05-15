@@ -33,7 +33,6 @@
             <option value="$PROJECT_DIR$/data/sync" />
             <option value="$PROJECT_DIR$/feature" />
             <option value="$PROJECT_DIR$/feature/conversation" />
-            <option value="$PROJECT_DIR$/feature/food" />
             <option value="$PROJECT_DIR$/feature/mood" />
             <option value="$PROJECT_DIR$/feature/note" />
             <option value="$PROJECT_DIR$/feature/sequence" />

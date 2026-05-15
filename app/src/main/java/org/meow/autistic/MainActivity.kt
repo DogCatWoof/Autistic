@@ -51,7 +51,6 @@ class MainActivity : ComponentActivity() {
 
         val savedDestination = runBlocking { NavStateStore.getDestinationFlow(this@MainActivity).first() }
         val initialDestination = when (intent?.action) {
-            "org.meow.autistic.OPEN_SCAN"  -> "Scan"
             "org.meow.autistic.OPEN_TASKS" -> "Task"
             "org.meow.autistic.OPEN_NOTES" -> "Notes"
             "org.meow.autistic.OPEN_MOOD"  -> "Mood"

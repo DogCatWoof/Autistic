@@ -16,7 +16,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.meow.autistic.data.foodlog.FoodLogDao
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -44,15 +43,12 @@ class DailyResetWorker(
 
     private val taskDao: TaskDao by inject()
     private val dailyTaskRepository: DailyTaskRepository by inject()
-    private val foodLogDao: FoodLogDao by inject()
 
     override suspend fun doWork(): Result {
         val today = LocalDate.now()
         val todayStr = today.toString()
         val prefs = context.dailyResetDataStore.data.first()
         if (prefs[LAST_RESET_DATE_KEY] == todayStr) return Result.success()
-
-        foodLogDao.deleteOlderThan(today.minusDays(14).toString())
 
         taskDao.deleteUnfinishedDailyTasks()
 

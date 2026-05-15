@@ -24,5 +24,4 @@ Health Connect integration: reads health metrics (steps, heart rate, sleep, etc.
 
 ## Not In This Module
 - Mood data (`:feature:mood`)
-- Food nutrition data (`:feature:food`)
 - Firestore sync (`:data:firestore`)

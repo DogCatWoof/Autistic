@@ -31,13 +31,7 @@
 | Log | Log a mood entry | Document appears in `moods/{uid}/items/` with timestamp and rating |
 | Delete | Delete a mood entry | Document removed |
 
-### 4. Food Log
-| Step | Action | Expected in Firestore |
-|---|---|---|
-| Log | Log a food item | Document appears in `food/{uid}/items/` |
-| Delete | Delete a food log entry | Document removed |
-
-### 5. Sequences
+### 4. Sequences
 | Step | Action | Expected in Firestore |
 |---|---|---|
 | Create | Create a sequence | Sequence document in `sequences/{uid}/items/`, steps in sub-collection |
@@ -45,7 +39,7 @@
 | Run | Complete a sequence run | Run document appears in `sequenceRuns/{uid}/items/` |
 | Delete | Delete a sequence | Sequence and steps removed |
 
-### 6. Daily Tasks
+### 5. Daily Tasks
 | Step | Action | Expected in Firestore |
 |---|---|---|
 | Create | Add a daily task | Document in `dailyTasks/{uid}/items/` |

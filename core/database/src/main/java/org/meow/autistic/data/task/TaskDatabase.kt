@@ -10,12 +10,6 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import org.meow.autistic.data.calendar.CalendarDao
 import org.meow.autistic.data.calendar.CalendarEventEntity
-import org.meow.autistic.data.foodlog.FoodCacheDao
-import org.meow.autistic.data.foodlog.FoodCacheEntity
-import org.meow.autistic.data.foodlog.FoodLogDao
-import org.meow.autistic.data.foodlog.FoodLogEntry
-import org.meow.autistic.data.foodlog.FoodLogItemDao
-import org.meow.autistic.data.foodlog.FoodLogItemEntry
 import org.meow.autistic.data.health.HealthSnapshotDao
 import org.meow.autistic.data.health.HealthSnapshotEntity
 import org.meow.autistic.data.mood.MoodDao
@@ -80,9 +74,17 @@ internal val MIGRATION_18_19 = object : Migration(18, 19) {
     }
 }
 
+internal val MIGRATION_19_20 = object : Migration(19, 20) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP TABLE IF EXISTS food_log_items")
+        db.execSQL("DROP TABLE IF EXISTS food_log")
+        db.execSQL("DROP TABLE IF EXISTS food_cache")
+    }
+}
+
 @Database(
-    entities = [TaskEntity::class, CalendarEventEntity::class, DailyTaskEntity::class, NoteEntity::class, MoodEntity::class, FoodLogEntry::class, FoodLogItemEntry::class, HealthSnapshotEntity::class, FoodCacheEntity::class, SequenceEntity::class, SequenceStepEntity::class, SequenceRunEntity::class, SequenceStepProgressEntity::class],
-    version = 19,
+    entities = [TaskEntity::class, CalendarEventEntity::class, DailyTaskEntity::class, NoteEntity::class, MoodEntity::class, HealthSnapshotEntity::class, SequenceEntity::class, SequenceStepEntity::class, SequenceRunEntity::class, SequenceStepProgressEntity::class],
+    version = 20,
     exportSchema = false,
 )
 @TypeConverters(InstantConverter::class)
@@ -92,10 +94,7 @@ abstract class TaskDatabase : RoomDatabase() {
     abstract fun dailyTaskDao(): DailyTaskDao
     abstract fun noteDao(): NoteDao
     abstract fun moodDao(): MoodDao
-    abstract fun foodLogDao(): FoodLogDao
-    abstract fun foodLogItemDao(): FoodLogItemDao
     abstract fun healthSnapshotDao(): HealthSnapshotDao
-    abstract fun foodCacheDao(): FoodCacheDao
     abstract fun sequenceDao(): SequenceDao
 
     companion object {
@@ -104,11 +103,16 @@ abstract class TaskDatabase : RoomDatabase() {
 
         fun getDatabase(context: Context): TaskDatabase {
             return Instance ?: synchronized(this) {
-                Room.databaseBuilder(context, TaskDatabase::class.java, "autistic_database")
-                    .addMigrations(MIGRATION_17_18, MIGRATION_18_19)
-                    .fallbackToDestructiveMigration(true)
-                    .build()
-                    .also { Instance = it }
+                try {
+                    Room.databaseBuilder(context, TaskDatabase::class.java, "autistic_database")
+                        .addMigrations(MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20)
+                        .fallbackToDestructiveMigration(true)
+                        .build()
+                        .also { Instance = it }
+                } catch (e: Exception) {
+                    android.util.Log.e("TaskDatabase", "Room init failed", e)
+                    throw e
+                }
             }
         }
 

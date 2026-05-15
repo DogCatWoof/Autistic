@@ -11,8 +11,6 @@ import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Mood
 import androidx.compose.material.icons.filled.PlaylistPlay
-import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.outlined.Chat
@@ -20,8 +18,6 @@ import androidx.compose.material.icons.outlined.Create
 import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material.icons.outlined.Mood
 import androidx.compose.material.icons.outlined.PlaylistPlay
-import androidx.compose.material.icons.outlined.QrCodeScanner
-import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.AlertDialog
@@ -66,10 +62,8 @@ import org.meow.autistic.data.sync.IMMEDIATE_WORK_NAME
 
 internal val BOTTOM_ITEMS = listOf(
     NavigationItem("Task", Icons.Filled.Done, Icons.Outlined.Done),
-    NavigationItem("Scan", Icons.Filled.QrCodeScanner, Icons.Outlined.QrCodeScanner),
     NavigationItem("Notes", Icons.Filled.Create, Icons.Outlined.Create),
     NavigationItem("Mood", Icons.Filled.Mood, Icons.Outlined.Mood),
-    NavigationItem("Food Log", Icons.Filled.Restaurant, Icons.Outlined.Restaurant),
     NavigationItem("Talk", Icons.Filled.Chat, Icons.Filled.Chat),
     NavigationItem("Sequences", Icons.Filled.PlaylistPlay, Icons.Filled.PlaylistPlay),
 )
@@ -211,10 +205,8 @@ fun MainScaffold(
                 } else {
                     when (currentDestination) {
                         "Task" -> TaskListScreen()
-                        "Scan" -> ScanScreen()
                         "Notes" -> NotesScreen()
                         "Mood" -> MoodScreen()
-                        "Food Log" -> FoodLogScreen()
                         "Talk" -> ConversationScreen()
                         "Sequences" -> SequenceListScreen()
                     }

@@ -29,14 +29,6 @@
 - A manual sync button in the top bar shows a spinner during sync and the last-synced timestamp when idle
 - A "Connect Google Tasks" banner is shown when the user is not authenticated
 
-### Scan and Lookup Groceries
-- Users scan grocery product barcodes using the device camera
-- A live barcode detector identifies the first valid code; the camera pauses on detection
-- The matched product's name, brand, quantity, ingredients, and nutrition facts are displayed
-- If the barcode is not in the local database, a "Product not found" message is shown
-- A "Scan again" button resets the camera
-- Camera permission is requested at runtime; if denied, an explanation and settings link are shown
-
 ### Notes
 - Users can create, edit, and delete free-form notes
 - The note list shows each note's title or first line (truncated to one line)
@@ -56,18 +48,6 @@
 #### Sync Section (Settings)
 - Google Tasks + Calendar sync: manual trigger and background schedule (see Sync Scheduling)
 - Daily Reset: shows last-run date and a manual "Run Now" button
-
-### Food Log
-- Users log daily food intake; each entry records description, calories, protein, fat, carbs, fiber, sugars, added sugars, and sugar alcohols
-- Entries are organized by day with prev/next navigation; daily nutrition totals are displayed with a calorie breakdown bar
-- **Manual entry**: a dialog with an optional description field and numeric nutrient inputs; autocomplete suggests from the local food cache
-- **Photo entry**: single "Analyze" button in the photo preview; AI classifies the photo as food, product, or unknown
-  - **Food**: Claude estimates nutrition per serving; results shown in an editable dialog with an editable name field
-  - **Product/barcode**: app checks the food cache by name, then queries USDA FDC and Open Food Facts by barcode; if found, results shown in editable dialog
-  - **Not found**: user is prompted to take a photo of the nutrition label; OCR extracts values and presents editable dialog
-- Accepted entries are saved to the food cache (keyed by description) for future autocomplete
-- Per-serving nutrients are multiplied by a user-specified servings count before saving
-- Stale in-flight analysis items (app killed mid-analysis) are cleared on startup
 
 ### Conversation Scaffolding (Social Support)
 Reduces three loads in real-time social situations: decoding intent, deciding what to say, and managing timing.
@@ -125,7 +105,7 @@ Firestore failures are caught and logged — they never abort steps 1–4.
 - `syncStatus` values: `local` | `synced` | `pending_push` | `pending_delete`
 - `CalendarEventEntity`: Google event ID, title, start/end times, all-day flag, calendar ID, last synced timestamp, `isHidden`
 - `DailyTaskEntity`: repeating task templates
-- `NoteEntity`, `MoodEntity`, `KetoLogEntry`: separate concerns, same database
+- `NoteEntity`, `MoodEntity`: separate concerns, same database
 - Schema migrations required for every version bump; no destructive migrations in production
 
 ### Data Integrity
@@ -138,7 +118,7 @@ Firestore failures are caught and logged — they never abort steps 1–4.
 - Pull: documents modified since last pull are merged into Room using last-write-wins (local wins ties)
 - Conflict resolution: local wins if newer; remote wins if newer; ties → local wins
 - Soft-deleted records (`isDeleted = true`) are propagated to Firestore then hard-deleted from Room
-- Collection structure: `users/{uid}/{tasks|notes|moods|foodLogItems|healthSnapshots|sequences|sequenceSteps|sequenceRuns|dailyTasks}`
+- Collection structure: `users/{uid}/{tasks|notes|moods|healthSnapshots|sequences|sequenceSteps|sequenceRuns|dailyTasks}`
 - Firestore security rules restrict access to `request.auth.uid == userId`
 
 ### Incremental Calendar Sync
@@ -148,10 +128,6 @@ Firestore failures are caught and logged — they never abort steps 1–4.
 ### Sync State (ViewModel)
 - `syncState: StateFlow<SyncState>` with values: `Idle` | `Syncing` | `Error` | `LastSynced`
 - `isAuthenticated: StateFlow<Boolean>` drives UI banner visibility
-
-### Product Database
-- Separate `ProductDatabase` with a `ProductEntity` table: `barcode` (PK, text), `productJson` (text)
-- Lookups by exact barcode string; no full-text search required
 
 ### Diagnostics
 - `QueryLogger` records execution time of every database repository call
@@ -209,7 +185,6 @@ Reads health data from other apps (Samsung Health, Garmin, Google Fit, etc.) via
 | `SleepSessionRecord` | Mood screen context; Energy Budgeting baseline |
 | `HeartRateRecord` | Energy Budgeting signal; stress indicator |
 | `WeightRecord` | Body metrics display |
-| `TotalCaloriesBurnedRecord` | Food log context (calories in vs. out) |
 | `BloodGlucoseRecord` | Optional; relevant for keto/diet tracking |
 | `NutritionRecord` | Pull nutrition from other logging apps |
 
@@ -231,7 +206,6 @@ A dedicated screen that surfaces accumulated health metrics for a single selecte
 #### Layout
 - **Day navigator** — header bar with back/forward chevrons and the selected date (e.g. "Mon Apr 27"); tapping the date label opens the weekly popup; defaults to today; forward arrow disabled on today
 - **Top section** — summary cards for the selected day:
-  - Calories (food log intake vs. Health Connect burned, shown as in/out balance)
   - Blood sugar (latest reading for the day + daily average)
   - Steps (day total)
   - Sleep (hours for the night ending on this day)
@@ -246,7 +220,7 @@ A dedicated screen that surfaces accumulated health metrics for a single selecte
 - Dismisses on tap-outside or back gesture
 
 #### Requirements
-- Data sourced from `HealthSnapshotEntity` (populated by `HealthConnectSyncWorker`) and the food log for calorie intake
+- Data sourced from `HealthSnapshotEntity` (populated by `HealthConnectSyncWorker`)
 - Pull-to-refresh on the day view triggers `refreshTodaySnapshot()` (only active when viewing today)
 - Navigating to a past day with no snapshot triggers a background fetch for that date
 - Empty states shown per metric when no Health Connect data is available for the selected day

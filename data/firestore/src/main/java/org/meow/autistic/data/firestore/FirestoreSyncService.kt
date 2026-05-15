@@ -1,6 +1,5 @@
 package org.meow.autistic.data.firestore
 
-import org.meow.autistic.data.foodlog.FoodLogItemDao
 import org.meow.autistic.data.mood.MoodDao
 import org.meow.autistic.data.note.NoteDao
 import org.meow.autistic.data.sequence.SequenceDao
@@ -14,7 +13,6 @@ data class FirestoreDaos(
     val task: TaskDao,
     val note: NoteDao,
     val mood: MoodDao,
-    val foodLogItem: FoodLogItemDao,
     val sequence: SequenceDao,
     val dailyTask: DailyTaskDao,
 )
@@ -37,7 +35,6 @@ class FirestoreSyncService(
         pushTasks(uid)
         pushNotes(uid)
         pushMoods(uid)
-        pushFoodLogItems(uid)
         pushSequences(uid)
         pushSequenceSteps(uid)
         pushSequenceRuns(uid)
@@ -52,8 +49,6 @@ class FirestoreSyncService(
             daos.note.getPendingFirestoreDelete().isNotEmpty() ||
             daos.mood.getPendingFirestoreSync().isNotEmpty() ||
             daos.mood.getPendingFirestoreDelete().isNotEmpty() ||
-            daos.foodLogItem.getPendingFirestoreSync().isNotEmpty() ||
-            daos.foodLogItem.getPendingFirestoreDelete().isNotEmpty() ||
             daos.sequence.getPendingFirestoreSync().isNotEmpty() ||
             daos.sequence.getPendingFirestoreDelete().isNotEmpty() ||
             daos.sequence.getPendingFirestoreStepSync().isNotEmpty() ||
@@ -65,7 +60,6 @@ class FirestoreSyncService(
         pullTasks(uid, since)
         pullNotes(uid, since)
         pullMoods(uid, since)
-        pullFoodLogItems(uid, since)
         pullSequences(uid, since)
         pullSequenceSteps(uid, since)
         pullSequenceRuns(uid, since)
@@ -99,14 +93,6 @@ class FirestoreSyncService(
             val id = m.firestoreId ?: newId()
             source.upsert(uid, "moods", id, m.toDocument().toMap())
             daos.mood.markFirestoreSynced(m.id, id)
-        }
-    }
-
-    private suspend fun pushFoodLogItems(uid: String) {
-        for (f in daos.foodLogItem.getPendingFirestoreSync() + daos.foodLogItem.getPendingFirestoreDelete()) {
-            val id = f.firestoreId ?: newId()
-            source.upsert(uid, "foodLogItems", id, f.toDocument().toMap())
-            daos.foodLogItem.markFirestoreSynced(f.id, id)
         }
     }
 
@@ -174,16 +160,6 @@ class FirestoreSyncService(
             val local = daos.mood.getByFirestoreId(doc.id)
             if (local == null || remote.lastModifiedAt.toInstant() > local.lastModifiedAt) {
                 daos.mood.upsert(remote.toEntity(firestoreId = doc.id, localId = local?.id ?: 0))
-            }
-        }
-    }
-
-    private suspend fun pullFoodLogItems(uid: String, since: Instant?) {
-        for (doc in fetchDocs(uid, "foodLogItems", since)) {
-            val remote = FoodLogItemDocument.fromSnapshot(doc)
-            val local = daos.foodLogItem.getByFirestoreId(doc.id)
-            if (local == null || remote.lastModifiedAt.toInstant() > local.lastModifiedAt) {
-                daos.foodLogItem.upsert(remote.toEntry(firestoreId = doc.id, localId = local?.id ?: 0L))
             }
         }
     }

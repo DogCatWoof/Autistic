@@ -55,7 +55,6 @@ class MainActivityTest {
     @Test
     fun bottomNav_allTabsDisplayed() {
         composeTestRule.onNodeWithTag("nav_tab_task").assertIsDisplayed()
-        composeTestRule.onNodeWithTag("nav_tab_scan").assertIsDisplayed()
         composeTestRule.onNodeWithTag("nav_tab_notes").assertIsDisplayed()
         composeTestRule.onNodeWithTag("nav_tab_mood").assertIsDisplayed()
     }
@@ -69,12 +68,6 @@ class MainActivityTest {
     fun clickTaskTab_showsTaskScreen() {
         composeTestRule.onNodeWithTag("nav_tab_task").performClick()
         composeTestRule.onNodeWithContentDescription("Add Task").assertIsDisplayed()
-    }
-
-    @Test
-    fun clickScanTab_showsScanScreen() {
-        composeTestRule.onNodeWithTag("nav_tab_scan").performClick()
-        composeTestRule.onNodeWithTag("scan_screen").assertExists()
     }
 
     @Test

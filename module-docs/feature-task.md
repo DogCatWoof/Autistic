@@ -32,4 +32,4 @@ Everything related to tasks and daily tasks: creation, editing, completion, dele
 ## Not In This Module
 - Firestore sync logic (`:data:firestore`, invoked by `:data:sync` orchestrator)
 - Google Drive backup (removed; Firestore sync is the cross-device strategy)
-- Note, mood, food, or sequence features
+- Note, mood, or sequence features

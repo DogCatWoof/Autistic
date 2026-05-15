@@ -51,7 +51,6 @@ All instrumented tests run against a clean database (cleared in `@Before`). Unit
 :feature:mood        MoodRepository, MoodCheckInWorker, MoodBroadcastReceiver, VM, Screen
 :feature:health      HealthConnectRepository, HealthConnectSyncWorker, VM, Screens
 :feature:sequence    SequenceRepository, SequenceRunNotificationManager, SequenceStepReceiver, VMs, Screen
-:feature:food        ProductDatabase, FoodLog/Product/ClaudeVision/AI services, VMs, Screens
 :feature:conversation IntentClassifier, ResponseTemplateRepository, TonePreferencesStore, VM, Screen
 :app                 AutisticApp, MainActivity, navigation, settings, all di/*.kt Koin modules
 ```
@@ -100,7 +99,7 @@ Firestore failures are caught and logged — they never abort steps 1–4. See `
 
 ## Key Constraints
 
-- **`TaskDatabase` is monolithic** in `:core:database` — all 13 entities and DAOs. `ProductDatabase` is separate in `:feature:food`.
+- **`TaskDatabase` is monolithic** in `:core:database` — all entities and DAOs.
 - **Kotlin package names never change** — only Gradle module membership changes during modularization.
 - **Google Tasks notes field must never be shown in UI** — `extraPropertiesJson` is internal metadata.
 - **Room is the source of truth** — all writes go to Room first, Firestore is sync target.

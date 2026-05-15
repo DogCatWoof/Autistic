@@ -44,8 +44,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "ANTHROPIC_API_KEY", "\"${localProps.getProperty("anthropic.api.key", "")}\"")
-        buildConfigField("String", "USDA_API_KEY", "\"${localProps.getProperty("usda.api.key", "")}\"")
         buildConfigField("String", "FIREBASE_WEB_CLIENT_ID", "\"${localProps.getProperty("firebase.web.client.id", "")}\"")
     }
 
@@ -104,7 +102,6 @@ dependencies {
     implementation(project(":feature:note"))
     implementation(project(":feature:task"))
     implementation(project(":feature:sequence"))
-    implementation(project(":feature:food"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -138,15 +135,6 @@ dependencies {
 
     // HTTP logging at boundary
     implementation(libs.okhttp.logging.interceptor)
-
-    // CameraX
-    implementation(libs.androidx.camera.core)
-    implementation(libs.androidx.camera.camera2)
-    implementation(libs.androidx.camera.lifecycle)
-    implementation(libs.androidx.camera.view)
-
-    // ML Kit barcode scanning
-    implementation(libs.mlkit.barcode.scanning)
 
     // JSON serialisation for product data
     implementation(libs.gson)
