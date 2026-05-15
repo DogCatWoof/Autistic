@@ -1,10 +1,12 @@
 package org.meow.autistic.data.sequence
 
 import android.app.PendingIntent
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import org.meow.autistic.core.notifications.SEQUENCES_CHANNEL_ID
 import org.meow.autistic.feature.sequence.R
 
@@ -16,6 +18,7 @@ const val SEQUENCE_NOTIFICATION_ID = 100
  */
 object SequenceRunNotificationManager {
 
+    @SuppressLint("MissingPermission")
     suspend fun update(context: Context, runId: Long, repository: SequenceRepository) {
         val run = repository.getRunById(runId) ?: return
         val sequence = repository.getById(run.sequenceId) ?: return
@@ -49,10 +52,19 @@ object SequenceRunNotificationManager {
             .addAction(0, "Done", completeIntent)
             .addAction(0, "End", endIntent)
             .build()
-        NotificationManagerCompat.from(context).notify(SEQUENCE_NOTIFICATION_ID, notification)
+        if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS)
+            == android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            NotificationManagerCompat.from(context).notify(SEQUENCE_NOTIFICATION_ID, notification)
+        }
     }
 
+    @SuppressLint("MissingPermission")
     fun cancel(context: Context) {
-        NotificationManagerCompat.from(context).cancel(SEQUENCE_NOTIFICATION_ID)
+        if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS)
+            == android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            NotificationManagerCompat.from(context).cancel(SEQUENCE_NOTIFICATION_ID)
+        }
     }
 }

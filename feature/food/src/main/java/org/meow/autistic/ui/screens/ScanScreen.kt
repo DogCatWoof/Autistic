@@ -9,9 +9,10 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
-import androidx.camera.core.Preview
+import androidx.camera.core.Preview as CameraPreview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.border
@@ -46,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -69,7 +71,7 @@ import kotlin.math.roundToInt
  * Barcode scan screen. Camera fills the top half; scanned barcodes accumulate in a
  * list on the bottom half with live status updates and swipe-to-dismiss.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalGetImage::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ScanScreen(modifier: Modifier = Modifier, viewModel: ScanViewModel = koinViewModel()) {
     val context = LocalContext.current
@@ -167,7 +169,7 @@ private fun CameraPreview(onBarcodeDetected: (String) -> Unit, modifier: Modifie
             val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
             cameraProviderFuture.addListener({
                 val cameraProvider = cameraProviderFuture.get()
-                val preview = Preview.Builder().build()
+                val preview = CameraPreview.Builder().build()
                     .also { it.setSurfaceProvider(previewView.surfaceProvider) }
                 val imageAnalysis = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
@@ -352,6 +354,7 @@ private fun dvPercent(nv: NutrientValue?, dv: Double? = null, dvUnit: String? = 
  * Debounces barcode detections: fires [onBarcodeDetected] only when the detected barcode
  * changes, or after [DEBOUNCE_MS] has elapsed since the last detection of the same barcode.
  */
+@OptIn(ExperimentalGetImage::class)
 private class BarcodeAnalyzer(private val onBarcodeDetected: (String) -> Unit) :
     ImageAnalysis.Analyzer {
 

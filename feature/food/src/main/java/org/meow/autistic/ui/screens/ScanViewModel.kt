@@ -1,10 +1,14 @@
 package org.meow.autistic.ui.screens
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Application
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -105,6 +109,7 @@ class ScanViewModel(
     }
 
     /** Suspends until any network with internet capability becomes available. */
+    @SuppressLint("MissingPermission")
     private suspend fun awaitNetwork() = suspendCancellableCoroutine<Unit> { cont ->
         val callback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
@@ -115,7 +120,11 @@ class ScanViewModel(
         val request = NetworkRequest.Builder()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
             .build()
-        connectivityManager.registerNetworkCallback(request, callback)
+        if (ContextCompat.checkSelfPermission(getApplication(), Manifest.permission.ACCESS_NETWORK_STATE)
+            == PackageManager.PERMISSION_GRANTED
+        ) {
+            connectivityManager.registerNetworkCallback(request, callback)
+        }
         cont.invokeOnCancellation {
             try { connectivityManager.unregisterNetworkCallback(callback) } catch (_: IllegalArgumentException) {}
         }

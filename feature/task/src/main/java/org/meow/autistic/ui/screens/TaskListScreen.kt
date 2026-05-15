@@ -370,7 +370,7 @@ fun CalendarEventItem(
     leadingIcon: ImageVector,
     onClick: () -> Unit = {},
 ) {
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM dd, HH:mm").withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault()) }
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM dd, hh:mm a").withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault()) }
     val dimColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
 
     val dismissState = rememberSwipeToDismissBoxState(
@@ -386,7 +386,6 @@ fun CalendarEventItem(
 
     SwipeToDismissBox(
         state = dismissState,
-        modifier = Modifier.requireHorizontalSwipe(),
         backgroundContent = {
             val isDelete by remember {
                 derivedStateOf {
@@ -474,7 +473,6 @@ fun TaskItem(
 
     SwipeToDismissBox(
         state = dismissState,
-        modifier = Modifier.requireHorizontalSwipe(),
         backgroundContent = {
             val isDelete by remember {
                 derivedStateOf {

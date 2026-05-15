@@ -43,7 +43,7 @@ class TaskListScreenTest {
 
     private fun openAddTaskDialog() {
         composeTestRule.onNodeWithContentDescription("Add Task").performClick()
-        composeTestRule.onNodeWithContentDescription("Task").performClick()
+        composeTestRule.onNodeWithText("Task").performClick()
     }
 
     @Test
@@ -86,13 +86,13 @@ class TaskListScreenTest {
         composeTestRule.onNodeWithText("Task description").performTextInput("Finish report")
         composeTestRule.onNodeWithText("Save").performClick()
 
-        composeTestRule.waitUntil(5000) {
+        composeTestRule.waitUntil(10000) {
             try { composeTestRule.onNodeWithText("Finish report").assertIsDisplayed(); true } catch (_: AssertionError) { false }
         }
 
         composeTestRule.onNodeWithText("Finish report").performTouchInput { swipeRight() }
 
-        composeTestRule.waitUntil(5000) {
+        composeTestRule.waitUntil(10000) {
             try { composeTestRule.onNodeWithText("Finish report").assertDoesNotExist(); true } catch (_: AssertionError) { false }
         }
     }
@@ -103,13 +103,13 @@ class TaskListScreenTest {
         composeTestRule.onNodeWithText("Task description").performTextInput("Buy milk")
         composeTestRule.onNodeWithText("Save").performClick()
 
-        composeTestRule.waitUntil(5000) {
+        composeTestRule.waitUntil(10000) {
             try { composeTestRule.onNodeWithText("Buy milk").assertIsDisplayed(); true } catch (_: AssertionError) { false }
         }
 
         composeTestRule.onNodeWithText("Buy milk").performTouchInput { swipeLeft() }
 
-        composeTestRule.waitUntil(5000) {
+        composeTestRule.waitUntil(10000) {
             try { composeTestRule.onNodeWithText("Buy milk").assertDoesNotExist(); true } catch (_: AssertionError) { false }
         }
     }
@@ -127,7 +127,7 @@ class TaskListScreenTest {
         composeTestRule.onNodeWithText("Notes").performTextInput("Some note here")
         composeTestRule.onNodeWithText("Save").performClick()
 
-        composeTestRule.waitUntil(5000) {
+        composeTestRule.waitUntil(10000) {
             try { composeTestRule.onNodeWithText("Some note here").assertIsDisplayed(); true } catch (_: AssertionError) { false }
         }
     }

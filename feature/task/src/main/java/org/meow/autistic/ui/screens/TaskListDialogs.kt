@@ -187,26 +187,33 @@ fun CalendarEventDialog(
     onDone: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("EEE, MMM dd · HH:mm").withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault()) }
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("EEE, MMM dd · hh:mm a").withLocale(Locale.getDefault()).withZone(ZoneId.systemDefault()) }
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.fillMaxWidth(0.95f),
         properties = DialogProperties(usePlatformDefaultWidth = false),
-        title = { Text(event.title) },
+        title = {
+            Column {
+                Text(event.title, style = MaterialTheme.typography.titleLarge)
+                Text("Meeting Finished", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (event.isAllDay) {
                     Text("All day", style = MaterialTheme.typography.bodyMedium)
                 } else {
-                    Text(dateFormatter.format(event.startAt), style = MaterialTheme.typography.bodyMedium)
-                    Text("– ${dateFormatter.format(event.endAt)}", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "${dateFormatter.format(event.startAt)} – ${dateFormatter.format(event.endAt)}",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
                 }
                 if (!event.location.isNullOrBlank()) {
                     Text("Location: ${event.location}", style = MaterialTheme.typography.bodyMedium)
                 }
                 event.reminderMinutes?.let { mins ->
                     Text(
-                        "Reminder: $mins min before",
+                        "Reminder: $mins min before, then every 5 min",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -215,6 +222,11 @@ fun CalendarEventDialog(
                 if (!eventDescription.isNullOrBlank()) {
                     HorizontalDivider()
                     Text(
+                        "Description:",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
                         eventDescription,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -222,7 +234,7 @@ fun CalendarEventDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDone) { Text("Done") } },
+        confirmButton = { TextButton(onClick = onDone) { Text("OK") } },
         dismissButton = {
             Row {
                 TextButton(onClick = onDelete) { Text("Delete", color = MaterialTheme.colorScheme.error) }

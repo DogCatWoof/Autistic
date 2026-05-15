@@ -14,8 +14,8 @@ import org.meow.autistic.feature.task.R
 import java.util.concurrent.TimeUnit
 
 /**
- * One-time worker that fires a task reminder notification at [TaskEntity.dueAt] minus
- * [TaskEntity.reminderMinutesBefore]. Keyed by task ID so updates replace pending reminders.
+ * Worker that fires a task reminder notification, then re-schedules itself every 5 minutes
+ * until the task is completed or deleted. Keyed by task ID.
  */
 class TaskReminderWorker(
     context: Context,
@@ -32,7 +32,16 @@ class TaskReminderWorker(
             .setAutoCancel(true)
             .build()
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.notify(("reminder_$taskId").hashCode(), notification)
+        nm.notify("reminder_$taskId".hashCode(), notification)
+
+        // Re-schedule every 5 minutes until cancelled
+        val repeatRequest = OneTimeWorkRequestBuilder<TaskReminderWorker>()
+            .setInitialDelay(5, TimeUnit.MINUTES)
+            .setInputData(inputData)
+            .build()
+        WorkManager.getInstance(applicationContext)
+            .enqueueUniqueWork(workName(taskId), ExistingWorkPolicy.REPLACE, repeatRequest)
+
         return Result.success()
     }
 
