@@ -36,7 +36,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="com.googleusercontent.apps.124698609083-i9oddbpv5j3tobk9uuv25g5agi7bvogt" android:host="oauth2redirect" />
+                <data android:scheme="com.googleusercontent.apps.124698609083-0l170urdlu7rat5cbs4vd2g2pbu1mbm6" android:host="oauth2redirect" />
             </intent-filter>
         </activity>
 
@@ -52,10 +52,6 @@
 
         <receiver
             android:name=".data.mood.MoodBroadcastReceiver"
-            android:exported="false" />
-
-        <receiver
-            android:name=".data.sequence.SequenceStepReceiver"
             android:exported="false" />
 
     </application>

@@ -27,8 +27,6 @@ The app is a 154-file, single-`:app` Gradle module. The goal is to partition cod
                      MoodViewModel, MoodScreen, showMoodCheckInNotification() (extracted from MainActivity)
 :feature:health      HealthConnectRepository, HealthConnectSyncWorker, HealthConnectViewModel,
                      HealthConnectSettingsScreen, HealthConnectDetailDialog, IntegratedHealthScreen
-:feature:sequence    SequenceRepository, SequenceRunNotificationManager, SequenceStepReceiver,
-                     SequenceViewModel, SequenceRunViewModel, SequenceListScreen
 :feature:conversation IntentClassifier, ResponseTemplateRepository, TonePreferencesStore,
                      ConversationViewModel, ConversationScreen
 :app                 AutisticApp, MainActivity, AppDrawer, NavBottomSheet, NavPreferencesStore,
@@ -46,7 +44,6 @@ The app is a 154-file, single-`:app` Gradle module. The goal is to partition cod
 :feature:note → :core:database, :core:ui
 :feature:mood → :core:database, :core:ui, :core:notifications
 :feature:health → :core:database, :core:ui
-:feature:sequence → :core:database, :core:common, :core:ui, :core:notifications
 :feature:conversation → :core:ui
 :data:sync → :core:database, :core:auth
 :data:firestore → :core:database, :core:auth
@@ -59,7 +56,7 @@ The app is a 154-file, single-`:app` Gradle module. The goal is to partition cod
 
 No cycles. `:core:*` never imports `:feature:*` or `:data:*`.
 
-Features using notifications: `:feature:task` (task reminders), `:feature:mood` (mood check-in), `:feature:sequence` (sequence step). Channel registration is centralised in `:core:notifications`; the feature-specific notification content and layouts stay in each feature module.
+Features using notifications: `:feature:task` (task reminders), `:feature:mood` (mood check-in). Channel registration is centralised in `:core:notifications`; the feature-specific notification content and layouts stay in each feature module.
 
 ---
 
@@ -84,19 +81,7 @@ class MoodBroadcastReceiver : BroadcastReceiver(), KoinComponent {
 }
 ```
 
-### 3. Fix `SequenceStepReceiver` direct DB access
-Line 28: `val dao = TaskDatabase.getDatabase(context).sequenceDao()`. Same fix — inject `SequenceDao` via `KoinComponent`.
-
-### 4. Fix `SequenceRunNotificationManager` direct DB access (object)
-`object SequenceRunNotificationManager` at line 21 calls `TaskDatabase.getDatabase(context)`. Since it's an `object`, pass the DAO as a parameter instead:
-```kotlin
-object SequenceRunNotificationManager {
-    suspend fun update(context: Context, runId: Long, dao: SequenceDao) { ... }
-}
-```
-Update the `SequenceStepReceiver` caller to pass the injected DAO.
-
-### 5. Extract `showNotification()` from MainActivity
+### 4. Extract `showNotification()` from MainActivity
 `showNotification()` is a top-level function at `MainActivity.kt:319`. It is imported by:
 - `MoodCheckInWorker` (moving to `:feature:mood`)
 - `SettingsScreen.kt` (staying in `:app`)
@@ -156,8 +141,7 @@ Each library module's `build.gradle.kts` then becomes 5–15 lines. `:app` keeps
 12. `:feature:note` — move NoteRepository + UI; trivial
 13. `:feature:health` — move health files; update AndroidManifest for HealthPermissionsRationaleActivity
 14. `:feature:mood` — apply fixes #2 and #5 first, then move; move `notification_mood_picker.xml` resource
-15. `:feature:sequence` — apply fixes #3 and #4, then move
-16. `:feature:task` — last; most dependencies; move repositories, workers, all task UI
+15. `:feature:task` — last; most dependencies; move repositories, workers, all task UI
 
 ---
 
@@ -165,9 +149,7 @@ Each library module's `build.gradle.kts` then becomes 5–15 lines. `:app` keeps
 
 - `app/src/main/java/org/meow/autistic/data/task/TaskDatabase.kt` — moves to `:core:database`
 - `app/src/main/java/org/meow/autistic/data/mood/MoodBroadcastReceiver.kt` — fix #2 before moving
-- `app/src/main/java/org/meow/autistic/data/sequence/SequenceStepReceiver.kt` — fix #3 before moving
-- `app/src/main/java/org/meow/autistic/data/sequence/SequenceRunNotificationManager.kt` — fix #4 before moving
-- `app/src/main/java/org/meow/autistic/MainActivity.kt` — extract `showNotification()` (#5)
+- `app/src/main/java/org/meow/autistic/MainActivity.kt` — extract `showNotification()` (#4)
 - `app/src/main/java/org/meow/autistic/data/auth/GoogleAuthManager.kt` — fix #1 before moving
 - `app/build.gradle.kts` — source of BuildConfig fields that move to constructor injection
 - `settings.gradle.kts` — add all 14 new `include()` paths

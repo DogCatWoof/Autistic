@@ -13,7 +13,6 @@ val databaseModule = module {
     single { get<TaskDatabase>().dailyTaskDao() }
     single { get<TaskDatabase>().noteDao() }
     single { get<TaskDatabase>().moodDao() }
-    single { get<TaskDatabase>().sequenceDao() }
     single { NoteRepository(get()) }
     single { MoodRepository(get()) }
 }

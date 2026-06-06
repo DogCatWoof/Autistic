@@ -64,14 +64,6 @@ Reduces three loads in real-time social situations: decoding intent, deciding wh
 - **MVP scope**: push-to-talk, on-device transcription, rule-based intent classifier (question/command/social/other), 3 response templates per class with tone settings, quick-tap UI, end-of-session feedback
 - **Extensions**: meeting mode (action items), script packs (medical/interview), multilingual layer
 
-### Sequences
-- A sequence is an ordered checklist of steps for a complex, repeating multi-part task
-- Each step has an instruction, optional estimated time, and a completion checkbox
-- Examples: morning routine, packing for a trip, preparing for a medical visit
-- Users start a "run"; the current step is highlighted and progress is saved
-- A run can be ended early; completed runs are stored as history
-- Sequences are managed in Settings; an active run surfaces as a persistent notification
-
 ---
 
 ## Technical Requirements
@@ -118,7 +110,7 @@ Firestore failures are caught and logged — they never abort steps 1–4.
 - Pull: documents modified since last pull are merged into Room using last-write-wins (local wins ties)
 - Conflict resolution: local wins if newer; remote wins if newer; ties → local wins
 - Soft-deleted records (`isDeleted = true`) are propagated to Firestore then hard-deleted from Room
-- Collection structure: `users/{uid}/{tasks|notes|moods|healthSnapshots|sequences|sequenceSteps|sequenceRuns|dailyTasks}`
+- Collection structure: `users/{uid}/{tasks|notes|moods|healthSnapshots|dailyTasks}`
 - Firestore security rules restrict access to `request.auth.uid == userId`
 
 ### Incremental Calendar Sync
@@ -228,15 +220,6 @@ A dedicated screen that surfaces accumulated health metrics for a single selecte
 ---
 
 ## Plan
-
-### Sequences (MVP)
-1. **Data layer** — `SequenceEntity` (id, name); `SequenceStepEntity` (id, sequenceId, instruction, estimatedMinutes, position); `SequenceRunEntity` (id, sequenceId, startedAt, completedAt); `SequenceStepProgressEntity` (runId, stepId, completedAt); `SequenceDao`; `SequenceRepository`
-2. **Room migration** — bump DB to version 16; four new tables
-3. **ViewModels** — `SequenceViewModel` (sequence/step CRUD); `SequenceRunViewModel` (active run state via `flatMapLatest`, `startRun()`, `completeStep()`, `endRun()`)
-4. **Screens** — `SequenceListScreen` (sequence management + active run card with progress bar, current step, Done/End buttons); Settings entry navigates here
-5. **Persistent notification** — `SequenceRunNotificationManager` object; `SequenceStepReceiver` handles Done/End actions from notification; DB version 16
-6. **Settings integration** — Sequences entry under Tasks in Settings
-7. **Tests** — `SequenceRepositoryTest` (unit); `SequenceRunViewModelTest` (unit, mocks notification manager); `SequenceDaoTest` (instrumented)
 
 ### Conversation Scaffolding (MVP)
 1. **ResponseTemplateRepository** — static JSON asset: `IntentClass → List<ResponseTemplate>` (3 per class, 3 tone variants); loaded at startup, cached in memory

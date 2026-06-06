@@ -76,7 +76,7 @@ android {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(25)
 }
 
 tasks.register("run") {
@@ -90,18 +90,11 @@ tasks.register("run") {
 }
 
 dependencies {
-    implementation(project(":core:common"))
-    implementation(project(":core:ui"))
-    implementation(project(":core:database"))
-    implementation(project(":core:auth"))
-    implementation(project(":core:notifications"))
-    implementation(project(":data:sync"))
-    implementation(project(":data:firestore"))
-    implementation(project(":feature:conversation"))
-    implementation(project(":feature:mood"))
-    implementation(project(":feature:note"))
-    implementation(project(":feature:task"))
-    implementation(project(":feature:sequence"))
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.google.identity.googleid)
+    implementation(libs.health.connect.client)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -121,27 +114,27 @@ dependencies {
     
     // WorkManager
     implementation(libs.androidx.work.runtime.ktx)
-
+    
     // Google Sign-In / OAuth
     implementation(libs.google.play.services.auth)
-
+    
     // Google API Client + Tasks + Calendar
     implementation(libs.google.api.client.android)
     implementation(libs.google.api.services.tasks)
     implementation(libs.google.api.services.calendar)
-
+    
     // Encrypted token storage
     implementation(libs.androidx.security.crypto)
-
+    
     // HTTP logging at boundary
     implementation(libs.okhttp.logging.interceptor)
-
+    
     // JSON serialisation for product data
     implementation(libs.gson)
-
+    
     // DataStore for sync timestamps
     implementation(libs.androidx.datastore.preferences)
-
+    
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
@@ -150,7 +143,7 @@ dependencies {
     implementation(libs.grpc.okhttp)
     implementation(libs.grpc.protobuf.lite)
     implementation(libs.grpc.stub)
-
+    
     // Koin DI
     implementation(libs.koin.android)
     implementation(libs.koin.compose)

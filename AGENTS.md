@@ -1,6 +1,6 @@
 # Autistic — Project AGENTS.md
 
-Android app with Room local storage, Google Tasks/Calendar/Drive sync, and Firestore cross-device sync. 15 Gradle modules, Kotlin 2.2.10, AGP 9.0.1, JVM 21.
+Android app with Room local storage, Google Tasks/Calendar/Drive sync, and Firestore cross-device sync. 15 Gradle modules, Kotlin 2.2.10, AGP 9.0.1, JVM 25.
 
 ## File Editing
 
@@ -50,7 +50,6 @@ All instrumented tests run against a clean database (cleared in `@Before`). Unit
 :feature:note        NoteRepository, NotesViewModel, NotesScreen
 :feature:mood        MoodRepository, MoodCheckInWorker, MoodBroadcastReceiver, VM, Screen
 :feature:health      HealthConnectRepository, HealthConnectSyncWorker, VM, Screens
-:feature:sequence    SequenceRepository, SequenceRunNotificationManager, SequenceStepReceiver, VMs, Screen
 :feature:conversation IntentClassifier, ResponseTemplateRepository, TonePreferencesStore, VM, Screen
 :app                 AutisticApp, MainActivity, navigation, settings, all di/*.kt Koin modules
 ```

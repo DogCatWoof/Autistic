@@ -22,21 +22,6 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/build-logic" />
-            <option value="$PROJECT_DIR$/core" />
-            <option value="$PROJECT_DIR$/core/auth" />
-            <option value="$PROJECT_DIR$/core/common" />
-            <option value="$PROJECT_DIR$/core/database" />
-            <option value="$PROJECT_DIR$/core/notifications" />
-            <option value="$PROJECT_DIR$/core/ui" />
-            <option value="$PROJECT_DIR$/data" />
-            <option value="$PROJECT_DIR$/data/firestore" />
-            <option value="$PROJECT_DIR$/data/sync" />
-            <option value="$PROJECT_DIR$/feature" />
-            <option value="$PROJECT_DIR$/feature/conversation" />
-            <option value="$PROJECT_DIR$/feature/mood" />
-            <option value="$PROJECT_DIR$/feature/note" />
-            <option value="$PROJECT_DIR$/feature/sequence" />
-            <option value="$PROJECT_DIR$/feature/task" />
           </set>
         </option>
       </GradleProjectSettings>

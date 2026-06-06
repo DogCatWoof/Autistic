@@ -6,8 +6,6 @@ import org.meow.autistic.data.firestore.FirestoreSource
 import org.meow.autistic.data.firestore.FirestoreSyncService
 import org.meow.autistic.data.mood.MoodDao
 import org.meow.autistic.data.note.NoteDao
-import org.meow.autistic.data.sequence.SequenceDao
-import org.meow.autistic.data.task.DailyTaskDao
 import org.meow.autistic.data.task.TaskDao
 
 val firestoreModule = module {
@@ -19,8 +17,6 @@ val firestoreModule = module {
                 task = get<TaskDao>(),
                 note = get<NoteDao>(),
                 mood = get<MoodDao>(),
-                sequence = get<SequenceDao>(),
-                dailyTask = get<DailyTaskDao>(),
             ),
         )
     }

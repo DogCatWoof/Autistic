@@ -10,14 +10,12 @@ import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Mood
-import androidx.compose.material.icons.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.Create
 import androidx.compose.material.icons.outlined.Done
 import androidx.compose.material.icons.outlined.Mood
-import androidx.compose.material.icons.outlined.PlaylistPlay
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.AlertDialog
@@ -65,7 +63,6 @@ internal val BOTTOM_ITEMS = listOf(
     NavigationItem("Notes", Icons.Filled.Create, Icons.Outlined.Create),
     NavigationItem("Mood", Icons.Filled.Mood, Icons.Outlined.Mood),
     NavigationItem("Talk", Icons.Filled.Chat, Icons.Filled.Chat),
-    NavigationItem("Sequences", Icons.Filled.PlaylistPlay, Icons.Filled.PlaylistPlay),
 )
 
 /** Full app shell: drawer, top/bottom bars, and screen routing. */
@@ -208,7 +205,6 @@ fun MainScaffold(
                         "Notes" -> NotesScreen()
                         "Mood" -> MoodScreen()
                         "Talk" -> ConversationScreen()
-                        "Sequences" -> SequenceListScreen()
                     }
                 }
             }
