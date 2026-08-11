@@ -12,7 +12,7 @@ import org.meow.autistic.ui.screens.TaskViewModel
 val viewModelModule = module {
     viewModel { TaskViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { DailyTasksViewModel(get()) }
-    viewModel { NotesViewModel(get()) }
+    viewModel { NotesViewModel(get(), get(), androidApplication()) }
     viewModel { MoodViewModel(get()) }
     viewModel { ConversationViewModel(get(), androidApplication()) }
 }

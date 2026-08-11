@@ -128,4 +128,42 @@ class NoteDaoTest {
         assertEquals("fs-note-1", result.firestoreId)
         assertEquals(false, result.pendingFirestoreSync)
     }
+
+    @Test
+    fun getActiveNotesByTopic_returnsNotesForTopic() = runTest {
+        val now = Instant.now()
+        dao.insert(NoteEntity(id = 1, title = "Work", content = "A", createdAt = now, updatedAt = now, topicId = 1))
+        dao.insert(NoteEntity(id = 2, title = "Personal", content = "B", createdAt = now, updatedAt = now, topicId = 2))
+        dao.insert(NoteEntity(id = 3, title = "Untagged", content = "C", createdAt = now, updatedAt = now, topicId = null))
+
+        val topic1 = dao.getActiveNotesByTopic(1).first()
+        assertEquals(1, topic1.size)
+        assertEquals("Work", topic1[0].title)
+
+        val untagged = dao.getActiveNotesByTopic(null).first()
+        assertEquals(1, untagged.size)
+        assertEquals("Untagged", untagged[0].title)
+    }
+
+    @Test
+    fun searchNotes_findsByTitleAndContent() = runTest {
+        val now = Instant.now()
+        dao.insert(NoteEntity(id = 1, title = "Groceries", content = "Buy milk and eggs", createdAt = now, updatedAt = now))
+        dao.insert(NoteEntity(id = 2, title = "Meeting", content = "Discuss groceries budget", createdAt = now, updatedAt = now))
+        dao.insert(NoteEntity(id = 3, title = "Random", content = "Nothing to do", createdAt = now, updatedAt = now))
+
+        val results = dao.searchNotes("groceries").first()
+        assertEquals(2, results.size)
+    }
+
+    @Test
+    fun searchNotesByTopic_filtersByTopicAndQuery() = runTest {
+        val now = Instant.now()
+        dao.insert(NoteEntity(id = 1, title = "Plan", content = "Team outing", createdAt = now, updatedAt = now, topicId = 1))
+        dao.insert(NoteEntity(id = 2, title = "Notes", content = "Team meeting notes", createdAt = now, updatedAt = now, topicId = 2))
+
+        val results = dao.searchNotesByTopic("team", topicId = 1).first()
+        assertEquals(1, results.size)
+        assertEquals("Plan", results[0].title)
+    }
 }

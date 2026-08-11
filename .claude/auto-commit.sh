@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-cd /home/paul/AndroidStudioProjects/Autistic || exit 0
+cd /home/paul/projects/Autistic || exit 0
 
 # Nothing to commit
 git status --porcelain 2>/dev/null | grep -q . || exit 0

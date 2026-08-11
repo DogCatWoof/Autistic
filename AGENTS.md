@@ -2,37 +2,7 @@
 
 Android app with Room local storage, Google Tasks/Calendar/Drive sync, and Firestore cross-device sync. 15 Gradle modules, Kotlin 2.2.10, AGP 9.0.1, JVM 25.
 
-## File Editing
-
-- You are the sole editor. Skip conflict checks and re-reads of files already read this session.
-- If a file was changed externally, the user will say **"X was updated externally"** — re-read it first.
-- Make code edits silently — no inline narration, no code blocks, no diffs in responses.
-- At the end of each response, list only the files modified on a single line (e.g. `Updated: Foo.kt, Bar.kt`).
-- Never show code blocks, diffs, or add/delete counts unless explicitly asked.
-
-## Developer Commands
-
-```
-./gradlew test                                          # all unit tests
-./gradlew :app:testDebugUnitTest --tests "*ClassName*"  # single unit test class
-./gradlew connectedAndroidTest                          # all instrumented tests
-./gradlew :app:compileDebugKotlin                       # fast compile check
-./gradlew run                                          # build + install on device
-```
-
-Configuration cache has known issues with `google-services` plugin — safe to ignore those warnings.
-
-## Testing Workflow
-
-At the end of each prompt:
-
-1. Add/update relevant unit tests (`src/test/`) and instrumented tests (`src/androidTest/`)
-2. `./gradlew test`
-3. `./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=<TestClass>` for each changed test class
-4. If any test fails, fix and re-run only related test classes. If all pass, run `./gradlew test connectedAndroidTest`
-5. All tests must pass before the response is complete
-
-All instrumented tests run against a clean database (cleared in `@Before`). Unit tests use Mockk — no live network.
+File editing, response style, developer commands, and testing workflow are in `~/.agents/rules/android.md` and `~/.agents/AGENTS.md`.
 
 ## Multi-Module Architecture
 

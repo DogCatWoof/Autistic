@@ -31,11 +31,19 @@
 
 ### Notes
 - Users can create, edit, and delete free-form notes
+- Notes can be associated with a topic; each note belongs to exactly one topic (or none)
+- Topics are managed from the note list — users can create, select, and delete topics
+- The most recently selected topic is restored on next app launch
 - The note list shows each note's title or first line (truncated to one line)
 - Tapping a note opens an editor where the full content can be modified or the note deleted
 - Swipe-to-delete is available on the list
 - A create (+) FAB adds a new note
 - Notes are persisted in the local database
+- Voice capture: push-to-talk records audio via the platform speech recognizer; partial transcription is shown in real-time; spoken punctuation ("comma", "period", etc.) is converted to symbols; recognition errors retry with backoff up to 30 seconds
+- Full-text search across notes by title and content; optionally restrict to the currently selected topic
+- Search results update in real-time as the user types
+- Sync status indicator (synced / pending sync) shown on each note
+- Screen stays on during voice capture to support hands-free operation
 
 ### Settings
 - Connect / disconnect a Google account; connected account email is displayed
